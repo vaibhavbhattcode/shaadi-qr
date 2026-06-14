@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %></title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; background:#fff8f3; color:#2b1424; }
+    .page { min-height:100vh; display:grid; place-items:center; padding:30px; }
+    .poster { width:min(780px, 100%); aspect-ratio: 3 / 4; border-radius:36px; padding:42px; text-align:center; background: radial-gradient(circle at top left, #ffe2d9, transparent 46%), radial-gradient(circle at bottom right, #ffe1f1, transparent 42%), white; border:12px solid #b83280; box-shadow:0 22px 70px rgba(84, 27, 63, .20); display:flex; flex-direction:column; justify-content:center; align-items:center; }
+    h1 { font-size:clamp(2.2rem, 8vw, 5rem); line-height:.95; margin:0; letter-spacing:-.07em; }
+    h2 { font-size:clamp(1.2rem, 4vw, 2rem); margin:14px 0 22px; color:#8a275f; }
+    .qr { width:min(420px, 75%); border-radius:26px; padding:16px; background:white; border:4px solid #f3cde2; }
+    .scan { margin:24px 0 8px; font-size:clamp(1.3rem, 4vw, 2.4rem); font-weight:900; color:#b83280; }
+    p { color:#6d5367; font-size:1.15rem; line-height:1.5; margin:6px 0; }
+    .url { font-family: ui-monospace, Menlo, Consolas, monospace; word-break: break-all; font-size:.88rem; color:#5a4052; max-width:90%; }
+    .actions { margin:20px; text-align:center; }
+    button { border:0; border-radius:999px; padding:12px 18px; background:linear-gradient(135deg,#b83280,#ff7a59); color:#fff; font-weight:900; cursor:pointer; }
+    @media print {
+      body { background:#fff; }
+      .actions { display:none; }
+      .page { padding:0; }
+      .poster { width:100vw; min-height:100vh; border-radius:0; box-shadow:none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="actions"><button onclick="window.print()">Print / Save PDF</button></div>
+  <main class="page">
+    <section class="poster">
+      <h1>Share Your Memories</h1>
+      <h2><%= event.title %></h2>
+      <img class="qr" src="<%= qrDataUrl %>" alt="Wedding upload QR">
+      <div class="scan">Scan QR & Upload Photos</div>
+      <p>No login required. Photos/videos couple ke private approval dashboard me jayenge.</p>
+      <p class="url"><%= uploadLink %></p>
+    </section>
+  </main>
+</body>
+</html>

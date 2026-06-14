@@ -1,0 +1,30 @@
+<%- include('partials/admin-nav', {
+  heading: 'Platform Settings',
+  subheading: 'Configure brand rules, security rules, and global configurations live.',
+  actions: ''
+}) %>
+
+<section style="max-width: 800px; margin: 24px auto 0;">
+  <form class="card grid" method="post" action="/admin/settings" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+    <label>Brand Name
+      <input name="brand_name" value="<%= settings.brand_name || 'ShaadiShots' %>" placeholder="e.g. ShaadiShots" required>
+    </label>
+
+    <label>Support Email Address
+      <input type="email" name="support_email" value="<%= settings.support_email || 'support@shaadishots.com' %>" placeholder="e.g. support@shaadishots.com" required>
+    </label>
+
+    <label class="row" style="font-weight:800; margin: 10px 0;">
+      <input style="width:auto" type="checkbox" name="registration_enabled" <%= settings.registration_enabled === 'true' ? 'checked' : '' %>> Allow Open Owner Registrations (`/register` route is active)
+    </label>
+
+    <label>Allowed Guest Upload File Types
+      <textarea name="allowed_file_types" rows="3" required><%= settings.allowed_file_types || 'image/jpeg,image/png,image/webp,image/heic,image/heif,video/mp4,video/quicktime,video/webm' %></textarea>
+      <span class="hint">Comma separated list of mime types. Default: image/jpeg,image/png,image/webp,image/heic,image/heif,video/mp4,video/quicktime,video/webm</span>
+    </label>
+
+    <button class="btn" type="submit" style="margin-top: 15px;">Save configurations</button>
+  </form>
+</section>

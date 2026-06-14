@@ -1,0 +1,88 @@
+<%- include('partials/admin-nav', {
+  heading: plan.id ? `Edit Plan: ${plan.name}` : 'Create Subscription Plan',
+  subheading: 'Set limits, pricing, and capabilities for this plan tier.',
+  actions: '<a class="btn secondary" href="/admin/plans">Back to plans</a>'
+}) %>
+
+<section style="max-width: 800px; margin: 24px auto 0;">
+  <form class="card grid" method="post" action="<%= plan.id ? `/admin/plans/${plan.id}` : '/admin/plans' %>" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+    <div class="grid grid-2">
+      <label>Plan Name
+        <input name="name" value="<%= plan.name || '' %>" placeholder="e.g. Royal Platinum" required>
+        <% if (errors.name) { %><span class="error-text"><%= errors.name[0] %></span><% } %>
+      </label>
+
+      <label>Plan Slug
+        <input name="slug" value="<%= plan.slug || '' %>" placeholder="e.g. royal-platinum" <%= plan.id ? 'readonly style="background:#f4f4f4"' : '' %> required>
+        <% if (errors.slug) { %><span class="error-text"><%= errors.slug[0] %></span><% } %>
+      </label>
+    </div>
+
+    <div class="grid grid-2">
+      <label>Price (INR)
+        <input type="number" name="price" value="<%= plan.price !== undefined ? plan.price : 0 %>" placeholder="e.g. 1999" required>
+        <% if (errors.price) { %><span class="error-text"><%= errors.price[0] %></span><% } %>
+      </label>
+
+      <label>Storage Limit (MB)
+        <input type="number" name="storage_limit_mb" value="<%= plan.storage_limit_mb || 1024 %>" placeholder="e.g. 2048 for 2GB" required>
+        <% if (errors.storage_limit_mb) { %><span class="error-text"><%= errors.storage_limit_mb[0] %></span><% } %>
+      </label>
+    </div>
+
+    <div class="grid grid-3">
+      <label>Max Photo Size (MB)
+        <input type="number" name="photo_max_mb" value="<%= plan.photo_max_mb || 10 %>" placeholder="e.g. 10" required>
+        <% if (errors.photo_max_mb) { %><span class="error-text"><%= errors.photo_max_mb[0] %></span><% } %>
+      </label>
+
+      <label>Max Video Size (MB)
+        <input type="number" name="video_max_mb" value="<%= plan.video_max_mb || 100 %>" placeholder="e.g. 100" required>
+        <% if (errors.video_max_mb) { %><span class="error-text"><%= errors.video_max_mb[0] %></span><% } %>
+      </label>
+
+      <label>Max Files per Upload
+        <input type="number" name="max_files_per_upload" value="<%= plan.max_files_per_upload || 10 %>" placeholder="e.g. 15" required>
+        <% if (errors.max_files_per_upload) { %><span class="error-text"><%= errors.max_files_per_upload[0] %></span><% } %>
+      </label>
+    </div>
+
+    <div class="grid grid-2">
+      <label>Max Folders
+        <input type="number" name="max_folders" value="<%= plan.max_folders || 10 %>" placeholder="e.g. 10" required>
+        <% if (errors.max_folders) { %><span class="error-text"><%= errors.max_folders[0] %></span><% } %>
+      </label>
+
+      <% if (plan.id) { %>
+        <label class="row" style="font-weight:800; margin-top:28px;">
+          <input style="width:auto" type="checkbox" name="is_active" <%= plan.is_active ? 'checked' : '' %>> Plan Active & Available
+        </label>
+      <% } %>
+    </div>
+
+    <div class="divider" style="margin: 10px 0;"></div>
+    <h3>Feature Flags</h3>
+    
+    <div class="grid grid-2">
+      <label class="row" style="font-weight:800;">
+        <input style="width:auto" type="checkbox" name="video_enabled" <%= plan.video_enabled !== 0 ? 'checked' : '' %>> Allow Video Uploads
+      </label>
+      
+      <label class="row" style="font-weight:800;">
+        <input style="width:auto" type="checkbox" name="zip_download_enabled" <%= plan.zip_download_enabled !== 0 ? 'checked' : '' %>> Allow Bulk ZIP Downloads
+      </label>
+      
+      <label class="row" style="font-weight:800;">
+        <input style="width:auto" type="checkbox" name="pin_gallery_enabled" <%= plan.pin_gallery_enabled !== 0 ? 'checked' : '' %>> Enable Gallery PIN Protection
+      </label>
+      
+      <label class="row" style="font-weight:800;">
+        <input style="width:auto" type="checkbox" name="custom_branding_enabled" <%= plan.custom_branding_enabled === 1 ? 'checked' : '' %>> Enable Custom Branding / White-label
+      </label>
+    </div>
+
+    <button class="btn" type="submit" style="margin-top: 15px;"><%= plan.id ? 'Save changes' : 'Create plan' %></button>
+  </form>
+</section>

@@ -1,0 +1,79 @@
+<%- include('partials/admin-nav', {
+  heading: 'Media Manager',
+  subheading: event.title,
+  actions: `<a class="btn secondary" href="/admin/events/${event.id}">Event details</a>`
+}) %>
+
+<section class="stat-grid">
+  <article class="stat-card"><span>Pending</span><strong><%= stats.counts.pending %></strong><small>Needs review</small></article>
+  <article class="stat-card"><span>Approved</span><strong><%= stats.counts.approved %></strong><small>Visible in gallery</small></article>
+  <article class="stat-card"><span>Rejected</span><strong><%= stats.counts.rejected %></strong><small>Hidden from gallery</small></article>
+  <article class="stat-card"><span>Storage</span><strong style="font-size:1.7rem;"><%= stats.usedHuman %></strong><small><%= stats.percent %>% used</small></article>
+</section>
+
+<section class="panel" style="margin-top:20px;">
+  <form class="filter-bar" method="get" action="/admin/events/<%= event.id %>/media">
+    <label>Status
+      <select name="status">
+        <% ['pending','approved','rejected','all'].forEach((s) => { %><option value="<%= s %>" <%= status === s ? 'selected' : '' %>><%= s %></option><% }) %>
+      </select>
+    </label>
+    <label>Folder
+      <select name="folder">
+        <option value="">All folders</option>
+        <% folders.forEach((folder) => { %><option value="<%= folder.id %>" <%= Number(folderId) === folder.id ? 'selected' : '' %>><%= folder.name %></option><% }) %>
+      </select>
+    </label>
+    <button class="btn" type="submit">Filter</button>
+  </form>
+</section>
+
+<% if (!media.length) { %>
+  <div class="empty" style="margin-top:22px;">No media found for this filter.</div>
+<% } else { %>
+  <form method="post" action="/admin/events/<%= event.id %>/media/bulk" style="margin-top:22px;">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="between panel" style="margin-bottom:18px;">
+      <div class="row">
+        <button class="btn small secondary" type="button" onclick="document.querySelectorAll('.media-check').forEach(c => c.checked = true)">Select all</button>
+        <button class="btn small secondary" type="button" onclick="document.querySelectorAll('.media-check').forEach(c => c.checked = false)">Clear</button>
+      </div>
+      <div class="row">
+        <select name="action" style="min-width:150px;">
+          <option value="approve">Approve</option>
+          <option value="reject">Reject</option>
+          <option value="delete">Delete</option>
+        </select>
+        <button class="btn" type="submit" onclick="return confirm('Apply bulk action to selected media?')">Apply</button>
+      </div>
+    </div>
+
+    <div class="media-grid">
+      <% media.forEach((item) => { %>
+        <article class="media-card">
+          <div class="thumb">
+            <% if (item.media_type === 'image') { %>
+              <a href="/admin/media/<%= item.id %>/file" target="_blank"><img loading="lazy" src="/admin/media/<%= item.id %>/thumbnail" alt="<%= item.original_name %>"></a>
+            <% } else { %>
+              <video src="/admin/media/<%= item.id %>/file" controls preload="metadata"></video>
+            <% } %>
+          </div>
+          <div class="body">
+            <div class="between">
+              <label class="row" style="font-weight:800;"><input class="media-check" style="width:auto" type="checkbox" name="media_ids" value="<%= item.id %>"> Select</label>
+              <span class="badge <%= item.status %>"><%= item.status %></span>
+            </div>
+            <strong title="<%= item.original_name %>" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><%= item.original_name %></strong>
+            <span class="hint"><%= item.folder_name %> · <%= helpers.formatBytes(item.size_bytes) %></span>
+            <span class="hint">By: <%= item.uploader_name || 'Guest' %> <%= item.uploader_side ? `· ${item.uploader_side}` : '' %></span>
+            <div class="row">
+              <% if (item.status !== 'approved') { %><button formaction="/admin/events/<%= event.id %>/media/<%= item.id %>/approve" formmethod="post" class="btn small green" type="submit">Approve</button><% } %>
+              <% if (item.status !== 'rejected') { %><button formaction="/admin/events/<%= event.id %>/media/<%= item.id %>/reject" formmethod="post" class="btn small secondary" type="submit">Reject</button><% } %>
+              <button formaction="/admin/events/<%= event.id %>/media/<%= item.id %>/delete" formmethod="post" class="btn small danger" type="submit" onclick="return confirm('Delete this media permanently?')">Delete</button>
+            </div>
+          </div>
+        </article>
+      <% }) %>
+    </div>
+  </form>
+<% } %>

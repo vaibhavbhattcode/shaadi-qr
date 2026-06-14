@@ -1,0 +1,92 @@
+<%- include('partials/admin-nav', {
+  heading: 'Security Center',
+  subheading: 'Monitor logs, manage IP blocks, and protect the ShaadiShots platform.',
+  actions: ''
+}) %>
+
+<section class="grid grid-2" style="margin-top:24px; align-items:start;">
+  <div class="panel">
+    <h2>Block an IP Address</h2>
+    <p class="muted">Suspicious traffic block karne ke liye IP address ban karein.</p>
+    
+    <form class="grid" method="post" action="/admin/security/block" style="margin-top: 14px;" novalidate>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      
+      <label>IP Address
+        <input name="ip" placeholder="e.g. 192.168.1.1" required>
+      </label>
+      
+      <label>Reason
+        <input name="reason" placeholder="e.g. Repeated failed logins" required>
+      </label>
+      
+      <button class="btn danger" type="submit">Block IP Address</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h2>Currently Blocked IPs</h2>
+    <p class="muted">In IP addresses se server access block kiya gaya hai.</p>
+    
+    <div class="table-wrap" style="margin-top:14px;">
+      <table class="table-like pro-table">
+        <thead>
+          <tr>
+            <th>IP Address</th>
+            <th>Reason</th>
+            <th>Blocked At</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% blockedIps.forEach((b) => { %>
+            <tr>
+              <td><strong><%= b.ip %></strong></td>
+              <td><%= b.reason || 'No reason specified' %></td>
+              <td><%= helpers.formatDate(b.blocked_at) %></td>
+              <td>
+                <form method="post" action="/admin/security/unblock" style="margin: 0;">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <input type="hidden" name="ip" value="<%= b.ip %>">
+                  <button class="btn small" type="submit">Unblock</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+          <% if (!blockedIps.length) { %>
+            <tr>
+              <td colspan="4" class="empty" style="text-align: center; padding: 20px;">No IP addresses are currently blocked.</td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="panel" style="margin-top:24px;">
+  <div class="panel-head">
+    <div>
+      <h2>Security Event Logs</h2>
+      <p>Latest security-related actions and events.</p>
+    </div>
+  </div>
+  <div class="audit-list">
+    <% securityLogs.forEach((log) => { %>
+      <div class="audit-item" style="border-left: 4px solid <%= log.action.includes('failed') || log.action.includes('blocked') ? 'var(--red)' : 'var(--green)' %>; padding-left: 14px;">
+        <div>
+          <strong><%= log.action %></strong>
+          <p>
+            Actor: <strong><%= log.actor_name || 'System / Guest' %></strong> 
+            <%= log.ip_address ? `· IP: ${log.ip_address}` : '' %>
+            <%= log.metadata ? `· Details: ${log.metadata}` : '' %>
+          </p>
+        </div>
+        <span class="hint"><%= helpers.formatDate(log.created_at) %></span>
+      </div>
+    <% }) %>
+    <% if (!securityLogs.length) { %>
+      <div class="empty">No security events found.</div>
+    <% } %>
+  </div>
+</section>

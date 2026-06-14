@@ -1,0 +1,91 @@
+<%- include('partials/admin-nav', {
+  heading: 'Payments',
+  subheading: 'Track manual/Razorpay plan payments and revenue records.',
+  actions: '<a class="btn secondary" href="/admin">Overview</a>'
+}) %>
+
+<section class="grid grid-3">
+  <div class="stat-card gradient-pink"><span>Paid revenue</span><strong>₹<%= Number(revenue || 0).toLocaleString('en-IN') %></strong><small>Total recorded paid amount</small></div>
+  <div class="stat-card"><span>Records</span><strong><%= payments.length %></strong><small>Latest payment entries</small></div>
+  <div class="stat-card"><span>Gateway ready</span><strong style="font-size:1.6rem;">Manual</strong><small>Razorpay can be plugged in next</small></div>
+</section>
+
+<section class="grid grid-2" style="margin-top:24px; align-items:start;">
+  <form class="panel grid" method="post" action="/admin/payments">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="panel-head"><div><h2>Add payment record</h2><p>Use for offline/UPI/Razorpay manual reconciliation.</p></div></div>
+    <label>User
+      <select name="user_id">
+        <option value="">No user selected</option>
+        <% users.forEach((user) => { %><option value="<%= user.id %>"><%= user.name %> · <%= user.email %></option><% }) %>
+      </select>
+    </label>
+    <label>Event
+      <select name="event_id">
+        <option value="">No event selected</option>
+        <% events.forEach((event) => { %><option value="<%= event.id %>"><%= event.title %></option><% }) %>
+      </select>
+    </label>
+    <div class="grid grid-2">
+      <label>Plan name
+        <input name="plan_name" placeholder="Premium" required>
+      </label>
+      <label>Amount INR
+        <input name="amount" type="number" min="0" placeholder="1499" required>
+      </label>
+    </div>
+    <div class="grid grid-2">
+      <label>Status
+        <select name="payment_status">
+          <option value="paid">Paid</option>
+          <option value="pending">Pending</option>
+          <option value="failed">Failed</option>
+          <option value="refunded">Refunded</option>
+        </select>
+      </label>
+      <label>Provider
+        <input name="provider" value="manual" placeholder="manual / razorpay">
+      </label>
+    </div>
+    <label>Provider payment ID
+      <input name="provider_payment_id" placeholder="pay_xxxxx">
+    </label>
+    <label>Notes
+      <textarea name="notes" rows="3" placeholder="UPI received, invoice #..."></textarea>
+    </label>
+    <button class="btn" type="submit">Add payment</button>
+  </form>
+
+  <div class="panel">
+    <div class="panel-head"><div><h2>Payment health</h2><p>Simple SaaS tracking until gateway integration.</p></div></div>
+    <div class="info-list">
+      <div><span>Paid</span><strong><%= payments.filter(p => p.payment_status === 'paid').length %></strong></div>
+      <div><span>Pending</span><strong><%= payments.filter(p => p.payment_status === 'pending').length %></strong></div>
+      <div><span>Failed</span><strong><%= payments.filter(p => p.payment_status === 'failed').length %></strong></div>
+      <div><span>Refunded</span><strong><%= payments.filter(p => p.payment_status === 'refunded').length %></strong></div>
+    </div>
+  </div>
+</section>
+
+<section class="panel" style="margin-top:24px;">
+  <div class="panel-head"><div><h2>Recent payment records</h2><p>Latest 300 entries.</p></div></div>
+  <div class="table-wrap">
+    <table class="table-like pro-table">
+      <thead><tr><th>Customer</th><th>Event</th><th>Plan</th><th>Amount</th><th>Status</th><th>Provider</th><th>Date</th></tr></thead>
+      <tbody>
+        <% payments.forEach((payment) => { %>
+          <tr>
+            <td><%= payment.user_name || '—' %><div class="hint"><%= payment.user_email || '' %></div></td>
+            <td><%= payment.event_title || '—' %></td>
+            <td><%= payment.plan_name %></td>
+            <td>₹<%= Number(payment.amount || 0).toLocaleString('en-IN') %></td>
+            <td><span class="badge <%= payment.payment_status === 'paid' ? 'approved' : payment.payment_status === 'failed' ? 'rejected' : 'pending' %>"><%= payment.payment_status %></span></td>
+            <td><%= payment.provider || 'manual' %><div class="hint"><%= payment.provider_payment_id || '' %></div></td>
+            <td><%= helpers.formatDate(payment.created_at) %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% if (!payments.length) { %><div class="empty">No payment records yet.</div><% } %>
+</section>

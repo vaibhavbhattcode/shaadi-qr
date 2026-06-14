@@ -1,0 +1,179 @@
+<section class="between">
+  <div>
+    <h1 style="margin:0 0 4px; letter-spacing:-.04em;">Upgrade Album Storage & Features</h1>
+    <p class="muted">Increase upload capacity and enable premium features like guest downloads and branding.</p>
+  </div>
+  <a class="btn secondary" href="/dashboard/events/<%= event.id %>">Back to Event</a>
+</section>
+
+<section class="grid grid-3" style="margin-top:24px; align-items: stretch;">
+  <% plans.forEach((p) => { %>
+    <% const isCurrent = event.plan === p.slug; %>
+    <div class="card" style="display:flex; flex-direction:column; justify-content:space-between; border-color: <%= isCurrent ? 'var(--brand)' : 'var(--border)' %>; background: <%= isCurrent ? 'rgba(255, 246, 251, 0.9)' : 'var(--surface)' %>; position: relative; overflow: hidden; height: 100%;">
+      <% if (isCurrent) { %>
+        <span class="badge approved" style="position: absolute; top: 12px; right: 12px;">Active Plan</span>
+      <% } %>
+      <div>
+        <h3 style="margin-top:0; font-size: 1.4rem; letter-spacing:-.02em;"><%= p.name %></h3>
+        <div style="margin: 16px 0;">
+          <span style="font-size: 2.2rem; font-weight: 950; letter-spacing: -.05em;">₹<%= p.price %></span>
+          <span class="muted">/ wedding event</span>
+        </div>
+        <div class="divider"></div>
+        <ul style="list-style: none; padding: 0; margin: 18px 0; display: grid; gap: 10px;">
+          <li style="display: flex; align-items: center; gap: 8px;">
+            <span style="color: var(--green); font-weight: bold;">✓</span>
+            <strong><%= p.storageLimitHuman %></strong> total storage
+          </li>
+          <li style="display: flex; align-items: center; gap: 8px;">
+            <span style="color: var(--green); font-weight: bold;">✓</span>
+            Photo uploads: max <strong><%= (p.photoMaxBytes / (1024*1024)).toFixed(0) %> MB</strong> / file
+          </li>
+          <li style="display: flex; align-items: center; gap: 8px;">
+            <span style="color: <%= p.videoEnabled ? 'var(--green)' : 'var(--red)' %>; font-weight: bold;"><%= p.videoEnabled ? '✓' : '✗' %></span>
+            Video uploads: <%= p.videoEnabled ? `max <strong>${(p.videoMaxBytes / (1024*1024)).toFixed(0)} MB</strong> / file` : 'Disabled' %>
+          </li>
+          <li style="display: flex; align-items: center; gap: 8px;">
+            <span style="color: <%= p.zipDownloadEnabled ? 'var(--green)' : 'var(--red)' %>; font-weight: bold;"><%= p.zipDownloadEnabled ? '✓' : '✗' %></span>
+            Album ZIP download: <%= p.zipDownloadEnabled ? 'Enabled' : 'Disabled' %>
+          </li>
+          <li style="display: flex; align-items: center; gap: 8px;">
+            <span style="color: <%= p.pinGalleryEnabled ? 'var(--green)' : 'var(--red)' %>; font-weight: bold;"><%= p.pinGalleryEnabled ? '✓' : '✗' %></span>
+            Gallery PIN security: <%= p.pinGalleryEnabled ? 'Enabled' : 'Disabled' %>
+          </li>
+          <li style="display: flex; align-items: center; gap: 8px;">
+            <span style="color: <%= p.customBrandingEnabled ? 'var(--green)' : 'var(--red)' %>; font-weight: bold;"><%= p.customBrandingEnabled ? '✓' : '✗' %></span>
+            Custom branding: <%= p.customBrandingEnabled ? 'Enabled' : 'Disabled' %>
+          </li>
+        </ul>
+      </div>
+      <div style="margin-top:20px;">
+        <% if (isCurrent) { %>
+          <button class="btn secondary" style="width: 100%; cursor: not-allowed;" disabled>Current Plan</button>
+        <% } else { %>
+          <button class="btn" id="btn-<%= p.slug %>" onclick="startPayment('<%= p.slug %>')" style="width: 100%;">Upgrade to <%= p.name %></button>
+        <% } %>
+      </div>
+    </div>
+  <% }) %>
+</section>
+
+<% if (!razorpayKeyId) { %>
+  <section class="card" style="margin-top:24px; border-color: var(--gold); background: #fffdf6; display: flex; align-items: center; gap: 14px;">
+    <div style="font-size: 1.8rem;">💡</div>
+    <div>
+      <h4 style="margin: 0 0 4px; color: var(--gold);">Sandbox Mock Payment Mode Active</h4>
+      <p class="hint" style="margin: 0; color: #786131;">The platform is currently operating without live Razorpay keys. Upgrades can be tested instantly and are simulated for free.</p>
+    </div>
+  </section>
+<% } %>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+  async function startPayment(planSlug) {
+    const btn = document.getElementById(`btn-${planSlug}`);
+    const originalText = btn.innerText;
+    btn.disabled = true;
+    btn.innerText = 'Creating order...';
+
+    try {
+      const response = await fetch(`/dashboard/events/<%= event.id %>/upgrade/order`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ planSlug, _csrf: '<%= csrfToken %>' })
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || 'Failed to initialize order');
+      }
+
+      if (data.mock) {
+        btn.innerText = 'Simulating payment...';
+        const verifyRes = await fetch(`/dashboard/events/<%= event.id %>/upgrade/verify`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify({ 
+            mock: true, 
+            planSlug: data.planSlug,
+            _csrf: '<%= csrfToken %>' 
+          })
+        });
+
+        const verifyData = await verifyRes.json();
+        if (!verifyRes.ok || !verifyData.ok) {
+          throw new Error(verifyData.error || 'Mock verification failed');
+        }
+
+        alert('Sandbox simulated payment successful! Your plan has been upgraded.');
+        window.location.href = `/dashboard/events/<%= event.id %>`;
+        return;
+      }
+
+      const options = {
+        key: data.keyId,
+        amount: data.amount,
+        currency: data.currency,
+        name: 'ShaadiShots',
+        description: `Upgrade to ${data.planName}`,
+        order_id: data.orderId,
+        prefill: {
+          name: data.user.name,
+          email: data.user.email,
+        },
+        theme: {
+          color: '#b83280',
+        },
+        handler: async function (paymentResponse) {
+          btn.innerText = 'Verifying signature...';
+          try {
+            const verifyRes = await fetch(`/dashboard/events/<%= event.id %>/upgrade/verify`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+              },
+              body: JSON.stringify({
+                razorpay_payment_id: paymentResponse.razorpay_payment_id,
+                razorpay_order_id: paymentResponse.razorpay_order_id,
+                razorpay_signature: paymentResponse.razorpay_signature,
+                _csrf: '<%= csrfToken %>'
+              })
+            });
+
+            const verifyData = await verifyRes.json();
+            if (!verifyRes.ok || !verifyData.ok) {
+              throw new Error(verifyData.error || 'Payment verification failed.');
+            }
+
+            window.location.href = `/dashboard/events/<%= event.id %>`;
+          } catch (err) {
+            alert(`Error: ${err.message}`);
+            btn.disabled = false;
+            btn.innerText = originalText;
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            btn.disabled = false;
+            btn.innerText = originalText;
+          }
+        }
+      };
+
+      const rzp = new Razorpay(options);
+      rzp.open();
+
+    } catch (err) {
+      alert(`Payment failed: ${err.message}`);
+      btn.disabled = false;
+      btn.innerText = originalText;
+    }
+  }
+</script>

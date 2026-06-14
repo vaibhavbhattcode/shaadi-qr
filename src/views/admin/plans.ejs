@@ -1,0 +1,60 @@
+<%- include('partials/admin-nav', {
+  heading: 'Platform Plans',
+  subheading: 'Manage subscription tiers, pricing, storage limits, and active features.',
+  actions: '<a class="btn" href="/admin/plans/new">Create new plan</a>'
+}) %>
+
+<section class="panel" style="margin-top: 24px;">
+  <div class="table-wrap">
+    <table class="table-like pro-table">
+      <thead>
+        <tr>
+          <th>Plan Name</th>
+          <th>Slug</th>
+          <th>Price</th>
+          <th>Storage Limit</th>
+          <th>Limits (Photo/Video)</th>
+          <th>Files/Folders</th>
+          <th>Features</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% plans.forEach((plan) => { %>
+          <tr>
+            <td><strong><%= plan.name %></strong></td>
+            <td><code><%= plan.slug %></code></td>
+            <td>₹<%= plan.price %></td>
+            <td><%= helpers.formatBytes(plan.storage_limit_bytes) %></td>
+            <td>
+              <div class="hint">Photo: <%= helpers.formatBytes(plan.photo_max_bytes) %></div>
+              <div class="hint">Video: <%= helpers.formatBytes(plan.video_max_bytes) %></div>
+            </td>
+            <td>
+              <div class="hint">Max Files: <%= plan.max_files_per_upload %></div>
+              <div class="hint">Max Folders: <%= plan.max_folders %></div>
+            </td>
+            <td>
+              <span class="badge <%= plan.video_enabled ? 'approved' : '' %>">Video</span>
+              <span class="badge <%= plan.zip_download_enabled ? 'approved' : '' %>">ZIP</span>
+              <span class="badge <%= plan.pin_gallery_enabled ? 'approved' : '' %>">PIN</span>
+              <span class="badge <%= plan.custom_branding_enabled ? 'approved' : '' %>">Branding</span>
+            </td>
+            <td>
+              <span class="badge <%= plan.is_active ? 'approved' : 'rejected' %>"><%= plan.is_active ? 'Active' : 'Inactive' %></span>
+            </td>
+            <td>
+              <a class="btn small secondary" href="/admin/plans/<%= plan.id %>/edit">Edit</a>
+            </td>
+          </tr>
+        <% }) %>
+        <% if (!plans.length) { %>
+          <tr>
+            <td colspan="9" class="empty" style="text-align: center; padding: 20px;">No plans have been created yet.</td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</section>

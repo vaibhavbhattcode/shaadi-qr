@@ -1,0 +1,26 @@
+<section class="grid grid-2" style="align-items:center; max-width: 980px; margin: 20px auto;">
+  <div>
+    <span class="badge">Admin login</span>
+    <h1 style="font-size:clamp(2rem,5vw,3.6rem); line-height:1; letter-spacing:-.05em; margin:14px 0;">Welcome back</h1>
+    <p class="muted">Login karke wedding events, QR codes, uploads aur private galleries manage karein.</p>
+  </div>
+  <form class="card" method="post" action="/login" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="next" value="<%= values.next || '' %>">
+    <div class="grid">
+      <label>Email
+        <input type="email" name="email" autocomplete="email" value="<%= values.email || '' %>" required>
+        <% if (errors.email) { %><span class="error-text"><%= errors.email[0] %></span><% } %>
+      </label>
+      <label>Password
+        <input type="password" name="password" autocomplete="current-password" required>
+        <% if (errors.password) { %><span class="error-text"><%= errors.password[0] %></span><% } %>
+      </label>
+      <div style="text-align: right; margin-top: -6px; margin-bottom: 8px;">
+        <a class="hint" href="/forgot-password">Forgot password?</a>
+      </div>
+      <button class="btn" type="submit">Login</button>
+      <p class="hint">New here? <a href="/register">Create an account</a>.</p>
+    </div>
+  </form>
+</section>

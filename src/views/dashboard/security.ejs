@@ -1,0 +1,51 @@
+<section style="max-width: 700px; margin: 0 auto;">
+  <div class="between">
+    <div>
+      <span class="badge">Security settings</span>
+      <h1 style="margin:10px 0 4px; letter-spacing:-.04em;">Multi-Factor Authentication (2FA)</h1>
+      <p class="muted">Apne account ki security double karne ke liye 2FA enable karein.</p>
+    </div>
+    <a class="btn secondary" href="/dashboard">Back to Dashboard</a>
+  </div>
+
+  <div class="card grid" style="margin-top:22px;">
+    <% if (twoFactorEnabled) { %>
+      <div class="alert success">
+        2FA is currently active on your account.
+      </div>
+      <p>Aapka account safe hai. Jab bhi aap login karenge, aapko authenticator app se 6-digit code enter karna hoga.</p>
+
+      <form method="post" action="/dashboard/security/2fa/disable" style="margin-top:10px;">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="btn danger" type="submit">Disable 2FA</button>
+      </form>
+    <% } else { %>
+      <h3 style="margin-top:0;">Enable 2FA</h3>
+      <p>Apne Authenticator app (jaise Google Authenticator, Microsoft Authenticator, ya Authy) se niche diya gaya QR code scan karein, ya secret key manual enter karein.</p>
+
+      <div style="display:grid; grid-template-columns: 200px 1fr; gap: 20px; align-items: center; margin: 20px 0; background: rgba(255,255,255,0.4); padding: 15px; border-radius: 18px; border: 1px solid var(--border);">
+        <div style="background: white; padding: 10px; border-radius: 14px; border: 1px solid var(--border); display: grid; place-items: center;">
+          <img src="<%= qrDataUrl %>" alt="Scan QR Code" style="width: 100%; max-width: 180px;">
+        </div>
+        <div>
+          <label>Manual Secret Key
+            <input readonly value="<%= secret %>" style="font-family: monospace; font-size: 1.1rem; letter-spacing: 2px; text-align: center; background: #fff8f8; cursor: pointer;" onclick="this.select(); document.execCommand('copy'); alert('Secret key copied!');">
+          </label>
+          <span class="hint" style="display: block; margin-top: 6px;">Key copy karne ke liye input par click karein.</span>
+        </div>
+      </div>
+
+      <form class="grid" method="post" action="/dashboard/security/2fa/enable" style="margin-top: 15px;">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="secret" value="<%= secret %>">
+
+        <label>Verification Code
+          <input name="code" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="000000" style="text-align: center; font-size: 1.3rem; letter-spacing: 6px;" required autocomplete="off">
+          <span class="hint">Authenticator app me show ho raha 6-digit code verify karne ke liye yahan enter karein.</span>
+        </label>
+
+        <button class="btn" type="submit">Verify & Enable 2FA</button>
+      </form>
+    <% } %>
+  </div>
+</section>

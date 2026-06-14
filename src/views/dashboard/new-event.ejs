@@ -1,0 +1,55 @@
+<section style="max-width: 900px; margin: 0 auto;">
+  <div class="between">
+    <div>
+      <span class="badge">New wedding event</span>
+      <h1 style="margin:10px 0 4px; letter-spacing:-.04em;">Create QR upload link</h1>
+      <p class="muted">Event details add karo, folders choose karo, phir QR code download ho jayega.</p>
+    </div>
+    <a class="btn secondary" href="/dashboard">Back</a>
+  </div>
+
+  <form class="card grid" method="post" action="/dashboard/events" style="margin-top:22px;" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+    <label>Wedding title
+      <input name="title" maxlength="120" value="<%= values.title || '' %>" placeholder="Rahul ❤️ Anjali Wedding" required>
+      <% if (errors.title) { %><span class="error-text"><%= errors.title[0] %></span><% } %>
+    </label>
+
+    <div class="grid grid-2">
+      <label>Bride name
+        <input name="bride_name" maxlength="80" value="<%= values.bride_name || '' %>" placeholder="Anjali">
+      </label>
+      <label>Groom name
+        <input name="groom_name" maxlength="80" value="<%= values.groom_name || '' %>" placeholder="Rahul">
+      </label>
+    </div>
+
+    <div class="grid grid-2">
+      <label>Wedding date
+        <input type="date" name="wedding_date" value="<%= values.wedding_date || '' %>">
+      </label>
+      <label>City
+        <input name="city" maxlength="80" value="<%= values.city || '' %>" placeholder="Jaipur">
+      </label>
+    </div>
+
+    <label>Venue
+      <input name="venue" maxlength="160" value="<%= values.venue || '' %>" placeholder="Royal Palace Banquet">
+    </label>
+
+    <label>Custom link slug <span class="hint">optional</span>
+      <input name="slug" maxlength="70" value="<%= values.slug || '' %>" placeholder="rahul-anjali">
+      <% if (errors.slug) { %><span class="error-text"><%= errors.slug[0] %></span><% } %>
+      <span class="hint">Leave blank to auto-generate. Only lowercase URL-safe text will be used.</span>
+    </label>
+
+    <label>Event folders
+      <input name="folders" maxlength="500" value="<%= values.folders || 'Haldi, Mehndi, Baraat, Reception' %>">
+      <span class="hint">Comma separated: Haldi, Mehndi, Baraat, Reception</span>
+      <% if (errors.folders) { %><span class="error-text"><%= errors.folders[0] %></span><% } %>
+    </label>
+
+    <button class="btn" type="submit">Create event & QR</button>
+  </form>
+</section>

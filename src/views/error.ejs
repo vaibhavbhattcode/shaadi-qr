@@ -1,0 +1,11 @@
+<section style="max-width:680px; margin:40px auto; text-align:center;">
+  <div class="card">
+    <span class="badge rejected">Error</span>
+    <h1 style="letter-spacing:-.04em;"><%= title || 'Error' %></h1>
+    <p class="muted"><%= message || 'Something went wrong.' %></p>
+    <div class="row" style="justify-content:center; margin-top:18px;">
+      <a class="btn" href="/">Home</a>
+      <% if (currentUser) { %><a class="btn secondary" href="/dashboard">Dashboard</a><% } %>
+    </div>
+  </div>
+</section>

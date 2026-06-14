@@ -1,0 +1,27 @@
+<section class="grid grid-2" style="align-items:center; max-width: 980px; margin: 20px auto;">
+  <div>
+    <span class="badge">Create owner account</span>
+    <h1 style="font-size:clamp(2rem,5vw,3.6rem); line-height:1; letter-spacing:-.05em; margin:14px 0;">Start your wedding QR album</h1>
+    <p class="muted">Account banane ke baad aap multiple wedding events create kar sakte ho, QR download kar sakte ho aur uploads approve kar sakte ho.</p>
+  </div>
+  <form class="card" method="post" action="/register" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="grid">
+      <label>Name
+        <input type="text" name="name" autocomplete="name" value="<%= values.name || '' %>" required maxlength="80">
+        <% if (errors.name) { %><span class="error-text"><%= errors.name[0] %></span><% } %>
+      </label>
+      <label>Email
+        <input type="email" name="email" autocomplete="email" value="<%= values.email || '' %>" required>
+        <% if (errors.email) { %><span class="error-text"><%= errors.email[0] %></span><% } %>
+      </label>
+      <label>Password
+        <input type="password" name="password" autocomplete="new-password" minlength="8" required>
+        <% if (errors.password) { %><span class="error-text"><%= errors.password[0] %></span><% } %>
+        <span class="hint">Minimum 8 characters. Production me strong password use karein.</span>
+      </label>
+      <button class="btn" type="submit">Create account</button>
+      <p class="hint">Already have an account? <a href="/login">Login</a>.</p>
+    </div>
+  </form>
+</section>

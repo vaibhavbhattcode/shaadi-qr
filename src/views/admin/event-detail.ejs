@@ -1,0 +1,119 @@
+<%- include('partials/admin-nav', {
+  heading: event.title,
+  subheading: `${event.owner_name} · ${event.owner_email}`,
+  actions: `<a class="btn secondary" href="/admin/events">Back to events</a><a class="btn" href="/admin/events/${event.id}/media">Review media</a>`
+}) %>
+
+<section class="grid grid-4">
+  <div class="stat-card"><span>Plan</span><strong style="font-size:1.7rem;"><%= helpers.planLabel(event.plan) %></strong><small><%= event.city || 'No city' %></small></div>
+  <div class="stat-card"><span>Storage</span><strong style="font-size:1.7rem;"><%= stats.usedHuman %></strong><small><%= stats.percent %>% of <%= stats.limitHuman %></small></div>
+  <div class="stat-card"><span>Pending</span><strong><%= stats.counts.pending %></strong><small>Needs approval</small></div>
+  <div class="stat-card"><span>Total Media</span><strong><%= stats.counts.total %></strong><small><%= stats.counts.approved %> approved</small></div>
+</section>
+
+<section class="grid grid-2" style="margin-top:24px; align-items:start;">
+  <div class="panel">
+    <div class="panel-head"><div><h2>QR & links</h2><p>Super admin can verify customer QR and gallery experience.</p></div></div>
+    <div style="display:grid; place-items:center; padding:12px;">
+      <img src="<%= qrDataUrl %>" alt="Upload QR" style="width:220px; max-width:100%; border-radius:22px; padding:10px; background:#fff; border:1px solid var(--border);">
+    </div>
+    <label>Secure upload link
+      <div class="copy-box"><input id="adminUploadLink" readonly value="<%= uploadLink %>"><button type="button" class="btn secondary" onclick="copyValue('adminUploadLink')">Copy</button></div>
+    </label>
+    <label>Gallery link
+      <div class="copy-box"><input id="adminGalleryLink" readonly value="<%= galleryLink %>"><button type="button" class="btn secondary" onclick="copyValue('adminGalleryLink')">Copy</button></div>
+    </label>
+    <div class="row" style="margin-top:12px;">
+      <a class="btn small secondary" target="_blank" href="/e/<%= event.slug %>/gallery">Open gallery</a>
+      <a class="btn small secondary" target="_blank" href="/e/<%= event.slug %>/upload?token=<%= encodeURIComponent(event.upload_token) %>">Test upload</a>
+    </div>
+  </div>
+
+  <form class="panel grid" method="post" action="/admin/events/<%= event.id %>/settings">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="panel-head"><div><h2>Platform controls</h2><p>Override plan, storage and customer-facing availability.</p></div></div>
+    <div class="grid grid-2">
+      <label>Plan
+        <select name="plan">
+          <% plans.forEach((plan) => { %>
+            <option value="<%= plan.slug %>" <%= event.plan === plan.slug ? 'selected' : '' %>><%= plan.name %> · <%= helpers.formatBytes(plan.storage_limit_bytes) %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label>Storage limit MB
+        <input name="storage_limit_mb" type="number" min="1" max="102400" value="<%= Math.ceil(event.storage_limit_bytes / 1024 / 1024) %>">
+      </label>
+    </div>
+    <div class="grid grid-3">
+      <label class="row"><input style="width:auto" type="checkbox" name="upload_enabled" <%= event.upload_enabled ? 'checked' : '' %>> Uploads open</label>
+      <label class="row"><input style="width:auto" type="checkbox" name="gallery_enabled" <%= event.gallery_enabled ? 'checked' : '' %>> Gallery enabled</label>
+      <label class="row"><input style="width:auto" type="checkbox" name="public_download_enabled" <%= event.public_download_enabled ? 'checked' : '' %>> Public ZIP</label>
+    </div>
+    <div class="progress"><span style="width:<%= stats.percent %>%"></span></div>
+    <button class="btn" type="submit">Save admin controls</button>
+  </form>
+</section>
+
+<section class="grid grid-2" style="margin-top:24px; align-items:start;">
+  <div class="panel">
+    <div class="panel-head"><div><h2>Owner details</h2><p>Customer account linked with this event.</p></div><a class="btn small secondary" href="/admin/users/<%= event.owner_id %>">Open user</a></div>
+    <div class="info-list">
+      <div><span>Owner</span><strong><%= event.owner_name %></strong></div>
+      <div><span>Email</span><strong><%= event.owner_email %></strong></div>
+      <div><span>Status</span><strong><%= event.owner_status %></strong></div>
+      <div><span>Created</span><strong><%= helpers.formatDate(event.created_at) %></strong></div>
+      <div><span>Updated</span><strong><%= helpers.formatDate(event.updated_at) %></strong></div>
+      <div><span>Wedding date</span><strong><%= helpers.formatDate(event.wedding_date) %></strong></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><div><h2>Folders</h2><p>Customer-created event sections.</p></div></div>
+    <div class="pill-grid">
+      <% folders.forEach((folder) => { %><span class="folder-pill"><%= folder.name %></span><% }) %>
+    </div>
+    <div class="divider"></div>
+    <form method="post" action="/admin/events/<%= event.id %>/regenerate-token" onsubmit="return confirm('Regenerate upload token? Old QR links will stop working.')">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn secondary" type="submit">Regenerate upload token</button>
+      <p class="hint">Use only if a QR link is leaked or abused.</p>
+    </form>
+  </div>
+</section>
+
+<section class="panel" style="margin-top:24px;">
+  <div class="panel-head"><div><h2>Recent media</h2><p>Latest guest uploads across folders.</p></div><a class="btn small secondary" href="/admin/events/<%= event.id %>/media?status=all">Open media manager</a></div>
+  <% if (!recentMedia.length) { %>
+    <div class="empty">No media uploaded yet.</div>
+  <% } else { %>
+    <div class="media-grid">
+      <% recentMedia.forEach((item) => { %>
+        <article class="media-card">
+          <div class="thumb">
+            <% if (item.media_type === 'image') { %><img loading="lazy" src="/admin/media/<%= item.id %>/file" alt="<%= item.original_name %>"><% } else { %><video src="/admin/media/<%= item.id %>/file" controls preload="metadata"></video><% } %>
+          </div>
+          <div class="body"><span class="badge <%= item.status %>"><%= item.status %></span><strong><%= item.original_name %></strong><span class="hint"><%= item.folder_name %> · <%= helpers.formatBytes(item.size_bytes) %></span></div>
+        </article>
+      <% }) %>
+    </div>
+  <% } %>
+</section>
+
+<section class="panel danger-zone" style="margin-top:24px;">
+  <div class="panel-head"><div><h2>Danger zone</h2><p>Permanently delete this event and all stored media files.</p></div></div>
+  <form method="post" action="/admin/events/<%= event.id %>/delete" onsubmit="return confirm('This permanently deletes the event and all media. Continue?')" class="grid grid-2">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label>Type slug to confirm: <span class="mono"><%= event.slug %></span>
+      <input name="confirmation" placeholder="<%= event.slug %>">
+    </label>
+    <button class="btn danger" type="submit" style="align-self:end;">Delete event permanently</button>
+  </form>
+</section>
+
+<script>
+  function copyValue(id) {
+    const input = document.getElementById(id);
+    input.select(); input.setSelectionRange(0, 99999);
+    if (navigator.clipboard) navigator.clipboard.writeText(input.value);
+  }
+</script>

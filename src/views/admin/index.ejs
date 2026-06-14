@@ -1,0 +1,87 @@
+<%- include('partials/admin-nav', {
+  heading: 'Business Overview',
+  subheading: 'Users, weddings, uploads, storage and revenue — one control room.',
+  actions: '<a class="btn" href="/admin/events">Review weddings</a><a class="btn secondary" href="/admin/payments">Add payment</a>'
+}) %>
+
+<section class="admin-hero">
+  <div class="admin-hero-copy">
+    <span class="eyebrow light">SaaS Control Center</span>
+    <h2>Run the complete wedding media platform professionally.</h2>
+    <p>Monitor active weddings, control customers, moderate uploads, track revenue and audit every important action.</p>
+  </div>
+  <div class="admin-hero-panel">
+    <div class="mini-stat"><strong><%= helpers.formatBytes(stats.storageUsed) %></strong><span>Total storage used</span></div>
+    <div class="mini-stat"><strong><%= stats.media.pending %></strong><span>Pending approvals</span></div>
+    <div class="mini-stat"><strong>₹<%= Number(stats.paymentRevenue || 0).toLocaleString('en-IN') %></strong><span>Recorded paid revenue</span></div>
+  </div>
+</section>
+
+<section class="stat-grid">
+  <article class="stat-card gradient-pink"><span>Total Users</span><strong><%= stats.userCount %></strong><small><%= stats.ownerCount %> owners · <%= stats.superAdminCount %> admins</small></article>
+  <article class="stat-card"><span>Wedding Events</span><strong><%= stats.eventCount %></strong><small><%= stats.openUploads %> upload links open</small></article>
+  <article class="stat-card"><span>Media Uploads</span><strong><%= stats.media.total %></strong><small><%= stats.media.approved %> approved · <%= stats.media.rejected %> rejected</small></article>
+  <article class="stat-card"><span>Suspended Users</span><strong><%= stats.suspendedUsers %></strong><small>Blocked from login/uploads</small></article>
+</section>
+
+<section class="grid grid-2" style="margin-top:24px; align-items:start;">
+  <div class="panel">
+    <div class="panel-head">
+      <div><h2>Recent users</h2><p>Newest customers and admins.</p></div>
+      <a class="btn small secondary" href="/admin/users">View all</a>
+    </div>
+    <div class="table-wrap">
+      <table class="table-like pro-table">
+        <thead><tr><th>User</th><th>Role</th><th>Status</th><th>Joined</th></tr></thead>
+        <tbody>
+          <% recentUsers.forEach((user) => { %>
+            <tr>
+              <td><a class="strong-link" href="/admin/users/<%= user.id %>"><%= user.name %></a><div class="hint"><%= user.email %></div></td>
+              <td><span class="badge"><%= user.role === 'super_admin' ? 'Super Admin' : 'Owner' %></span></td>
+              <td><span class="badge <%= user.status === 'active' ? 'approved' : 'rejected' %>"><%= user.status %></span></td>
+              <td><%= helpers.formatDate(user.created_at) %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div><h2>Recent weddings</h2><p>Latest events created by customers.</p></div>
+      <a class="btn small secondary" href="/admin/events">View all</a>
+    </div>
+    <div class="table-wrap">
+      <table class="table-like pro-table">
+        <thead><tr><th>Wedding</th><th>Owner</th><th>Media</th><th>Storage</th></tr></thead>
+        <tbody>
+          <% recentEvents.forEach((event) => { %>
+            <tr>
+              <td><a class="strong-link" href="/admin/events/<%= event.id %>"><%= event.title %></a><div class="hint"><%= event.slug %></div></td>
+              <td><%= event.owner_name %><div class="hint"><%= event.owner_email %></div></td>
+              <td><%= event.media_count || 0 %></td>
+              <td><%= helpers.formatBytes(event.storage_used || 0) %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="panel" style="margin-top:24px;">
+  <div class="panel-head">
+    <div><h2>Latest audit activity</h2><p>Security and operational actions across the platform.</p></div>
+    <a class="btn small secondary" href="/admin/audit">Full audit log</a>
+  </div>
+  <div class="audit-list">
+    <% recentAudit.forEach((log) => { %>
+      <div class="audit-item">
+        <div><strong><%= log.action %></strong><p><%= log.actor_name || 'System/Guest' %> <%= log.event_title ? `· ${log.event_title}` : '' %></p></div>
+        <span class="hint"><%= helpers.formatDate(log.created_at) %></span>
+      </div>
+    <% }) %>
+    <% if (!recentAudit.length) { %><div class="empty">No audit activity yet.</div><% } %>
+  </div>
+</section>

@@ -1,0 +1,15 @@
+<section style="max-width:560px; margin:40px auto;">
+  <form class="card grid" method="post" action="/e/<%= event.slug %>/gallery/unlock" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div style="text-align:center;">
+      <span class="badge">Private gallery</span>
+      <h1 style="margin:12px 0 6px; letter-spacing:-.04em;"><%= event.title %></h1>
+      <p class="muted">Gallery PIN se protected hai. Couple/admin se PIN le kar enter karein.</p>
+    </div>
+    <label>Gallery PIN
+      <input name="pin" type="password" inputmode="numeric" pattern="[0-9]{4,12}" maxlength="12" placeholder="Enter PIN" required autofocus>
+      <% if (errors.pin) { %><span class="error-text"><%= errors.pin[0] %></span><% } %>
+    </label>
+    <button class="btn" type="submit">Unlock gallery</button>
+  </form>
+</section>

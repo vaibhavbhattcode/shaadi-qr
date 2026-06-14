@@ -1,0 +1,19 @@
+<div class="admin-toolbar">
+  <div>
+    <span class="eyebrow">Super Admin Console</span>
+    <h1><%= heading || title %></h1>
+    <% if (subheading) { %><p><%= subheading %></p><% } %>
+  </div>
+  <div class="admin-actions"><%- typeof actions !== 'undefined' ? actions : '' %></div>
+</div>
+
+<nav class="tabs">
+  <a class="tab <%= path === '/admin' ? 'active' : '' %>" href="/admin">Overview</a>
+  <a class="tab <%= path.startsWith('/admin/users') ? 'active' : '' %>" href="/admin/users">Users</a>
+  <a class="tab <%= path.startsWith('/admin/events') ? 'active' : '' %>" href="/admin/events">Events</a>
+  <a class="tab <%= path.startsWith('/admin/payments') ? 'active' : '' %>" href="/admin/payments">Payments</a>
+  <a class="tab <%= path.startsWith('/admin/plans') ? 'active' : '' %>" href="/admin/plans">Plans</a>
+  <a class="tab <%= path.startsWith('/admin/audit') ? 'active' : '' %>" href="/admin/audit">Audit Logs</a>
+  <a class="tab <%= path.startsWith('/admin/security') ? 'active' : '' %>" href="/admin/security">Security Center</a>
+  <a class="tab <%= path.startsWith('/admin/settings') ? 'active' : '' %>" href="/admin/settings">Settings</a>
+</nav>

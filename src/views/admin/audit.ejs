@@ -1,0 +1,36 @@
+<%- include('partials/admin-nav', {
+  heading: 'Audit Logs',
+  subheading: 'Track login, upload, approval, user and platform-level admin actions.',
+  actions: '<a class="btn secondary" href="/admin">Overview</a>'
+}) %>
+
+<section class="panel">
+  <form class="filter-bar" method="get" action="/admin/audit">
+    <label>Search audit
+      <input name="q" value="<%= filters.q %>" placeholder="action, user, email, event">
+    </label>
+    <button class="btn" type="submit">Search</button>
+  </form>
+</section>
+
+<section class="panel" style="margin-top:20px;">
+  <div class="panel-head"><div><h2>Activity log</h2><p><%= logs.length %> latest matching entries</p></div></div>
+  <div class="table-wrap">
+    <table class="table-like pro-table">
+      <thead><tr><th>Action</th><th>Actor</th><th>Event</th><th>IP</th><th>Metadata</th><th>Date</th></tr></thead>
+      <tbody>
+        <% logs.forEach((log) => { %>
+          <tr>
+            <td><strong><%= log.action %></strong></td>
+            <td><%= log.actor_name || 'System/Guest' %><div class="hint"><%= log.actor_email || '' %></div></td>
+            <td><%= log.event_title || '—' %></td>
+            <td><span class="mono"><%= log.ip_address || '—' %></span></td>
+            <td><span class="mono"><%= log.metadata || '—' %></span></td>
+            <td><%= helpers.formatDate(log.created_at) %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% if (!logs.length) { %><div class="empty">No audit logs found.</div><% } %>
+</section>

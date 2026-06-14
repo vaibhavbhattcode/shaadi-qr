@@ -1,0 +1,53 @@
+<%- include('partials/admin-nav', {
+  heading: 'Event Management',
+  subheading: 'Monitor all customer wedding albums, storage, uploads and approval queues.',
+  actions: '<a class="btn secondary" href="/dashboard/events/new">Create event as owner</a>'
+}) %>
+
+<section class="panel">
+  <form class="filter-bar" method="get" action="/admin/events">
+    <label>Search
+      <input name="q" value="<%= filters.q %>" placeholder="Wedding, slug, city, owner">
+    </label>
+    <label>Plan
+      <select name="plan">
+        <option value="all" <%= filters.plan === 'all' ? 'selected' : '' %>>All plans</option>
+        <% plans.forEach((p) => { %>
+          <option value="<%= p.slug %>" <%= filters.plan === p.slug ? 'selected' : '' %>><%= p.name %></option>
+        <% }) %>
+      </select>
+    </label>
+    <label>Uploads
+      <select name="upload">
+        <% [['all','All'], ['open','Open'], ['closed','Closed']].forEach(([value, label]) => { %>
+          <option value="<%= value %>" <%= filters.upload === value ? 'selected' : '' %>><%= label %></option>
+        <% }) %>
+      </select>
+    </label>
+    <button class="btn" type="submit">Apply filters</button>
+  </form>
+</section>
+
+<section class="panel" style="margin-top:20px;">
+  <div class="panel-head"><div><h2>Wedding events</h2><p><%= events.length %> result(s)</p></div></div>
+  <div class="table-wrap">
+    <table class="table-like pro-table">
+      <thead><tr><th>Wedding</th><th>Owner</th><th>Plan</th><th>Upload</th><th>Gallery</th><th>Media</th><th>Storage</th><th></th></tr></thead>
+      <tbody>
+        <% events.forEach((event) => { %>
+          <tr>
+            <td><a class="strong-link" href="/admin/events/<%= event.id %>"><%= event.title %></a><div class="hint"><%= event.city || 'No city' %> · <%= event.slug %></div></td>
+            <td><%= event.owner_name %><div class="hint"><%= event.owner_email %> · <%= event.owner_status %></div></td>
+            <td><span class="badge"><%= helpers.planLabel(event.plan) %></span></td>
+            <td><span class="badge <%= event.upload_enabled ? 'approved' : 'rejected' %>"><%= event.upload_enabled ? 'open' : 'closed' %></span></td>
+            <td><span class="badge <%= event.gallery_enabled ? 'approved' : 'rejected' %>"><%= event.gallery_enabled ? 'on' : 'off' %></span></td>
+            <td><%= event.media_count || 0 %><div class="hint"><%= event.pending_count || 0 %> pending</div></td>
+            <td><%= helpers.formatBytes(event.storage_used || 0) %><div class="progress compact"><span style="width:<%= helpers.percent(event.storage_used || 0, event.storage_limit_bytes) %>%"></span></div></td>
+            <td><a class="btn small secondary" href="/admin/events/<%= event.id %>">Manage</a></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% if (!events.length) { %><div class="empty">No events found.</div><% } %>
+</section>

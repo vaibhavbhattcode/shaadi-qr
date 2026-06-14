@@ -1,0 +1,97 @@
+<%- include('partials/admin-nav', {
+  heading: user.name,
+  subheading: user.email,
+  actions: '<a class="btn secondary" href="/admin/users">Back to users</a>'
+}) %>
+
+<section class="grid grid-4">
+  <div class="stat-card"><span>Role</span><strong style="font-size:1.6rem;"><%= user.role === 'super_admin' ? 'Super Admin' : 'Owner' %></strong><small>Current access level</small></div>
+  <div class="stat-card"><span>Status</span><strong style="font-size:1.6rem;"><%= user.status %></strong><small><%= user.status === 'active' ? 'Can login' : 'Blocked' %></small></div>
+  <div class="stat-card"><span>Events</span><strong><%= events.length %></strong><small>Wedding albums</small></div>
+  <div class="stat-card"><span>Storage</span><strong style="font-size:1.7rem;"><%= helpers.formatBytes(storageUsed) %></strong><small>Total usage</small></div>
+</section>
+
+<section class="grid grid-2" style="margin-top:24px; align-items:start;">
+  <div class="panel">
+    <div class="panel-head"><div><h2>Account controls</h2><p>Use carefully. These affect customer access immediately.</p></div></div>
+    <div class="grid">
+      <form method="post" action="/admin/users/<%= user.id %>/status" class="control-card">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label>Status
+          <select name="status">
+            <option value="active" <%= user.status === 'active' ? 'selected' : '' %>>Active</option>
+            <option value="suspended" <%= user.status === 'suspended' ? 'selected' : '' %>>Suspended</option>
+          </select>
+        </label>
+        <p class="hint">Suspended users cannot login. Their public upload/gallery links are blocked.</p>
+        <button class="btn" type="submit">Update status</button>
+      </form>
+
+      <form method="post" action="/admin/users/<%= user.id %>/role" class="control-card">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label>Role
+          <select name="role">
+            <option value="owner" <%= user.role === 'owner' ? 'selected' : '' %>>Owner</option>
+            <option value="super_admin" <%= user.role === 'super_admin' ? 'selected' : '' %>>Super Admin</option>
+          </select>
+        </label>
+        <p class="hint">Super admins can manage all users, events, payments, media and audit logs.</p>
+        <button class="btn secondary" type="submit">Update role</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><div><h2>Profile metadata</h2><p>Account timestamps and login status.</p></div></div>
+    <div class="info-list">
+      <div><span>Created</span><strong><%= helpers.formatDate(user.created_at) %></strong></div>
+      <div><span>Updated</span><strong><%= helpers.formatDate(user.updated_at) %></strong></div>
+      <div><span>Last login</span><strong><%= helpers.formatDate(user.last_login_at) %></strong></div>
+      <div><span>Suspended at</span><strong><%= helpers.formatDate(user.suspended_at) %></strong></div>
+    </div>
+  </div>
+</section>
+
+<section class="panel" style="margin-top:24px;">
+  <div class="panel-head"><div><h2>User events</h2><p>All wedding albums owned by this customer.</p></div></div>
+  <div class="table-wrap">
+    <table class="table-like pro-table">
+      <thead><tr><th>Wedding</th><th>Plan</th><th>Uploads</th><th>Media</th><th>Storage</th><th>Created</th><th></th></tr></thead>
+      <tbody>
+        <% events.forEach((event) => { %>
+          <tr>
+            <td><a class="strong-link" href="/admin/events/<%= event.id %>"><%= event.title %></a><div class="hint"><%= event.slug %></div></td>
+            <td><span class="badge"><%= helpers.planLabel(event.plan) %></span></td>
+            <td><span class="badge <%= event.upload_enabled ? 'approved' : 'rejected' %>"><%= event.upload_enabled ? 'open' : 'closed' %></span></td>
+            <td><%= event.media_count || 0 %> <span class="hint">(<%= event.pending_count || 0 %> pending)</span></td>
+            <td><%= helpers.formatBytes(event.storage_used || 0) %></td>
+            <td><%= helpers.formatDate(event.created_at) %></td>
+            <td><a class="btn small secondary" href="/admin/events/<%= event.id %>">Manage</a></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% if (!events.length) { %><div class="empty">No events created by this user yet.</div><% } %>
+</section>
+
+<section class="panel" style="margin-top:24px;">
+  <div class="panel-head"><div><h2>Payment records</h2><p>Recent manual/Razorpay records attached to this customer.</p></div><a class="btn small secondary" href="/admin/payments">Manage payments</a></div>
+  <div class="table-wrap">
+    <table class="table-like pro-table">
+      <thead><tr><th>Plan</th><th>Event</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+      <tbody>
+        <% payments.forEach((payment) => { %>
+          <tr>
+            <td><%= payment.plan_name %></td>
+            <td><%= payment.event_title || '—' %></td>
+            <td>₹<%= Number(payment.amount || 0).toLocaleString('en-IN') %></td>
+            <td><span class="badge <%= payment.payment_status === 'paid' ? 'approved' : payment.payment_status === 'failed' ? 'rejected' : 'pending' %>"><%= payment.payment_status %></span></td>
+            <td><%= helpers.formatDate(payment.created_at) %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% if (!payments.length) { %><div class="empty">No payment records for this user.</div><% } %>
+</section>

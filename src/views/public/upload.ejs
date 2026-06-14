@@ -1,0 +1,143 @@
+<section style="max-width: 820px; margin: 0 auto;">
+  <div class="card" style="text-align:center; margin-bottom:20px;">
+    <span class="badge">Wedding upload</span>
+    <h1 style="font-size:clamp(2rem,6vw,4rem); line-height:1; letter-spacing:-.06em; margin:12px 0;"><%= event.title %></h1>
+    <p class="muted">Aapke candid photos/videos yahan upload karein. Couple/admin approve karne ke baad gallery me dikhenge.</p>
+    <div style="margin-top:14px;">
+      <div class="between"><span class="hint">Album storage</span><span class="hint"><%= storage.usedHuman %> / <%= storage.limitHuman %></span></div>
+      <div class="progress"><span style="width:<%= storage.percent %>%"></span></div>
+    </div>
+  </div>
+
+  <form id="uploadForm" class="card grid" method="post" enctype="multipart/form-data" action="/e/<%= event.slug %>/upload?token=<%= encodeURIComponent(uploadToken) %>">
+    <input type="hidden" name="token" value="<%= uploadToken %>">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+    <div class="grid grid-2">
+      <label>Event folder
+        <select name="folder_id" required>
+          <% folders.forEach((folder) => { %>
+            <option value="<%= folder.id %>"><%= folder.name %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label>Your name <span class="hint">optional</span>
+        <input name="uploader_name" maxlength="80" placeholder="e.g. Priya">
+      </label>
+    </div>
+
+    <label>Your side <span class="hint">optional</span>
+      <select name="uploader_side">
+        <option value="">Not selected</option>
+        <option value="bride">Bride side</option>
+        <option value="groom">Groom side</option>
+        <option value="family">Family</option>
+        <option value="friend">Friend</option>
+        <option value="other">Other</option>
+      </select>
+    </label>
+
+    <div id="dropZone" class="upload-drop">
+      <h2 style="margin-top:0;">📸 Select photos/videos</h2>
+      <p class="muted">JPG, PNG, WEBP, HEIC, MP4, MOV, WEBM supported.</p>
+      <input id="fileInput" type="file" name="media" multiple accept="image/jpeg,image/png,image/webp,image/heic,image/heif,video/mp4,video/quicktime,video/webm,.jpg,.jpeg,.png,.webp,.heic,.heif,.mp4,.mov,.webm" required>
+      <div id="fileList" class="hint" style="margin-top:12px;"></div>
+    </div>
+
+    <div class="grid" style="border: 1px solid var(--border); padding: 14px; border-radius: var(--radius-sm); background: rgba(255, 255, 255, 0.4); margin-bottom: 8px;">
+      <label class="row" style="font-weight: 850; align-items: center; justify-content: space-between; flex-wrap: wrap; margin: 0;">
+        <span>Security Check: <strong><%= captchaQuestion %></strong></span>
+        <input name="captcha" type="number" required placeholder="Answer" style="width: 110px; text-align: center; margin: 0; padding: 8px 10px;">
+      </label>
+    </div>
+
+    <div id="progressWrap" style="display:none;">
+      <div class="between"><span class="hint">Uploading...</span><span class="hint" id="progressText">0%</span></div>
+      <div class="progress"><span id="progressBar" style="width:0%"></span></div>
+    </div>
+
+    <button id="submitBtn" class="btn" type="submit">Upload memories</button>
+    <div id="resultBox" aria-live="polite"></div>
+  </form>
+
+  <p class="hint" style="text-align:center; margin-top:14px;">Privacy: Uploads directly public nahi hote. Admin approval ke baad hi gallery me show honge.</p>
+</section>
+
+<script>
+  const form = document.getElementById('uploadForm');
+  const fileInput = document.getElementById('fileInput');
+  const fileList = document.getElementById('fileList');
+  const resultBox = document.getElementById('resultBox');
+  const submitBtn = document.getElementById('submitBtn');
+  const progressWrap = document.getElementById('progressWrap');
+  const progressBar = document.getElementById('progressBar');
+  const progressText = document.getElementById('progressText');
+  const dropZone = document.getElementById('dropZone');
+  const csrf = document.querySelector('meta[name="csrf-token"]').content;
+
+  function human(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    const units = ['KB','MB','GB']; let value = bytes / 1024; let unit = units[0];
+    for (let i = 1; i < units.length && value >= 1024; i++) { value /= 1024; unit = units[i]; }
+    return value.toFixed(value >= 10 ? 1 : 2) + ' ' + unit;
+  }
+
+  function renderFiles() {
+    const files = Array.from(fileInput.files || []);
+    if (!files.length) { fileList.textContent = 'No files selected'; return; }
+    const total = files.reduce((s, f) => s + f.size, 0);
+    fileList.textContent = files.length + ' file(s) selected · ' + human(total);
+  }
+
+  fileInput.addEventListener('change', renderFiles);
+  ['dragenter','dragover'].forEach(evt => dropZone.addEventListener(evt, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); }));
+  ['dragleave','drop'].forEach(evt => dropZone.addEventListener(evt, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); }));
+  dropZone.addEventListener('drop', (e) => { fileInput.files = e.dataTransfer.files; renderFiles(); });
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    resultBox.innerHTML = '';
+    if (!fileInput.files.length) {
+      resultBox.innerHTML = '<div class="alert error">Please select at least one photo/video.</div>';
+      return;
+    }
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', form.action);
+    xhr.setRequestHeader('X-CSRF-Token', csrf);
+    xhr.setRequestHeader('Accept', 'application/json');
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const pct = Math.round((event.loaded / event.total) * 100);
+        progressBar.style.width = pct + '%';
+        progressText.textContent = pct + '%';
+      }
+    };
+    xhr.onload = () => {
+      submitBtn.disabled = false;
+      progressWrap.style.display = 'none';
+      let data = null;
+      try { data = JSON.parse(xhr.responseText); } catch {}
+      if (xhr.status >= 200 && xhr.status < 300 && data && data.ok) {
+        const accepted = data.accepted || [];
+        const skipped = data.skipped || [];
+        const rejected = data.rejected || [];
+        resultBox.innerHTML = '<div class="alert success">✅ Upload complete. ' + accepted.length + ' file(s) pending approval.</div>' +
+          (skipped.length ? '<div class="alert error">Skipped duplicates: ' + skipped.map(x => x.name).join(', ') + '</div>' : '') +
+          (rejected.length ? '<div class="alert error">Rejected: ' + rejected.map(x => x.name + ' (' + x.reason + ')').join(', ') + '</div>' : '');
+        form.reset(); renderFiles(); progressBar.style.width = '0%'; progressText.textContent = '0%';
+      } else {
+        resultBox.innerHTML = '<div class="alert error">' + ((data && data.error) || 'Upload failed. Please try again.') + '</div>';
+      }
+    };
+    xhr.onerror = () => {
+      submitBtn.disabled = false;
+      progressWrap.style.display = 'none';
+      resultBox.innerHTML = '<div class="alert error">Network error. Please try again.</div>';
+    };
+    submitBtn.disabled = true;
+    progressWrap.style.display = 'block';
+    xhr.send(new FormData(form));
+  });
+  renderFiles();
+</script>

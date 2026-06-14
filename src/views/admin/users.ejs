@@ -1,0 +1,56 @@
+<%- include('partials/admin-nav', {
+  heading: 'User Management',
+  subheading: 'Manage customer accounts, suspensions and super admin privileges.',
+  actions: '<a class="btn secondary" href="/admin">Overview</a>'
+}) %>
+
+<section class="panel">
+  <form class="filter-bar" method="get" action="/admin/users">
+    <label>Search
+      <input name="q" value="<%= filters.q %>" placeholder="Name or email">
+    </label>
+    <label>Role
+      <select name="role">
+        <% ['all','owner','super_admin'].forEach((role) => { %>
+          <option value="<%= role %>" <%= filters.role === role ? 'selected' : '' %>><%= role === 'all' ? 'All roles' : role.replace('_', ' ') %></option>
+        <% }) %>
+      </select>
+    </label>
+    <label>Status
+      <select name="status">
+        <% ['all','active','suspended'].forEach((status) => { %>
+          <option value="<%= status %>" <%= filters.status === status ? 'selected' : '' %>><%= status === 'all' ? 'All statuses' : status %></option>
+        <% }) %>
+      </select>
+    </label>
+    <button class="btn" type="submit">Apply filters</button>
+  </form>
+</section>
+
+<section class="panel" style="margin-top:20px;">
+  <div class="panel-head">
+    <div><h2>Users</h2><p><%= users.length %> result(s)</p></div>
+  </div>
+  <div class="table-wrap">
+    <table class="table-like pro-table">
+      <thead>
+        <tr><th>User</th><th>Role</th><th>Status</th><th>Events</th><th>Media</th><th>Storage</th><th>Last login</th><th></th></tr>
+      </thead>
+      <tbody>
+        <% users.forEach((user) => { %>
+          <tr>
+            <td><a class="strong-link" href="/admin/users/<%= user.id %>"><%= user.name %></a><div class="hint"><%= user.email %></div></td>
+            <td><span class="badge"><%= user.role === 'super_admin' ? 'Super Admin' : 'Owner' %></span></td>
+            <td><span class="badge <%= user.status === 'active' ? 'approved' : 'rejected' %>"><%= user.status %></span></td>
+            <td><%= user.event_count || 0 %></td>
+            <td><%= user.media_count || 0 %></td>
+            <td><%= helpers.formatBytes(user.storage_used || 0) %></td>
+            <td><%= helpers.formatDate(user.last_login_at) %></td>
+            <td><a class="btn small secondary" href="/admin/users/<%= user.id %>">Manage</a></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% if (!users.length) { %><div class="empty">No users found.</div><% } %>
+</section>

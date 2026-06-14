@@ -1,0 +1,50 @@
+<section class="hero">
+  <div>
+    <span class="badge">QR-based wedding media collection</span>
+    <h1>Guests scan QR. Memories upload ho jaati hain.</h1>
+    <p>
+      Shaadi me har guest photos/videos banata hai, par couple tak sab media nahi pahuchta.
+      <strong><%= appName %></strong> ek secure upload QR, admin approval, private gallery aur ZIP download provide karta hai.
+    </p>
+    <div class="row">
+      <% if (currentUser) { %>
+        <a class="btn" href="/dashboard/events/new">Create wedding QR</a>
+        <a class="btn secondary" href="/dashboard">Open dashboard</a>
+      <% } else { %>
+        <a class="btn" href="/register">Start free demo</a>
+        <a class="btn secondary" href="/login">Login</a>
+      <% } %>
+    </div>
+  </div>
+  <div class="card">
+    <div class="grid">
+      <div class="metric">
+        <div class="num">1</div>
+        <div class="muted">Couple creates event and QR link</div>
+      </div>
+      <div class="metric">
+        <div class="num">2</div>
+        <div class="muted">Guests upload photos/videos without login</div>
+      </div>
+      <div class="metric">
+        <div class="num">3</div>
+        <div class="muted">Admin approves media before gallery</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="grid grid-3">
+  <div class="card soft">
+    <h3>🔐 Secure by default</h3>
+    <p class="muted">HTTP-only auth cookies, CSRF tokens, rate limits, server-side validation, magic-byte file checks and owner-only dashboards.</p>
+  </div>
+  <div class="card soft">
+    <h3>☁️ Storage control</h3>
+    <p class="muted">Per-plan storage quotas, per-file limits, duplicate detection and storage usage progress for every wedding event.</p>
+  </div>
+  <div class="card soft">
+    <h3>🖼️ Moderated gallery</h3>
+    <p class="muted">Uploaded media stays pending until the couple/admin approves it. Gallery can be PIN protected.</p>
+  </div>
+</section>
