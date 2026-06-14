@@ -2,10 +2,6 @@ services:
   - type: web
     name: shaadishots
     env: docker
-    disk:
-      name: shaadishots-data
-      mountPath: /data
-      sizeGB: 5
     envVars:
       - key: NODE_ENV
         value: production
@@ -14,9 +10,9 @@ services:
       - key: TRUST_PROXY
         value: true
       - key: DATABASE_PATH
-        value: /data/app.db
+        value: ./data/app.db
       - key: STORAGE_DIR
-        value: /data/storage
+        value: ./storage
       - key: JWT_SECRET
         generateValue: true
       - key: COOKIE_SECRET
