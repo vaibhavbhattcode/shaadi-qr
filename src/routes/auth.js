@@ -9,6 +9,7 @@ import { setFlash } from '../middleware/flash.js';
 import { asyncHandler } from '../lib/async-handler.js';
 import { verifyTotp } from '../lib/totp.js';
 import { randomToken } from '../lib/helpers.js';
+import { whatsappService } from '../lib/whatsapp.js';
 
 export const authRouter = express.Router();
 
@@ -37,41 +38,12 @@ authRouter.get('/register', redirectIfAuthenticated, (req, res) => {
   return res.render('auth/register', { title: 'Create account', values: {}, errors: {} });
 });
 
-authRouter.post('/register', redirectIfAuthenticated, authLimiter, requireCsrf, asyncHandler(async (req, res) => {
-  if (!getSettingBool('registration_enabled', true)) {
-    return res.status(403).render('error', { title: 'Registration disabled', message: 'Registration is disabled.' });
-  }
-
-  const parsed = registerSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).render('auth/register', {
-      title: 'Create account',
-      values: req.body,
-      errors: parsed.error.flatten().fieldErrors,
-    });
-  }
-
-  const { name, email, password } = parsed.data;
-  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-  if (existing) {
-    return res.status(409).render('auth/register', {
-      title: 'Create account',
-      values: { name, email },
-      errors: { email: ['This email already has an account.'] },
-    });
-  }
-
-  const passwordHash = await hashPassword(password);
-  const result = db.prepare('INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)').run(name, email, passwordHash, 'owner');
-  const user = db.prepare('SELECT id, name, email, role FROM users WHERE id = ?').get(result.lastInsertRowid);
-  setAuthCookie(res, user);
-  logAudit({ actorUserId: user.id, action: 'register', ip: req.ip });
-  setFlash(res, 'success', 'Account created successfully. Welcome!');
-  return res.redirect('/dashboard');
-}));
+authRouter.post('/register', redirectIfAuthenticated, (req, res) => {
+  return res.status(400).render('error', { title: 'Registration disabled', message: 'Email registration is disabled. Please create an account using Google or WhatsApp OTP.' });
+});
 
 authRouter.get('/login', redirectIfAuthenticated, (req, res) => {
-  return res.render('auth/login', { title: 'Login', values: { next: req.query.next || '' }, errors: {} });
+  return res.render('auth/login', { title: 'Login', values: { next: req.query.next || '' }, errors: {}, isAdminMode: req.query.admin === '1' });
 });
 
 authRouter.post('/login', redirectIfAuthenticated, authLimiter, requireCsrf, asyncHandler(async (req, res) => {
@@ -81,6 +53,7 @@ authRouter.post('/login', redirectIfAuthenticated, authLimiter, requireCsrf, asy
       title: 'Login',
       values: req.body,
       errors: parsed.error.flatten().fieldErrors,
+      isAdminMode: true,
     });
   }
 
@@ -92,6 +65,7 @@ authRouter.post('/login', redirectIfAuthenticated, authLimiter, requireCsrf, asy
       title: 'Login',
       values: { email, next: parsed.data.next || '' },
       errors: { password: ['Invalid email or password.'] },
+      isAdminMode: true,
     });
   }
 
@@ -101,6 +75,7 @@ authRouter.post('/login', redirectIfAuthenticated, authLimiter, requireCsrf, asy
       title: 'Login',
       values: { email, next: parsed.data.next || '' },
       errors: { password: ['This account is suspended. Please contact support.'] },
+      isAdminMode: true,
     });
   }
 
@@ -255,4 +230,187 @@ authRouter.post('/reset-password', authLimiter, requireCsrf, asyncHandler(async 
   logAudit({ actorUserId: reset.user_id, action: 'password_reset_completed', ip: req.ip });
   setFlash(res, 'success', 'Password reset successfully. You can now log in.');
   return res.redirect('/login');
+}));
+
+authRouter.post('/auth/google', authLimiter, asyncHandler(async (req, res) => {
+  const { credential } = req.body;
+  if (!credential) {
+    return res.status(400).json({ ok: false, error: 'Google ID Token is missing.' });
+  }
+
+  try {
+    const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('Google token verification failed:', errText);
+      return res.status(400).json({ ok: false, error: 'Failed to verify Google credential.' });
+    }
+
+    const payload = await response.json();
+    
+    if (config.google.clientId && payload.aud !== config.google.clientId) {
+      return res.status(400).json({ ok: false, error: 'Google Client ID mismatch.' });
+    }
+
+    const email = payload.email?.toLowerCase();
+    const name = payload.name || 'Google User';
+    const googleId = payload.sub;
+
+    if (!email || !googleId) {
+      return res.status(400).json({ ok: false, error: 'Incomplete Google account profile details.' });
+    }
+
+    let user = db.prepare('SELECT * FROM users WHERE google_id = ?').get(googleId);
+
+    if (!user) {
+      user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+      if (user) {
+        db.prepare('UPDATE users SET google_id = ?, updated_at = ? WHERE id = ?').run(googleId, nowIso(), user.id);
+        user.google_id = googleId;
+        logAudit({ actorUserId: user.id, action: 'google_linked', ip: req.ip });
+      } else {
+        const dummyPasswordHash = await hashPassword(randomToken(16));
+        const insert = db.prepare('INSERT INTO users (name, email, password_hash, role, google_id) VALUES (?, ?, ?, ?, ?)')
+          .run(name, email, dummyPasswordHash, 'owner', googleId);
+        
+        user = db.prepare('SELECT * FROM users WHERE id = ?').get(insert.lastInsertRowid);
+        logAudit({ actorUserId: user.id, action: 'register_google', ip: req.ip });
+      }
+    }
+
+    if (user.status !== 'active') {
+      return res.status(403).json({ ok: false, error: 'This account is suspended.' });
+    }
+
+    db.prepare('UPDATE users SET last_login_at = ?, updated_at = ? WHERE id = ?').run(nowIso(), nowIso(), user.id);
+    setAuthCookie(res, user);
+    logAudit({ actorUserId: user.id, action: 'login_google', ip: req.ip });
+    setFlash(res, 'success', 'Logged in successfully with Google.');
+    return res.json({ ok: true, redirectUrl: '/dashboard' });
+
+  } catch (err) {
+    console.error('Google Auth Route Error:', err);
+    return res.status(500).json({ ok: false, error: 'Internal server error during Google validation.' });
+  }
+}));
+
+authRouter.post('/auth/google/mock', authLimiter, asyncHandler(async (req, res) => {
+  if (config.google.clientId) {
+    return res.status(400).json({ ok: false, error: 'Mock login is disabled when real Google Client ID is configured.' });
+  }
+
+  const mockEmail = 'demo.google@shaadishots.local';
+  const mockGoogleId = 'mock_google_1234567890';
+  const mockName = 'Demo Google User';
+
+  let user = db.prepare('SELECT * FROM users WHERE google_id = ?').get(mockGoogleId);
+  if (!user) {
+    user = db.prepare('SELECT * FROM users WHERE email = ?').get(mockEmail);
+    if (user) {
+      db.prepare('UPDATE users SET google_id = ?, updated_at = ? WHERE id = ?').run(mockGoogleId, nowIso(), user.id);
+      user.google_id = mockGoogleId;
+    } else {
+      const dummyPasswordHash = await hashPassword(randomToken(16));
+      const insert = db.prepare('INSERT INTO users (name, email, password_hash, role, google_id) VALUES (?, ?, ?, ?, ?)')
+        .run(mockName, mockEmail, dummyPasswordHash, 'owner', mockGoogleId);
+      
+      user = db.prepare('SELECT * FROM users WHERE id = ?').get(insert.lastInsertRowid);
+      logAudit({ actorUserId: user.id, action: 'register_google_mock', ip: req.ip });
+    }
+  }
+
+  if (user.status !== 'active') {
+    return res.status(403).json({ ok: false, error: 'Demo account is suspended.' });
+  }
+
+  db.prepare('UPDATE users SET last_login_at = ?, updated_at = ? WHERE id = ?').run(nowIso(), nowIso(), user.id);
+  setAuthCookie(res, user);
+  logAudit({ actorUserId: user.id, action: 'login_google_mock', ip: req.ip });
+  setFlash(res, 'success', 'Logged in successfully with Google Demo Sandbox.');
+  return res.json({ ok: true, redirectUrl: '/dashboard' });
+}));
+
+authRouter.post('/auth/whatsapp/send-otp', authLimiter, asyncHandler(async (req, res) => {
+  const { phone } = req.body;
+  if (!phone || typeof phone !== 'string') {
+    return res.status(400).json({ ok: false, error: 'Phone number is required.' });
+  }
+
+  let cleanPhone = phone.replace(/[^0-9]/g, '');
+  if (cleanPhone.length === 10 && !cleanPhone.startsWith('91')) {
+    cleanPhone = '91' + cleanPhone;
+  }
+
+  if (cleanPhone.length < 10 || cleanPhone.length > 15) {
+    return res.status(400).json({ ok: false, error: 'Please enter a valid phone number with country code.' });
+  }
+
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
+  db.prepare('DELETE FROM otp_verifications WHERE phone_number = ?').run(cleanPhone);
+  db.prepare('INSERT INTO otp_verifications (phone_number, code, expires_at) VALUES (?, ?, ?)')
+    .run(cleanPhone, code, expiresAt);
+
+  const sent = await whatsappService.sendOtp(cleanPhone, code);
+
+  if (!sent) {
+    console.log(`\n========================================\n[WHATSAPP OTP FALLBACK] Phone: +${cleanPhone}\nCode: ${code}\n========================================\n`);
+    return res.json({ ok: true, message: 'OTP sent in fallback mode.', mockOtp: code });
+  }
+
+  return res.json({ ok: true, message: 'OTP sent successfully.' });
+}));
+
+authRouter.post('/auth/whatsapp/verify-otp', authLimiter, asyncHandler(async (req, res) => {
+  const { phone, code, next } = req.body;
+  if (!phone || !code) {
+    return res.status(400).json({ ok: false, error: 'Phone number and verification code are required.' });
+  }
+
+  let cleanPhone = phone.replace(/[^0-9]/g, '');
+  if (cleanPhone.length === 10 && !cleanPhone.startsWith('91')) {
+    cleanPhone = '91' + cleanPhone;
+  }
+
+  const cleanCode = String(code).trim();
+
+  const record = db.prepare('SELECT * FROM otp_verifications WHERE phone_number = ? AND code = ?').get(cleanPhone, cleanCode);
+  if (!record || new Date(record.expires_at) < new Date()) {
+    logAudit({ action: 'failed_whatsapp_otp', metadata: { phone: cleanPhone }, ip: req.ip });
+    return res.status(400).json({ ok: false, error: 'Invalid or expired verification code.' });
+  }
+
+  db.prepare('DELETE FROM otp_verifications WHERE id = ?').run(record.id);
+
+  let user = db.prepare('SELECT * FROM users WHERE phone_number = ?').get(cleanPhone);
+  
+  if (!user) {
+    const email = `phone-${cleanPhone}@shaadishots.local`;
+    const name = `User +${cleanPhone.slice(-10)}`;
+    const dummyPasswordHash = await hashPassword(randomToken(16));
+    
+    let emailClash = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    if (emailClash) {
+      return res.status(500).json({ ok: false, error: 'Registration failed due to email conflict.' });
+    }
+
+    const insert = db.prepare('INSERT INTO users (name, email, password_hash, role, phone_number) VALUES (?, ?, ?, ?, ?)')
+      .run(name, email, dummyPasswordHash, 'owner', cleanPhone);
+    
+    user = db.prepare('SELECT * FROM users WHERE id = ?').get(insert.lastInsertRowid);
+    logAudit({ actorUserId: user.id, action: 'register_whatsapp', ip: req.ip });
+  }
+
+  if (user.status !== 'active') {
+    return res.status(403).json({ ok: false, error: 'This account is suspended.' });
+  }
+
+  db.prepare('UPDATE users SET last_login_at = ?, updated_at = ? WHERE id = ?').run(nowIso(), nowIso(), user.id);
+  setAuthCookie(res, user);
+  logAudit({ actorUserId: user.id, action: 'login_whatsapp', ip: req.ip });
+  setFlash(res, 'success', 'Logged in successfully via WhatsApp OTP.');
+
+  const target = next ? safeNext(next) : (isSuperAdmin(user) ? '/admin' : '/dashboard');
+  return res.json({ ok: true, redirectUrl: target });
 }));

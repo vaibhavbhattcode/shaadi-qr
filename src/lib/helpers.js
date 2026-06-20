@@ -64,10 +64,18 @@ export function uniqueSlug(baseText) {
 
 export function absoluteUrl(req, pathOrUrl) {
   if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+  if (req && typeof req.get === 'function') {
+    const protocol = req.headers?.['x-forwarded-proto'] || req.protocol || 'http';
+    const host = req.get('host');
+    if (host) {
+      return `${protocol}://${host}${pathOrUrl.startsWith('/') ? pathOrUrl : `/${pathOrUrl}`}`;
+    }
+  }
   const appUrl = (config.appUrl || '').replace(/\/$/, '');
   if (appUrl) return `${appUrl}${pathOrUrl.startsWith('/') ? pathOrUrl : `/${pathOrUrl}`}`;
-  const protocol = req.protocol;
-  return `${protocol}://${req.get('host')}${pathOrUrl.startsWith('/') ? pathOrUrl : `/${pathOrUrl}`}`;
+  const protocol = req ? req.protocol : 'http';
+  const host = req && typeof req.get === 'function' ? req.get('host') : 'localhost:3000';
+  return `${protocol}://${host}${pathOrUrl.startsWith('/') ? pathOrUrl : `/${pathOrUrl}`}`;
 }
 
 export function uploadUrl(req, event) {

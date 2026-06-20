@@ -1,26 +1,322 @@
-<section class="grid grid-2" style="align-items:center; max-width: 980px; margin: 20px auto;">
+<section class="grid grid-2" style="align-items:center; max-width: 980px; margin: 20px auto; gap: 30px;">
   <div>
-    <span class="badge">Admin login</span>
-    <h1 style="font-size:clamp(2rem,5vw,3.6rem); line-height:1; letter-spacing:-.05em; margin:14px 0;">Welcome back</h1>
-    <p class="muted">Login karke wedding events, QR codes, uploads aur private galleries manage karein.</p>
+    <span class="badge"><%= isAdminMode ? 'Staff Portal' : 'Secure Login' %></span>
+    <h1 style="font-size:clamp(2rem,5vw,3.6rem); line-height:1; letter-spacing:-.05em; margin:14px 0;">
+      <%= isAdminMode ? 'Super Admin Login' : 'Login to ShaadiShots' %>
+    </h1>
+    <p class="muted">
+      <%= isAdminMode ? 'Enter email credentials to access the platform administrative console.' : 'OTP verification or Google accounts securely link wedding albums instantly.' %>
+    </p>
   </div>
-  <form class="card" method="post" action="/login" novalidate>
-    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-    <input type="hidden" name="next" value="<%= values.next || '' %>">
-    <div class="grid">
-      <label>Email
-        <input type="email" name="email" autocomplete="email" value="<%= values.email || '' %>" required>
-        <% if (errors.email) { %><span class="error-text"><%= errors.email[0] %></span><% } %>
-      </label>
-      <label>Password
-        <input type="password" name="password" autocomplete="current-password" required>
-        <% if (errors.password) { %><span class="error-text"><%= errors.password[0] %></span><% } %>
-      </label>
-      <div style="text-align: right; margin-top: -6px; margin-bottom: 8px;">
-        <a class="hint" href="/forgot-password">Forgot password?</a>
+  
+  <div class="card" style="padding: 28px;">
+    <% if (isAdminMode) { %>
+      <!-- Admin Email Login Form -->
+      <form class="grid" method="post" action="/login" novalidate style="gap: 16px;">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="next" value="<%= values.next || '/admin' %>">
+        
+        <label>Admin Email
+          <input type="email" name="email" autocomplete="email" value="<%= values.email || '' %>" required placeholder="admin@shaadishots.com">
+          <% if (errors.email) { %><span class="error-text"><%= errors.email[0] %></span><% } %>
+        </label>
+        
+        <label>Password
+          <input type="password" name="password" autocomplete="current-password" required placeholder="••••••••">
+          <% if (errors.password) { %><span class="error-text"><%= errors.password[0] %></span><% } %>
+        </label>
+        
+        <button class="btn" type="submit">Verify Admin Access</button>
+        <p class="hint" style="text-align: center;"><a href="/login">← Back to Regular Login</a></p>
+      </form>
+    <% } else { %>
+      <!-- Public WhatsApp OTP & Google Login Form -->
+      <div class="grid" style="gap: 16px;">
+        <div id="phone-field-wrapper">
+          <label>WhatsApp Phone Number
+            <input type="tel" id="phone-input" placeholder="E.g. +91 98765 43210" required>
+            <span class="hint">Includes country code (e.g. +91 for India). Default: +91</span>
+          </label>
+        </div>
+
+        <div id="otp-info-msg" class="alert success" style="display: none; padding: 10px; font-size: 0.9rem; margin: 4px 0;"></div>
+
+        <button id="send-otp-btn" class="btn">Send OTP via WhatsApp</button>
+
+        <div id="otp-verify-section" class="grid" style="display: none; gap: 16px;">
+          <label>Verification Code
+            <input type="text" id="otp-code-input" placeholder="Enter 6-digit code" maxlength="6" style="text-align: center; letter-spacing: 0.3em; font-weight: 800; font-size: 1.2rem;">
+          </label>
+          <button id="verify-otp-btn" class="btn green">Verify & Login</button>
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; flex-wrap: wrap; gap: 10px;">
+            <span class="hint" style="color: var(--muted); font-weight: 700;">
+              Expires in: <strong id="otp-countdown" style="color: var(--brand);">10:00</strong>
+            </span>
+            <button id="resend-otp-btn" class="btn secondary small" style="padding: 4px 12px; min-height: 30px; font-size: 0.8rem;" disabled>Resend OTP</button>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 14px; margin-bottom: 10px;">
+          <div style="flex: 1; height: 1px; background: var(--border);"></div>
+          <span class="hint">or continue with</span>
+          <div style="flex: 1; height: 1px; background: var(--border);"></div>
+        </div>
+
+        <% if (googleClientId) { %>
+          <div id="g_id_onload"
+               data-client_id="<%= googleClientId %>"
+               data-context="signin"
+               data-ux_mode="popup"
+               data-callback="handleCredentialResponse"
+               data-auto_prompt="false">
+          </div>
+          <div class="g_id_signin"
+               data-type="standard"
+               data-shape="pill"
+               data-theme="outline"
+               data-text="signin_with"
+               data-size="large"
+               data-logo_alignment="center"
+               style="display: flex; justify-content: center;">
+          </div>
+        <% } else { %>
+          <button id="mock-google-btn" class="btn secondary" style="width: 100%; gap: 10px; border-radius: 999px;">
+            <span style="font-size: 1.2rem;">🔑</span> Sign in with Google (Demo Mock)
+          </button>
+        <% } %>
+        
+        <div class="divider" style="margin: 14px 0;"></div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;">
+          <a class="hint" href="/register">Create new album</a>
+          <a class="hint" href="/login?admin=1" style="color: var(--muted)">Staff Portal Login</a>
+        </div>
       </div>
-      <button class="btn" type="submit">Login</button>
-      <p class="hint">New here? <a href="/register">Create an account</a>.</p>
-    </div>
-  </form>
+    <% } %>
+  </div>
 </section>
+
+<script>
+  let countdownInterval = null;
+  let cooldownInterval = null;
+
+  function startTimers() {
+    // Reset any running interval tasks
+    clearInterval(countdownInterval);
+    clearInterval(cooldownInterval);
+
+    // 1. Expiry Countdown (10 minutes)
+    let totalSeconds = 10 * 60;
+    const countdownEl = document.getElementById('otp-countdown');
+    const verifyBtn = document.getElementById('verify-otp-btn');
+    verifyBtn.disabled = false;
+    countdownEl.style.color = 'var(--brand)';
+
+    countdownInterval = setInterval(() => {
+      totalSeconds--;
+      if (totalSeconds <= 0) {
+        clearInterval(countdownInterval);
+        countdownEl.innerText = 'Expired';
+        countdownEl.style.color = 'var(--red)';
+        verifyBtn.disabled = true;
+      } else {
+        const mins = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+        const secs = String(totalSeconds % 60).padStart(2, '0');
+        countdownEl.innerText = `${mins}:${secs}`;
+      }
+    }, 1000);
+
+    // 2. Cooldown for Resend (60 seconds)
+    let cooldownSeconds = 60;
+    const resendBtn = document.getElementById('resend-otp-btn');
+    resendBtn.disabled = true;
+    resendBtn.innerText = `Resend OTP (${cooldownSeconds}s)`;
+
+    cooldownInterval = setInterval(() => {
+      cooldownSeconds--;
+      if (cooldownSeconds <= 0) {
+        clearInterval(cooldownInterval);
+        resendBtn.disabled = false;
+        resendBtn.innerText = 'Resend OTP';
+      } else {
+        resendBtn.innerText = `Resend OTP (${cooldownSeconds}s)`;
+      }
+    }, 1000);
+  }
+
+  function handleCredentialResponse(response) {
+    fetch('/auth/google', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+      },
+      body: JSON.stringify({ credential: response.credential })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.ok) {
+        window.location.href = data.redirectUrl || '/dashboard';
+      } else {
+        alert(data.error || 'Google Login failed');
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Google validation request failed.');
+    });
+  }
+
+  function mockGoogleLogin() {
+    fetch('/auth/google/mock', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+      }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.ok) {
+        window.location.href = data.redirectUrl || '/dashboard';
+      } else {
+        alert(data.error || 'Mock Login failed');
+      }
+    });
+  }
+
+  function sendOtp() {
+    const phone = document.getElementById('phone-input').value.trim();
+    if (!phone) {
+      alert('Please enter your WhatsApp phone number');
+      return;
+    }
+    
+    const sendBtn = document.getElementById('send-otp-btn');
+    const resendBtn = document.getElementById('resend-otp-btn');
+    sendBtn.disabled = true;
+    sendBtn.innerText = 'Sending...';
+    resendBtn.disabled = true;
+
+    fetch('/auth/whatsapp/send-otp', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+      },
+      body: JSON.stringify({ phone })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.ok) {
+        document.getElementById('otp-verify-section').style.display = 'grid';
+        document.getElementById('phone-field-wrapper').style.opacity = '0.5';
+        document.getElementById('phone-input').disabled = true;
+        sendBtn.style.display = 'none';
+        
+        const otpInfo = document.getElementById('otp-info-msg');
+        otpInfo.style.display = 'block';
+        if (data.mockOtp) {
+          otpInfo.innerHTML = `Code sent! <strong style="color:var(--red)">Fallback: OTP is ${data.mockOtp}</strong>`;
+        } else {
+          otpInfo.innerText = 'OTP code sent successfully to WhatsApp.';
+        }
+
+        // Start/Reset Timers
+        startTimers();
+      } else {
+        alert(data.error || 'Failed to send OTP. Verify code format and retry.');
+        sendBtn.disabled = false;
+        sendBtn.innerText = 'Send OTP via WhatsApp';
+        resendBtn.disabled = false;
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Error requesting OTP.');
+      sendBtn.disabled = false;
+      sendBtn.innerText = 'Send OTP via WhatsApp';
+      resendBtn.disabled = false;
+    });
+  }
+
+  function verifyOtp() {
+    const phone = document.getElementById('phone-input').value.trim();
+    const code = document.getElementById('otp-code-input').value.trim();
+    if (!code || code.length !== 6) {
+      alert('Enter valid 6-digit OTP code');
+      return;
+    }
+
+    const verifyBtn = document.getElementById('verify-otp-btn');
+    verifyBtn.disabled = true;
+    verifyBtn.innerText = 'Verifying...';
+
+    fetch('/auth/whatsapp/verify-otp', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+      },
+      body: JSON.stringify({ phone, code, next: '<%= values.next || "" %>' })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.ok) {
+        window.location.href = data.redirectUrl || '/dashboard';
+      } else {
+        alert(data.error || 'Incorrect verification code. Please try again.');
+        verifyBtn.disabled = false;
+        verifyBtn.innerText = 'Verify & Login';
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Verification request failed.');
+      verifyBtn.disabled = false;
+      verifyBtn.innerText = 'Verify & Login';
+    });
+  }
+
+  // Bind Event Listeners securely after DOM loads
+  document.addEventListener('DOMContentLoaded', () => {
+    const sendOtpBtn = document.getElementById('send-otp-btn');
+    const verifyOtpBtn = document.getElementById('verify-otp-btn');
+    const resendOtpBtn = document.getElementById('resend-otp-btn');
+    const mockGoogleBtn = document.getElementById('mock-google-btn');
+    const phoneInput = document.getElementById('phone-input');
+    const otpCodeInput = document.getElementById('otp-code-input');
+
+    if (sendOtpBtn) {
+      sendOtpBtn.addEventListener('click', sendOtp);
+    }
+    if (verifyOtpBtn) {
+      verifyOtpBtn.addEventListener('click', verifyOtp);
+    }
+    if (resendOtpBtn) {
+      resendOtpBtn.addEventListener('click', sendOtp);
+    }
+    if (mockGoogleBtn) {
+      mockGoogleBtn.addEventListener('click', mockGoogleLogin);
+    }
+
+    // Support submitting by hitting the 'Enter' key
+    if (phoneInput) {
+      phoneInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          sendOtp();
+        }
+      });
+    }
+    if (otpCodeInput) {
+      otpCodeInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          verifyOtp();
+        }
+      });
+    }
+  });
+</script>

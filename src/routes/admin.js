@@ -8,6 +8,7 @@ import { setFlash } from '../middleware/flash.js';
 import { asyncHandler } from '../lib/async-handler.js';
 import { deleteMediaFileAndRow, sendMediaFile, sendMediaThumbnail } from '../lib/storage.js';
 import { absoluteUrl, formatBytes, galleryUrl, percent, planLabel, randomToken, uploadUrl } from '../lib/helpers.js';
+import { whatsappService } from '../lib/whatsapp.js';
 
 export const adminRouter = express.Router();
 
@@ -21,6 +22,20 @@ function totals() {
   const eventCount = db.prepare('SELECT COUNT(*) AS count FROM events').get().count;
   const openUploads = db.prepare('SELECT COUNT(*) AS count FROM events WHERE upload_enabled = 1').get().count;
   const paymentRevenue = db.prepare("SELECT COALESCE(SUM(amount), 0) AS total FROM payments WHERE payment_status = 'paid'").get().total;
+
+  const plansBreakdown = db.prepare(`
+    SELECT plan_name, COUNT(*) AS count, SUM(amount) AS revenue 
+    FROM payments 
+    WHERE payment_status = 'paid' 
+    GROUP BY plan_name
+  `).all();
+
+  const eventPlansBreakdown = db.prepare(`
+    SELECT plan, COUNT(*) AS count 
+    FROM events 
+    GROUP BY plan
+  `).all();
+
   return {
     userCount,
     ownerCount,
@@ -32,6 +47,8 @@ function totals() {
     storageUsed: getGlobalStorageUsage(),
     storageUsedHuman: formatBytes(getGlobalStorageUsage()),
     paymentRevenue,
+    plansBreakdown,
+    eventPlansBreakdown,
   };
 }
 
@@ -492,10 +509,21 @@ adminRouter.get('/admin/security', (req, res) => {
        OR a.action = 'suspicious_activity'
        OR a.action = '2fa_enabled'
        OR a.action = '2fa_disabled'
+       OR a.action = 'media_flagged_nsfw'
     ORDER BY a.created_at DESC
     LIMIT 100
   `).all();
-  res.render('admin/security', { title: 'Security Center', blockedIps, securityLogs });
+
+  const flaggedMedia = db.prepare(`
+    SELECT m.*, e.title AS event_title, u.name AS owner_name
+    FROM media m
+    JOIN events e ON e.id = m.event_id
+    JOIN users u ON u.id = e.owner_id
+    WHERE m.is_nsfw = 1
+    ORDER BY m.created_at DESC
+  `).all();
+
+  res.render('admin/security', { title: 'Security Center', blockedIps, securityLogs, flaggedMedia });
 });
 
 const blockIpSchema = z.object({
@@ -708,3 +736,64 @@ adminRouter.post('/admin/settings', requireCsrf, (req, res) => {
   setFlash(res, 'success', 'Platform settings updated successfully.');
   res.redirect('/admin/settings');
 });
+
+adminRouter.get('/admin/whatsapp', (req, res) => {
+  res.render('admin/whatsapp', {
+    title: 'WhatsApp Settings',
+    status: whatsappService.connectionStatus,
+    qrDataUrl: whatsappService.qrDataUrl,
+    pairedNumber: whatsappService.pairedNumber,
+  });
+});
+
+adminRouter.post('/admin/whatsapp/logout', requireCsrf, asyncHandler(async (req, res) => {
+  await whatsappService.logout();
+  logAudit({ actorUserId: req.user.id, action: 'super_admin_whatsapp_disconnect', ip: req.ip });
+  setFlash(res, 'success', 'WhatsApp connection has been reset. You can now pair a new device.');
+  res.redirect('/admin/whatsapp');
+}));
+
+adminRouter.post('/admin/media/:mediaId/approve-flagged', requireCsrf, asyncHandler(async (req, res) => {
+  const mediaId = req.params.mediaId;
+  const media = db.prepare('SELECT * FROM media WHERE id = ?').get(mediaId);
+  if (!media) {
+    setFlash(res, 'error', 'Media not found.');
+    return res.redirect('/admin/security');
+  }
+
+  db.prepare("UPDATE media SET is_nsfw = 0, status = 'approved', approved_at = ?, rejected_at = NULL WHERE id = ?")
+    .run(nowIso(), mediaId);
+
+  logAudit({
+    actorUserId: req.user.id,
+    eventId: media.event_id,
+    action: 'super_admin_media_approve_flagged',
+    metadata: { mediaId },
+    ip: req.ip
+  });
+
+  setFlash(res, 'success', 'Media cleared and approved successfully.');
+  res.redirect('/admin/security');
+}));
+
+adminRouter.post('/admin/media/:mediaId/delete-flagged', requireCsrf, asyncHandler(async (req, res) => {
+  const mediaId = req.params.mediaId;
+  const media = db.prepare('SELECT * FROM media WHERE id = ?').get(mediaId);
+  if (!media) {
+    setFlash(res, 'error', 'Media not found.');
+    return res.redirect('/admin/security');
+  }
+
+  await deleteMediaFileAndRow(media, req.user.id, req);
+
+  logAudit({
+    actorUserId: req.user.id,
+    eventId: media.event_id,
+    action: 'super_admin_media_delete_flagged',
+    metadata: { mediaId },
+    ip: req.ip
+  });
+
+  setFlash(res, 'success', 'Flagged media permanently deleted.');
+  res.redirect('/admin/security');
+}));

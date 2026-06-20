@@ -51,7 +51,7 @@
         <% if (isCurrent) { %>
           <button class="btn secondary" style="width: 100%; cursor: not-allowed;" disabled>Current Plan</button>
         <% } else { %>
-          <button class="btn" id="btn-<%= p.slug %>" onclick="startPayment('<%= p.slug %>')" style="width: 100%;">Upgrade to <%= p.name %></button>
+          <button class="btn upgrade-plan-btn" id="btn-<%= p.slug %>" data-plan="<%= p.slug %>" style="width: 100%;">Upgrade to <%= p.name %></button>
         <% } %>
       </div>
     </div>
@@ -176,4 +176,13 @@
       btn.innerText = originalText;
     }
   }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.upgrade-plan-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const planSlug = btn.getAttribute('data-plan');
+        startPayment(planSlug);
+      });
+    });
+  });
 </script>

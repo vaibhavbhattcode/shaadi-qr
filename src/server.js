@@ -16,11 +16,13 @@ import { dashboardRouter } from './routes/dashboard.js';
 import { publicRouter } from './routes/public.js';
 import { adminRouter } from './routes/admin.js';
 import { formatBytes, formatDate, percent, planLabel, shortNumber, yesNo } from './lib/helpers.js';
+import { whatsappService } from './lib/whatsapp.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 migrate();
+whatsappService.init().catch(err => console.error('Failed to initialize WhatsApp connection loop:', err));
 
 const app = express();
 
@@ -48,6 +50,7 @@ app.use((req, res, next) => {
   res.locals.appName = 'ShaadiShots';
   res.locals.path = req.path;
   res.locals.helpers = { formatBytes, formatDate, percent, planLabel, shortNumber, yesNo };
+  res.locals.googleClientId = config.google?.clientId || null;
   next();
 });
 

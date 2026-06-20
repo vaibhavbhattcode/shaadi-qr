@@ -13,6 +13,8 @@ import { deleteMediaFileAndRow, resolveStoragePath, sendMediaFile, sendMediaThum
 import { absoluteUrl, cleanSlug, formatBytes, galleryUrl, percent, planLabel, randomToken, uniqueSlug, uploadUrl } from '../lib/helpers.js';
 import { asyncHandler } from '../lib/async-handler.js';
 import { generateSecret, getOtpAuthUrl, verifyTotp } from '../lib/totp.js';
+import { getAuthUrl, getTokens } from '../lib/google-drive.js';
+
 
 export const dashboardRouter = express.Router();
 
@@ -709,4 +711,239 @@ dashboardRouter.post('/dashboard/events/:eventId/upgrade/verify', requireEventOw
 
   setFlash(res, 'success', `Successfully upgraded to ${targetPlan.name} plan!`);
   return res.json({ ok: true });
+}));
+
+const profileUpdateSchema = z.object({
+  name: z.string().trim().min(2, 'Name must be at least 2 characters').max(80),
+  email: z.string().trim().email('Valid email is required').max(160).transform((v) => v.toLowerCase()),
+  phone_number: z.string().trim().transform(v => v.replace(/[^0-9+]/g, '')).refine(v => {
+    if (!v) return true;
+    const clean = v.replace(/[^0-9]/g, '');
+    return clean.length >= 10 && clean.length <= 15;
+  }, 'Phone number must be a valid mobile number with country code (e.g. +91 98765 43210)').optional().or(z.literal(''))
+});
+
+dashboardRouter.get('/dashboard/profile', asyncHandler(async (req, res) => {
+  const payments = db.prepare(`
+    SELECT p.*, e.title AS event_title 
+    FROM payments p 
+    LEFT JOIN events e ON e.id = p.event_id 
+    WHERE p.user_id = ? 
+    ORDER BY p.created_at DESC
+  `).all(req.user.id);
+
+  res.render('dashboard/profile', {
+    title: 'My Profile',
+    payments,
+    errors: {},
+    values: {},
+  });
+}));
+
+dashboardRouter.post('/dashboard/profile', requireCsrf, asyncHandler(async (req, res) => {
+  const parsed = profileUpdateSchema.safeParse(req.body);
+  const payments = db.prepare(`
+    SELECT p.*, e.title AS event_title 
+    FROM payments p 
+    LEFT JOIN events e ON e.id = p.event_id 
+    WHERE p.user_id = ? 
+    ORDER BY p.created_at DESC
+  `).all(req.user.id);
+
+  if (!parsed.success) {
+    return res.status(400).render('dashboard/profile', {
+      title: 'My Profile',
+      payments,
+      errors: parsed.error.flatten().fieldErrors,
+      values: req.body,
+    });
+  }
+
+  const { name, email, phone_number } = parsed.data;
+
+  // Prevent users who have an active phone number from clearing it (locking themselves out of OTP login).
+  if (!phone_number && req.user.phone_number) {
+    return res.status(400).render('dashboard/profile', {
+      title: 'My Profile',
+      payments,
+      errors: { phone_number: ['Phone number cannot be removed as it is required for your WhatsApp OTP login.'] },
+      values: req.body,
+    });
+  }
+
+  // Check email conflict
+  const emailConflict = db.prepare('SELECT id FROM users WHERE email = ? AND id != ?').get(email, req.user.id);
+  if (emailConflict) {
+    return res.status(409).render('dashboard/profile', {
+      title: 'My Profile',
+      payments,
+      errors: { email: ['This email is already in use by another account.'] },
+      values: req.body,
+    });
+  }
+
+  // Check phone number conflict
+  let cleanPhone = null;
+  if (phone_number) {
+    cleanPhone = phone_number.replace(/[^0-9]/g, '');
+    if (cleanPhone.length === 10 && !cleanPhone.startsWith('91')) {
+      cleanPhone = '91' + cleanPhone;
+    }
+    const phoneConflict = db.prepare('SELECT id FROM users WHERE phone_number = ? AND id != ?').get(cleanPhone, req.user.id);
+    if (phoneConflict) {
+      return res.status(409).render('dashboard/profile', {
+        title: 'My Profile',
+        payments,
+        errors: { phone_number: ['This phone number is already registered to another account.'] },
+        values: req.body,
+      });
+    }
+  }
+
+  // Update details
+  db.prepare('UPDATE users SET name = ?, email = ?, phone_number = ?, updated_at = ? WHERE id = ?')
+    .run(name, email, cleanPhone, nowIso(), req.user.id);
+
+  // Update session info
+  req.user.name = name;
+  req.user.email = email;
+  req.user.phone_number = cleanPhone;
+
+  logAudit({
+    actorUserId: req.user.id,
+    action: 'profile_update',
+    metadata: { name, email, phone_number: cleanPhone },
+    ip: req.ip
+  });
+
+  setFlash(res, 'success', 'Profile updated successfully.');
+  res.redirect('/dashboard/profile');
+}));
+
+dashboardRouter.get('/dashboard/payments/:paymentId/invoice', asyncHandler(async (req, res) => {
+  const paymentId = Number(req.params.paymentId);
+  if (!Number.isInteger(paymentId)) {
+    return res.status(404).render('error', { title: 'Not found', message: 'Invoice not found.' });
+  }
+
+  const payment = db.prepare(`
+    SELECT p.*, e.title AS event_title 
+    FROM payments p 
+    LEFT JOIN events e ON e.id = p.event_id 
+    WHERE p.id = ? AND p.user_id = ? AND p.payment_status = 'paid'
+  `).get(paymentId, req.user.id);
+
+  if (!payment) {
+    return res.status(404).render('error', { title: 'Not found', message: 'Invoice not found or unpaid.' });
+  }
+
+  const buyer = db.prepare('SELECT id, name, email, phone_number FROM users WHERE id = ?').get(req.user.id);
+
+  res.render('dashboard/invoice', {
+    title: `Invoice INV-2026-${String(payment.id).padStart(5, '0')}`,
+    layout: false,
+    payment,
+    buyer,
+    eventTitle: payment.event_title,
+  });
+}));
+
+// Redirect owner to Google Drive authentication consent
+dashboardRouter.get('/dashboard/events/:eventId/google-drive/auth', requireEventOwner(), asyncHandler(async (req, res) => {
+  const hasGoogleKeys = config.google.clientId && config.google.clientSecret;
+  
+  if (!hasGoogleKeys) {
+    // Sandbox simulated connection fallback
+    const configData = { mock: true, connected_at: nowIso() };
+    db.prepare("UPDATE events SET storage_provider = 'google_drive', storage_config = ?, updated_at = ? WHERE id = ?")
+      .run(JSON.stringify(configData), nowIso(), req.event.id);
+
+    logAudit({
+      actorUserId: req.user.id,
+      eventId: req.event.id,
+      action: 'event_google_drive_connect_mock',
+      ip: req.ip
+    });
+
+    setFlash(res, 'success', 'Connected successfully to Google Drive Sandbox Simulator.');
+    return res.redirect(`/dashboard/events/${req.event.id}`);
+  }
+
+  const redirectUri = absoluteUrl(req, '/dashboard/google-drive/callback');
+  const authUrl = getAuthUrl(req.event.id, redirectUri);
+  return res.redirect(authUrl);
+}));
+
+// Google OAuth redirect callback handler
+dashboardRouter.get('/dashboard/google-drive/callback', asyncHandler(async (req, res) => {
+  const { code, state, error } = req.query;
+  
+  if (error) {
+    setFlash(res, 'error', `Google access denied: ${error}`);
+    return res.redirect('/dashboard');
+  }
+
+  if (!code || !state) {
+    setFlash(res, 'error', 'Invalid Google callback request parameters.');
+    return res.redirect('/dashboard');
+  }
+
+  const eventId = Number(state);
+  if (!Number.isInteger(eventId)) {
+    setFlash(res, 'error', 'Invalid callback state data.');
+    return res.redirect('/dashboard');
+  }
+
+  // Ensure logged-in user owns the event in state
+  const event = db.prepare('SELECT * FROM events WHERE id = ? AND owner_id = ?').get(eventId, req.user.id);
+  if (!event) {
+    setFlash(res, 'error', 'Authorization failed. Album event not found or unauthorized.');
+    return res.redirect('/dashboard');
+  }
+
+  try {
+    const redirectUri = absoluteUrl(req, '/dashboard/google-drive/callback');
+    const tokens = await getTokens(code, redirectUri);
+
+    const expiresAt = Date.now() + (tokens.expires_in * 1000);
+    const configData = {
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      expires_at: expiresAt,
+      connected_at: nowIso()
+    };
+
+    db.prepare("UPDATE events SET storage_provider = 'google_drive', storage_config = ?, updated_at = ? WHERE id = ?")
+      .run(JSON.stringify(configData), nowIso(), event.id);
+
+    logAudit({
+      actorUserId: req.user.id,
+      eventId: event.id,
+      action: 'event_google_drive_connect',
+      ip: req.ip
+    });
+
+    setFlash(res, 'success', 'Successfully connected your Google Drive account! Guest uploads will be saved to your Drive.');
+  } catch (err) {
+    console.error('Google OAuth token exchange failed:', err);
+    setFlash(res, 'error', `Google Drive connection failed: ${err.message}`);
+  }
+
+  return res.redirect(`/dashboard/events/${eventId}`);
+}));
+
+// Disconnect Google Drive integration
+dashboardRouter.post('/dashboard/events/:eventId/google-drive/disconnect', requireEventOwner(), requireCsrf, asyncHandler(async (req, res) => {
+  db.prepare("UPDATE events SET storage_provider = 'platform', storage_config = NULL, updated_at = ? WHERE id = ?")
+    .run(nowIso(), req.event.id);
+
+  logAudit({
+    actorUserId: req.user.id,
+    eventId: req.event.id,
+    action: 'event_google_drive_disconnect',
+    ip: req.ip
+  });
+
+  setFlash(res, 'success', 'Google Drive storage disconnected. Reverted to default platform storage.');
+  return res.redirect(`/dashboard/events/${req.event.id}`);
 }));

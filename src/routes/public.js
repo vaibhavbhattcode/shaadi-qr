@@ -10,6 +10,7 @@ import { resolveStoragePath, safeUnlink, sendMediaFile, sendMediaThumbnail, uplo
 import { formatBytes, percent } from '../lib/helpers.js';
 import { asyncHandler } from '../lib/async-handler.js';
 import { generateCaptcha, verifyCaptcha } from '../lib/captcha.js';
+import { setFlash } from '../middleware/flash.js';
 
 export const publicRouter = express.Router();
 
@@ -70,6 +71,44 @@ function folderList(eventId) {
 
 publicRouter.get('/', (req, res) => {
   res.render('home', { title: 'Wedding QR Photo Collect App' });
+});
+
+publicRouter.get('/privacy', (req, res) => {
+  res.render('public/privacy', { title: 'Privacy Policy' });
+});
+
+publicRouter.get('/contact', (req, res) => {
+  res.render('public/contact', { title: 'Contact Us', errors: {}, values: {} });
+});
+
+const contactSchema = z.object({
+  name: z.string().trim().min(2, 'Name must be at least 2 characters').max(80),
+  email: z.string().trim().email('Valid email is required').max(160),
+  subject: z.string().trim().min(3, 'Subject must be at least 3 characters').max(150),
+  message: z.string().trim().min(10, 'Message must be at least 10 characters').max(1000),
+});
+
+publicRouter.post('/contact', requireCsrf, (req, res) => {
+  const parsed = contactSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).render('public/contact', {
+      title: 'Contact Us',
+      errors: parsed.error.flatten().fieldErrors,
+      values: req.body,
+    });
+  }
+
+  const { name, email, subject, message } = parsed.data;
+  logAudit({
+    action: 'contact_message_submitted',
+    metadata: { name, email, subject, messageLength: message.length },
+    ip: req.ip,
+  });
+
+  console.log(`\n========================================\n[SUPPORT CONTACT MESSAGE] from ${name} (${email}):\nSubject: ${subject}\nMessage: ${message}\n========================================\n`);
+
+  setFlash(res, 'success', 'Your message has been sent successfully. We will get back to you shortly!');
+  return res.redirect('/contact');
 });
 
 publicRouter.get('/e/:slug/upload', requireUploadAccess, (req, res) => {

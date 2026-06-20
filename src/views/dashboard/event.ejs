@@ -138,51 +138,71 @@
 <section class="grid grid-2" style="margin-top:22px; align-items:start;">
   <div class="card">
     <h2 style="margin-top:0;">Storage Integrations</h2>
-    <p class="muted" style="margin-bottom:20px;">Choose where you want to store guest uploads. By default, they are securely saved on ShaadiShots' cloud storage.</p>
+    <p class="muted" style="margin-bottom:20px;">Apne guest uploads ka storage location select karein. Basic plan users apna Google Drive connect karke free unlimited hosting enable kar sakte hain.</p>
     
     <div class="info-list">
-      <div style="flex-direction: column; align-items: flex-start; gap: 8px;">
+      <div style="flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 16px; display: flex;">
         <div class="between" style="width: 100%;">
           <strong>Platform Secure Cloud</strong>
-          <span class="badge approved">Active</span>
+          <% if (event.storage_provider === 'platform') { %>
+            <span class="badge approved">Active</span>
+          <% } else { %>
+            <span class="badge secondary">Available</span>
+          <% } %>
         </div>
-        <p class="hint" style="margin: 0;">S3-compatible secure bucket. Media is professionally structured and isolated: <br>
-        <code class="mono" style="background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; font-size: 0.85em;">events/<%= event.id %>/{folder-name}/{media-id}-{filename}</code></p>
+        <p class="hint" style="margin: 0;">Wedding images are stored securely on ShaadiShots cloud servers. Isolation: <code class="mono" style="font-size: 0.85em;">events/<%= event.id %>/*</code></p>
       </div>
 
-      <div style="flex-direction: column; align-items: flex-start; gap: 8px; opacity: 0.7;">
+      <div style="flex-direction: column; align-items: flex-start; gap: 8px; border-top: 1px solid var(--border); padding-top: 16px; margin-bottom: 16px; display: flex;">
         <div class="between" style="width: 100%;">
           <strong>Google Drive</strong>
-          <span class="badge">Coming Soon</span>
+          <% if (event.storage_provider === 'google_drive') { %>
+            <span class="badge approved">Active (Connected)</span>
+          <% } else { %>
+            <span class="badge secondary">Available</span>
+          <% } %>
         </div>
-        <p class="hint" style="margin: 0;">Sync uploads directly to a folder in your personal or business Google Drive account.</p>
-      </div>
-
-      <div style="flex-direction: column; align-items: flex-start; gap: 8px; opacity: 0.7;">
-        <div class="between" style="width: 100%;">
-          <strong>Custom S3 Bucket</strong>
-          <span class="badge">Coming Soon</span>
-        </div>
-        <p class="hint" style="margin: 0;">Connect your own Cloudflare R2, AWS S3, or DigitalOcean Space bucket to store files in your own cloud infrastructure.</p>
+        <p class="hint" style="margin: 0; margin-bottom: 10px;">Store wedding images directly in your own Google Drive. No premium subscription required.</p>
+        
+        <% if (event.storage_provider === 'google_drive') { %>
+          <% const configData = JSON.parse(event.storage_config || '{}'); %>
+          <div class="alert success" style="margin: 0; width: 100%; box-sizing: border-box;">
+            <p class="hint" style="margin: 0; color: var(--green); font-weight: bold;">
+              🟢 <%= configData.mock ? 'Sandbox Mock Drive Connected' : 'Google Drive Account Connected' %>
+            </p>
+            <p class="hint" style="margin: 4px 0 0;">
+              Guest uploads are being saved to your Google Drive securely.
+            </p>
+          </div>
+          <form method="post" action="/dashboard/events/<%= event.id %>/google-drive/disconnect" style="margin: 10px 0 0; width: 100%;">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button class="btn danger small" type="submit" style="width: 100%; min-height: 32px;">Disconnect Google Drive</button>
+          </form>
+        <% } else { %>
+          <a class="btn small" href="/dashboard/events/<%= event.id %>/google-drive/auth" style="display: block; width: 100%; text-align: center; text-decoration: none; line-height: 2;">
+            🔗 Connect Google Drive
+          </a>
+        <% } %>
       </div>
     </div>
   </div>
 
   <div class="card">
-    <h2 style="margin-top:0;">Storage Configuration</h2>
+    <h2 style="margin-top:0;">Storage Status</h2>
     <div style="display: flex; flex-direction: column; gap: 14px;">
       <label>Active Storage Provider
-        <select disabled>
-          <option selected>ShaadiShots Cloud (Default)</option>
-          <option>Google Drive</option>
-          <option>Custom S3 Compatible Bucket</option>
-        </select>
+        <input type="text" readonly value="<%= event.storage_provider === 'google_drive' ? 'Google Drive' : 'ShaadiShots Cloud (Default)' %>" style="background: var(--border); cursor: not-allowed; width: 100%; box-sizing: border-box;">
       </label>
       <div class="alert" style="background: rgba(255,255,255,0.5); border-color: var(--border); margin-bottom: 0;">
-        <p class="hint" style="margin: 0; font-weight: 500;">
-          Your files are safely isolated and encrypted at rest in the platform cloud. 
-          To request early access to Google Drive or custom S3 sync, please contact support.
-        </p>
+        <% if (event.storage_provider === 'google_drive') { %>
+          <p class="hint" style="margin: 0; font-weight: 500;">
+            Photos will bypass platform limits and go directly to your linked Google Drive folder privately. Private streaming proxy protects your file links.
+          </p>
+        <% } else { %>
+          <p class="hint" style="margin: 0; font-weight: 500;">
+            Currently saving to ShaadiShots Secure S3. Connect Google Drive to redirect storage or upgrade plan to extend platform limits.
+          </p>
+        <% } %>
       </div>
     </div>
   </div>

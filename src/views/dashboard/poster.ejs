@@ -4,38 +4,945 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><%= title %></title>
+  
+  <!-- Import Google Fonts for unique theme typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=DM+Serif+Display:ital@0;1&family=Great+Vibes&family=Lora:ital,wght@0,400..700;1,400..700&family=Marcellus&family=Montserrat:wght@400;700;900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=WindSong:wght@500&display=swap" rel="stylesheet">
+  
   <style>
+    /* Global Base Reset */
     * { box-sizing: border-box; }
-    body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; background:#fff8f3; color:#2b1424; }
-    .page { min-height:100vh; display:grid; place-items:center; padding:30px; }
-    .poster { width:min(780px, 100%); aspect-ratio: 3 / 4; border-radius:36px; padding:42px; text-align:center; background: radial-gradient(circle at top left, #ffe2d9, transparent 46%), radial-gradient(circle at bottom right, #ffe1f1, transparent 42%), white; border:12px solid #b83280; box-shadow:0 22px 70px rgba(84, 27, 63, .20); display:flex; flex-direction:column; justify-content:center; align-items:center; }
-    h1 { font-size:clamp(2.2rem, 8vw, 5rem); line-height:.95; margin:0; letter-spacing:-.07em; }
-    h2 { font-size:clamp(1.2rem, 4vw, 2rem); margin:14px 0 22px; color:#8a275f; }
-    .qr { width:min(420px, 75%); border-radius:26px; padding:16px; background:white; border:4px solid #f3cde2; }
-    .scan { margin:24px 0 8px; font-size:clamp(1.3rem, 4vw, 2.4rem); font-weight:900; color:#b83280; }
-    p { color:#6d5367; font-size:1.15rem; line-height:1.5; margin:6px 0; }
-    .url { font-family: ui-monospace, Menlo, Consolas, monospace; word-break: break-all; font-size:.88rem; color:#5a4052; max-width:90%; }
-    .actions { margin:20px; text-align:center; }
-    button { border:0; border-radius:999px; padding:12px 18px; background:linear-gradient(135deg,#b83280,#ff7a59); color:#fff; font-weight:900; cursor:pointer; }
+    body { 
+      margin: 0; 
+      font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; 
+      background: #f8fafc; 
+      color: #1e293b; 
+      transition: background 0.4s ease, color 0.4s ease;
+    }
+    
+    .page { 
+      min-height: 100vh; 
+      display: grid; 
+      place-items: center; 
+      padding: 30px; 
+    }
+    
+    /* Base Card Container */
+    .poster { 
+      width: min(780px, 100%); 
+      aspect-ratio: 3 / 4; 
+      border-radius: 40px; 
+      padding: 48px; 
+      text-align: center; 
+      display: flex; 
+      flex-direction: column; 
+      justify-content: center; 
+      align-items: center;
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      border-width: 12px;
+      border-style: solid;
+    }
+
+    .poster > * {
+      position: relative;
+      z-index: 10;
+    }
+
+    /* ==========================================================================
+       DECORATIVE ASSETS LAYER
+       ========================================================================== */
+    .poster > .decorations {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 1;
+      display: block;
+    }
+
+    .deco-leaf, .deco-flower, .deco-sparkle, .deco-heart, .deco-star, .svg-decor {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    /* Theme-specific overlays */
+    .cyber-grid, .cyber-scanline, .news-halftone, .retro-waves, .sakura-container {
+      display: none;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    /* ==========================================================================
+       KEYFRAME ANIMATIONS (Unique per theme)
+       ========================================================================== */
+    @keyframes float {
+      0% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-8px) rotate(0.5deg); }
+      100% { transform: translateY(0px) rotate(0deg); }
+    }
+    @keyframes neon-glow {
+      0% { box-shadow: 0 0 15px rgba(0, 242, 254, 0.3), inset 0 0 10px rgba(0, 242, 254, 0.1); border-color: #00f2fe; }
+      100% { box-shadow: 0 0 35px rgba(0, 242, 254, 0.6), inset 0 0 20px rgba(0, 242, 254, 0.3); border-color: #ff007f; }
+    }
+    @keyframes gentle-sway {
+      0% { transform: rotate(-0.5deg) scale(1); }
+      50% { transform: rotate(0.5deg) scale(1.01); }
+      100% { transform: rotate(-0.5deg) scale(1); }
+    }
+    @keyframes warm-pulse {
+      0% { transform: scale(1); filter: brightness(1); }
+      50% { transform: scale(1.02); filter: brightness(1.03); }
+      100% { transform: scale(1); filter: brightness(1); }
+    }
+    @keyframes gold-shimmer {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    @keyframes stars-twinkle {
+      0%, 100% { opacity: 0.8; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.8); }
+    }
+    @keyframes flower-drift {
+      0% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-5px) rotate(2deg); }
+      100% { transform: translateY(0) rotate(0deg); }
+    }
+    @keyframes metallic-shine {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    @keyframes festive-spark {
+      0% { border-color: #ff9100; box-shadow: 0 0 15px rgba(255,145,0,0.3); }
+      50% { border-color: #d500f9; box-shadow: 0 0 30px rgba(213,0,249,0.5); }
+      100% { border-color: #ff9100; box-shadow: 0 0 15px rgba(255,145,0,0.3); }
+    }
+    @keyframes geo-slide {
+      0% { background-position: 0% 0%; }
+      100% { background-position: 100% 100%; }
+    }
+    @keyframes boho-sway {
+      0% { transform: skewX(-1deg); }
+      50% { transform: skewX(1deg); }
+      100% { transform: skewX(-1deg); }
+    }
+    @keyframes ocean-wave {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Common elements */
+    .qr-container {
+      padding: 16px;
+      background: white;
+      border-radius: 28px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+
+    .qr {
+      width: min(340px, 100%);
+      height: auto;
+      border-radius: 18px;
+      display: block;
+    }
+
+    h1 { 
+      font-size: clamp(1.8rem, 5.5vw, 3.2rem); 
+      line-height: 1.05; 
+      margin: 0; 
+      letter-spacing: -0.04em; 
+    }
+    
+    h2 { 
+      font-size: clamp(1.1rem, 3.5vw, 1.6rem); 
+      margin: 12px 0 20px; 
+    }
+    
+    .scan { 
+      margin: 20px 0 8px; 
+      font-size: clamp(1.2rem, 3.5vw, 1.8rem); 
+      font-weight: 800; 
+    }
+    
+    p { 
+      font-size: 1rem; 
+      line-height: 1.5; 
+      margin: 6px 0; 
+    }
+    
+    .url { 
+      font-family: ui-monospace, Menlo, Consolas, monospace; 
+      word-break: break-all; 
+      font-size: 0.82rem; 
+      max-width: 90%; 
+      margin-top: 14px;
+      opacity: 0.85;
+    }
+
+    /* ==========================================================================
+       THEME STYLING (24 Styles)
+       ========================================================================== */
+
+    /* Theme 1: Royal Rose (Pink & Gold) */
+    .poster.theme-royal-rose {
+      background: radial-gradient(circle at top left, #fff0f3, transparent 50%), 
+                  radial-gradient(circle at bottom right, #fae0e4, transparent 50%), 
+                  #ffffff; 
+      border-color: #b83280;
+      box-shadow: 0 25px 70px rgba(184, 50, 128, 0.15);
+      font-family: 'Playfair Display', Georgia, serif;
+      animation: gentle-sway 8s ease-in-out infinite;
+    }
+    .theme-royal-rose h1 { color: #4a0e2e; font-weight: 900; }
+    .theme-royal-rose h2 { color: #b83280; font-style: italic; }
+    .theme-royal-rose .scan { color: #b83280; }
+    .theme-royal-rose .qr-container { border: 4px solid #f9bec7; animation: float 6s ease-in-out infinite; }
+    .theme-royal-rose p { color: #6d5367; }
+    .theme-royal-rose .url { color: #4a0e2e; }
+    .theme-royal-rose .deco-flower-1 { display: block; opacity: 0.7; left: 10%; top: 12%; font-size: 1.5rem; animation: float 6s ease-in-out infinite; }
+    .theme-royal-rose .deco-flower-2 { display: block; opacity: 0.7; right: 10%; bottom: 12%; font-size: 1.5rem; animation: float 5s ease-in-out infinite; }
+    .theme-royal-rose .deco-heart-1 { display: block; opacity: 0.4; right: 15%; top: 18%; font-size: 1.2rem; animation: float 4s ease-in-out infinite; }
+    .theme-royal-rose .svg-rings { display: block; opacity: 0.15; top: 8%; left: 50%; transform: translateX(-50%); width: 70px; color: #b83280; }
+
+    /* Theme 2: Minimal Dark (Cyber Neon Glow) */
+    .poster.theme-minimal-dark {
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      border-color: #00f2fe;
+      color: #f8fafc;
+      animation: neon-glow 4s infinite alternate;
+    }
+    .theme-minimal-dark h1 { color: #ffffff; text-shadow: 0 0 15px rgba(0, 242, 254, 0.4); font-weight: 900; }
+    .theme-minimal-dark h2 { color: #38bdf8; }
+    .theme-minimal-dark .scan { color: #00f2fe; text-shadow: 0 0 10px rgba(0,242,254,0.3); }
+    .theme-minimal-dark .qr-container { border: 4px solid #38bdf8; background: #0f172a; }
+    .theme-minimal-dark p { color: #94a3b8; }
+    .theme-minimal-dark .url { color: #38bdf8; }
+    .theme-minimal-dark .deco-sparkle-1 { display: block; opacity: 0.6; left: 8%; top: 12%; color: #00f2fe; font-size: 1.4rem; animation: float 5s ease-in-out infinite; }
+    .theme-minimal-dark .deco-sparkle-2 { display: block; opacity: 0.6; right: 8%; bottom: 12%; color: #ff007f; font-size: 1.4rem; animation: float 7s ease-in-out infinite; }
+
+    /* Theme 3: Botanical Garden (Natural Green & Ivory) */
+    .poster.theme-botanical {
+      background: radial-gradient(circle at top left, #f1f8f5, transparent 50%),
+                  radial-gradient(circle at bottom right, #e8f5e9, transparent 50%),
+                  #fafdfb;
+      border-color: #2d6a4f;
+      box-shadow: 0 25px 70px rgba(45, 106, 79, 0.12);
+      font-family: 'Lora', Georgia, serif;
+      animation: gentle-sway 10s ease-in-out infinite;
+    }
+    .theme-botanical h1 { color: #1b4332; font-weight: 800; }
+    .theme-botanical h2 { color: #40916c; font-style: italic; }
+    .theme-botanical .scan { color: #2d6a4f; }
+    .theme-botanical .qr-container { border: 4px solid #b7e4c7; }
+    .theme-botanical p { color: #52796f; }
+    .theme-botanical .url { color: #1b4332; }
+    .theme-botanical .svg-vine-left { display: block; opacity: 0.15; left: 4%; top: 5%; width: 120px; color: #2d6a4f; }
+    .theme-botanical .svg-vine-right { display: block; opacity: 0.15; right: 4%; bottom: 5%; width: 120px; color: #2d6a4f; transform: scaleY(-1); }
+    .theme-botanical .deco-leaf-1 { display: block; opacity: 0.6; left: 12%; bottom: 20%; font-size: 1.4rem; animation: gentle-sway 8s infinite ease-in-out; }
+    .theme-botanical .deco-leaf-2 { display: block; opacity: 0.6; right: 12%; top: 20%; font-size: 1.4rem; animation: gentle-sway 7s infinite ease-in-out; }
+
+    /* Theme 4: Sunset Bliss (Gold & Coral) */
+    .poster.theme-sunset {
+      background: linear-gradient(135deg, #fffcf5 0%, #fff5f5 100%);
+      border-color: #ff7a59;
+      box-shadow: 0 25px 70px rgba(255, 122, 89, 0.12);
+      animation: warm-pulse 6s ease-in-out infinite;
+    }
+    .theme-sunset h1 { color: #bf360c; font-weight: 900; }
+    .theme-sunset h2 { color: #e65100; }
+    .theme-sunset .scan { color: #ff7a59; }
+    .theme-sunset .qr-container { border: 4px solid #ffe0b2; animation: float 5.5s ease-in-out infinite; }
+    .theme-sunset p { color: #7c6258; }
+    .theme-sunset .url { color: #e65100; }
+    .theme-sunset .deco-sparkle-1 { display: block; opacity: 0.4; left: 15%; top: 12%; color: #ff7a59; font-size: 1.4rem; animation: float 5s ease-in-out infinite; }
+
+    /* Theme 5: Vintage Craft (Antique Parchment Style) */
+    .poster.theme-vintage {
+      background: radial-gradient(circle, #fcf4e8 0%, #f4e4cc 100%);
+      border-color: #8c6a46;
+      border-style: double;
+      border-width: 16px;
+      box-shadow: 0 20px 50px rgba(140, 106, 70, 0.2);
+      font-family: 'DM Serif Display', Georgia, serif;
+    }
+    .theme-vintage h1 { color: #4e3629; font-weight: 700; letter-spacing: 0.02em; font-family: 'DM Serif Display', serif; }
+    .theme-vintage h2 { color: #704c38; font-style: italic; }
+    .theme-vintage .scan { color: #4e3629; text-transform: uppercase; font-size: 1.5rem; letter-spacing: 0.05em; }
+    .theme-vintage .qr-container { border: 4px dashed #8c6a46; background: #faf4eb; }
+    .theme-vintage p { color: #70584c; font-family: 'Lora', serif; }
+    .theme-vintage .url { color: #4e3629; }
+    .theme-vintage .svg-corner-tl { display: block; opacity: 0.15; top: 20px; left: 20px; width: 50px; color: #8c6a46; }
+    .theme-vintage .svg-corner-tr { display: block; opacity: 0.15; top: 20px; right: 20px; width: 50px; color: #8c6a46; }
+    .theme-vintage .svg-corner-bl { display: block; opacity: 0.15; bottom: 20px; left: 20px; width: 50px; color: #8c6a46; }
+    .theme-vintage .svg-corner-br { display: block; opacity: 0.15; bottom: 20px; right: 20px; width: 50px; color: #8c6a46; }
+
+    /* Theme 6: Starry Night (Glittering Navy & Gold) */
+    .poster.theme-starry {
+      background: radial-gradient(circle at center, #1e295d 0%, #0c1033 100%);
+      border-color: #d4af37;
+      box-shadow: 0 25px 60px rgba(212, 175, 55, 0.25);
+      color: #ffffff;
+      font-family: 'Cinzel', serif;
+    }
+    .theme-starry h1 { color: #ffffff; font-family: 'Cinzel', serif; font-weight: 900; text-shadow: 0 0 10px rgba(212, 175, 55, 0.3); }
+    .theme-starry h2 { color: #f3e5ab; font-family: 'Great Vibes', cursive; font-size: 2.2rem; text-transform: none; margin: 4px 0 14px; }
+    .theme-starry .scan { color: #d4af37; font-family: 'Cinzel', serif; text-shadow: 0 0 8px rgba(212,175,55,0.2); }
+    .theme-starry .qr-container { border: 4px solid #d4af37; background: #0c1033; animation: float 7s ease-in-out infinite; }
+    .theme-starry p { color: #cbd5e1; font-family: 'Lora', serif; }
+    .theme-starry .url { color: #f3e5ab; }
+    .theme-starry .deco-star-1 { display: block; opacity: 0.7; left: 10%; top: 15%; color: #d4af37; font-size: 1.2rem; animation: stars-twinkle 3s infinite; }
+    .theme-starry .deco-star-2 { display: block; opacity: 0.7; right: 10%; bottom: 15%; color: #d4af37; font-size: 1.2rem; animation: stars-twinkle 4.2s infinite; }
+
+    /* Theme 7: Lavender Fields (Romantic Violet Pastel) */
+    .poster.theme-lavender {
+      background: radial-gradient(circle at top left, #f3e8ff, transparent 55%),
+                  radial-gradient(circle at bottom right, #fae8ff, transparent 50%),
+                  #faf5ff;
+      border-color: #8b5cf6;
+      box-shadow: 0 25px 60px rgba(139, 92, 246, 0.12);
+      font-family: 'Lora', Georgia, serif;
+      animation: flower-drift 8s infinite ease-in-out;
+    }
+    .theme-lavender h1 { color: #4c1d95; font-family: 'Great Vibes', cursive; font-size: 4rem; font-weight: normal; letter-spacing: 0; }
+    .theme-lavender h2 { color: #7c3aed; font-family: 'Lora', serif; margin-top: 2px; }
+    .theme-lavender .scan { color: #6d28d9; }
+    .theme-lavender .qr-container { border: 4px solid #ddd6fe; animation: float 5s ease-in-out infinite; }
+    .theme-lavender p { color: #6b21a8; }
+    .theme-lavender .url { color: #4c1d95; }
+    .theme-lavender .deco-flower-1 { display: block; opacity: 0.6; left: 12%; top: 12%; font-size: 1.4rem; color: #8b5cf6; animation: float 6s infinite; }
+    .theme-lavender .deco-flower-2 { display: block; opacity: 0.6; right: 12%; bottom: 12%; font-size: 1.4rem; color: #8b5cf6; animation: float 5s infinite; }
+
+    /* Theme 8: Ethereal Marble (Luxury Gold Veins) */
+    .poster.theme-marble {
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      border-color: #c5a880;
+      box-shadow: 0 25px 70px rgba(197, 168, 128, 0.2);
+      font-family: 'Marcellus', serif;
+    }
+    .theme-marble h1 { color: #1e293b; font-family: 'Marcellus', serif; letter-spacing: 0.1em; text-transform: uppercase; font-size: 2.5rem; }
+    .theme-marble h2 { color: #c5a880; font-family: 'Marcellus', serif; text-transform: uppercase; letter-spacing: 0.05em; }
+    .theme-marble .scan { color: #1e293b; font-family: 'Marcellus', serif; text-transform: uppercase; letter-spacing: 0.08em; }
+    .theme-marble .qr-container { border: 4px solid #c5a880; background: #ffffff; }
+    .theme-marble p { color: #475569; font-family: 'Lora', serif; }
+    .theme-marble .url { color: #c5a880; }
+    .theme-marble .svg-corner-tl { display: block; opacity: 0.2; top: 15px; left: 15px; width: 45px; color: #c5a880; }
+    .theme-marble .svg-corner-tr { display: block; opacity: 0.2; top: 15px; right: 15px; width: 45px; color: #c5a880; }
+    .theme-marble .svg-corner-bl { display: block; opacity: 0.2; bottom: 15px; left: 15px; width: 45px; color: #c5a880; }
+    .theme-marble .svg-corner-br { display: block; opacity: 0.2; bottom: 15px; right: 15px; width: 45px; color: #c5a880; }
+
+    /* Theme 9: Bollywood Glam (Crimson & Marigold Gold) */
+    .poster.theme-bollywood {
+      background: radial-gradient(circle at top left, #fff5f5 0%, #fffaf0 100%);
+      border-color: #ff9100;
+      box-shadow: 0 25px 60px rgba(255, 145, 0, 0.2);
+      animation: festive-spark 5s infinite ease-in-out;
+    }
+    .theme-bollywood h1 { color: #900c3f; font-family: 'DM Serif Display', serif; font-size: 3.5rem; font-weight: 800; }
+    .theme-bollywood h2 { color: #ff5733; font-family: 'Marcellus', serif; }
+    .theme-bollywood .scan { color: #c70039; font-family: 'DM Serif Display', serif; text-transform: uppercase; }
+    .theme-bollywood .qr-container { border: 5px solid #ffc300; animation: float 6.5s ease-in-out infinite; }
+    .theme-bollywood p { color: #581845; font-family: 'Lora', serif; font-weight: 600; }
+    .theme-bollywood .url { color: #900c3f; }
+    .theme-bollywood .deco-sparkle-1 { display: block; opacity: 0.6; left: 12%; top: 15%; color: #ff9100; font-size: 1.4rem; animation: float 5s infinite; }
+    .theme-bollywood .deco-sparkle-2 { display: block; opacity: 0.6; right: 12%; bottom: 15%; color: #ffc300; font-size: 1.4rem; animation: float 6s infinite; }
+
+    /* Theme 10: Modern Indigo (Deep Blue & Silver) */
+    .poster.theme-indigo {
+      background: radial-gradient(circle at top left, #e0e7ff, transparent 55%),
+                  radial-gradient(circle at bottom right, #e0f2fe, transparent 50%),
+                  #e0e7ff;
+      border-color: #3b82f6;
+      box-shadow: 0 25px 70px rgba(59, 130, 246, 0.15);
+      font-family: 'Montserrat', sans-serif;
+    }
+    .theme-indigo h1 { color: #1e3a8a; font-family: 'Montserrat', sans-serif; font-weight: 900; text-transform: uppercase; }
+    .theme-indigo h2 { color: #2563eb; font-family: 'Montserrat', sans-serif; font-weight: 700; }
+    .theme-indigo .scan { color: #1d4ed8; font-family: 'Montserrat', sans-serif; font-weight: 700; text-transform: uppercase; }
+    .theme-indigo .qr-container { border: 4px solid #93c5fd; }
+    .theme-indigo p { color: #1e3a8a; }
+    .theme-indigo .url { color: #3b82f6; }
+    .theme-indigo .deco-sparkle-1 { display: block; opacity: 0.4; left: 10%; top: 12%; color: #3b82f6; font-size: 1.3rem; animation: float 6s infinite; }
+
+    /* Theme 11: Boho Terracotta (Warm Earth & Pampas) */
+    .poster.theme-boho {
+      background: radial-gradient(circle at top left, #fff7ed, transparent 60%),
+                  radial-gradient(circle at bottom right, #ffedd5, transparent 50%),
+                  #fafaf9;
+      border-color: #c27d58;
+      box-shadow: 0 25px 60px rgba(194, 125, 88, 0.15);
+      font-family: 'Lora', Georgia, serif;
+      animation: boho-sway 9s infinite ease-in-out;
+    }
+    .theme-boho h1 { color: #7c2d12; font-family: 'Lora', serif; font-weight: 800; }
+    .theme-boho h2 { color: #c27d58; font-family: 'Lora', serif; font-style: italic; }
+    .theme-boho .scan { color: #7c2d12; font-family: 'Lora', serif; font-weight: bold; }
+    .theme-boho .qr-container { border: 4px solid #fed7aa; animation: float 5.8s ease-in-out infinite; }
+    .theme-boho p { color: #9a3412; font-family: 'Plus Jakarta Sans', sans-serif; }
+    .theme-boho .url { color: #7c2d12; }
+    .theme-boho .deco-leaf-1 { display: block; opacity: 0.5; left: 12%; top: 15%; font-size: 1.4rem; filter: sepia(0.5) hue-rotate(-15deg); animation: float 6s infinite; }
+
+    /* Theme 12: Ocean Breeze (Teal & Foam White) */
+    .poster.theme-ocean {
+      background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+      border-color: #00796b;
+      box-shadow: 0 25px 70px rgba(0, 121, 107, 0.15);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      animation: ocean-wave 12s infinite ease-in-out;
+    }
+    .theme-ocean h1 { color: #004d40; font-weight: 900; text-transform: uppercase; letter-spacing: -0.02em; }
+    .theme-ocean h2 { color: #00796b; font-weight: 700; }
+    .theme-ocean .scan { color: #004d40; font-weight: 800; }
+    .theme-ocean .qr-container { border: 4px solid #80deea; }
+    .theme-ocean p { color: #004d40; }
+    .theme-ocean .url { color: #00796b; }
+    .theme-ocean .deco-sparkle-1 { display: block; opacity: 0.4; left: 10%; top: 12%; color: #00796b; font-size: 1.3rem; animation: float 5s infinite; }
+
+
+    /* ==========================================================================
+       THEMES 13 TO 24 (12 Additional Themes)
+       ========================================================================== */
+
+    /* Theme 13: Midnight Forest (Deep Emerald & Gold) */
+    .poster.theme-midnight-forest {
+      background: linear-gradient(135deg, #051d11 0%, #0d3b24 50%, #061d11 100%);
+      border-color: #d4af37;
+      box-shadow: 0 25px 70px rgba(13, 59, 36, 0.4);
+      color: #faf5e8;
+      font-family: 'Cinzel', serif;
+      animation: gentle-sway 9s ease-in-out infinite;
+    }
+    .theme-midnight-forest h1 { color: #d4af37; font-family: 'Cinzel', serif; font-weight: 700; text-shadow: 0 2px 10px rgba(212,175,55,0.3); }
+    .theme-midnight-forest h2 { color: #ffffff; font-family: 'Marcellus', serif; text-transform: uppercase; letter-spacing: 0.05em; }
+    .theme-midnight-forest .scan { color: #d4af37; font-family: 'Cinzel', serif; letter-spacing: 0.05em; }
+    .theme-midnight-forest .qr-container { border: 4px solid #d4af37; background: #051d11; }
+    .theme-midnight-forest p { color: #94b8a3; }
+    .theme-midnight-forest .url { color: #d4af37; }
+    .theme-midnight-forest .deco-leaf-1 { display: block; opacity: 0.4; left: 8%; top: 15%; font-size: 1.6rem; filter: sepia(1) saturate(3) hue-rotate(5deg); animation: float 6s ease-in-out infinite; }
+    .theme-midnight-forest .deco-leaf-2 { display: block; opacity: 0.4; right: 8%; bottom: 15%; font-size: 1.6rem; filter: sepia(1) saturate(3) hue-rotate(5deg); animation: float 5s ease-in-out infinite; }
+
+    /* Theme 14: Cyberpunk Neon (Fluorescent Pink & Cyan Grid) */
+    .poster.theme-cyberpunk {
+      background: radial-gradient(circle at center, #180325 0%, #07000d 100%);
+      border-color: #ff007f;
+      color: #00ffff;
+      font-family: 'Montserrat', sans-serif;
+      animation: neon-glow 3s infinite alternate;
+    }
+    .theme-cyberpunk h1 { color: #ff007f; font-weight: 900; text-shadow: 0 0 10px #ff007f, 0 0 20px #ff007f; text-transform: uppercase; letter-spacing: 0.05em; }
+    .theme-cyberpunk h2 { color: #ffffff; text-shadow: 0 0 8px #ffffff; font-weight: 800; }
+    .theme-cyberpunk .scan { color: #00ffff; text-shadow: 0 0 10px #00ffff; letter-spacing: 0.1em; text-transform: uppercase; font-size: 1.3rem; }
+    .theme-cyberpunk .qr-container { border: 4px solid #00ffff; background: #07000d; box-shadow: 0 0 15px rgba(0,255,255,0.4); }
+    .theme-cyberpunk p { color: #dbb5ec; }
+    .theme-cyberpunk .url { color: #ff007f; text-shadow: 0 0 5px rgba(255,0,127,0.3); }
+    .theme-cyberpunk .cyber-grid {
+      display: block;
+      background: repeating-linear-gradient(rgba(255,0,127,0.03) 0px, rgba(255,0,127,0.03) 1px, transparent 1px, transparent 15px),
+                  repeating-linear-gradient(90deg, rgba(255,0,127,0.03) 0px, rgba(255,0,127,0.03) 1px, transparent 1px, transparent 15px);
+    }
+    .theme-cyberpunk .cyber-scanline {
+      display: block;
+      background: rgba(0, 255, 255, 0.4);
+      box-shadow: 0 0 10px #00ffff;
+      animation: scanline-move 6s linear infinite;
+    }
+    .theme-cyberpunk .deco-sparkle-1 { display: block; opacity: 0.7; left: 10%; top: 15%; color: #00ffff; font-size: 1.5rem; animation: float 4s infinite; }
+    .theme-cyberpunk .deco-sparkle-2 { display: block; opacity: 0.7; right: 10%; bottom: 15%; color: #ff007f; font-size: 1.5rem; animation: float 5s infinite; }
+
+    /* Theme 15: Golden Hour (Warm Sunset Amber) */
+    .poster.theme-golden-hour {
+      background: radial-gradient(circle at center, #fff7ed 0%, #ffedd5 40%, #fed7aa 100%);
+      border-color: #ea580c;
+      box-shadow: 0 25px 70px rgba(234, 88, 12, 0.15);
+      font-family: 'Playfair Display', Georgia, serif;
+      animation: warm-pulse 7s ease-in-out infinite;
+    }
+    .theme-golden-hour h1 { color: #7c2d12; font-weight: 900; }
+    .theme-golden-hour h2 { color: #ea580c; font-family: 'Great Vibes', cursive; font-size: 2.2rem; margin: 4px 0 14px; }
+    .theme-golden-hour .scan { color: #c2410c; }
+    .theme-golden-hour .qr-container { border: 4px solid #fdba74; box-shadow: 0 10px 25px rgba(234,88,12,0.1); }
+    .theme-golden-hour p { color: #9a3412; }
+    .theme-golden-hour .url { color: #7c2d12; }
+    .theme-golden-hour .deco-sparkle-1 { display: block; opacity: 0.5; left: 10%; top: 12%; color: #f59e0b; font-size: 1.5rem; animation: float 5s infinite; }
+    .theme-golden-hour .deco-sparkle-2 { display: block; opacity: 0.5; right: 10%; bottom: 12%; color: #f59e0b; font-size: 1.5rem; animation: float 6s infinite; }
+
+    /* Theme 16: Rose Gold (Blushing Metallic Gold Shine) */
+    .poster.theme-rose-gold {
+      background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 50%, #fecdd3 100%);
+      border-color: #fda4af;
+      box-shadow: 0 25px 70px rgba(244, 63, 94, 0.12);
+      font-family: 'Playfair Display', Georgia, serif;
+      animation: gentle-sway 8s ease-in-out infinite;
+    }
+    .theme-rose-gold h1 { color: #9f1239; font-weight: 800; }
+    .theme-rose-gold h2 { color: #db2777; font-family: 'WindSong', cursive; font-size: 2.6rem; margin: 0px 0 10px; font-weight: normal; }
+    .theme-rose-gold .scan { color: #be185d; }
+    .theme-rose-gold .qr-container { border: 4px solid #fecdd3; }
+    .theme-rose-gold p { color: #881337; }
+    .theme-rose-gold .url { color: #9f1239; }
+    .theme-rose-gold .deco-sparkle-1 { display: block; opacity: 0.6; left: 15%; top: 18%; color: #db2777; font-size: 1.4rem; animation: rotate-sparkle 6s linear infinite; }
+    .theme-rose-gold .deco-sparkle-2 { display: block; opacity: 0.6; right: 15%; bottom: 18%; color: #db2777; font-size: 1.4rem; animation: rotate-sparkle 5s linear infinite; }
+
+    /* Theme 17: Retro Gazette (Monochrome Vintage Newsprint) */
+    .poster.theme-retro-gazette {
+      background: #f1ebd9;
+      border-color: #1e1b4b;
+      border-width: 14px;
+      border-style: double;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+      font-family: 'DM Serif Display', Georgia, serif;
+    }
+    .theme-retro-gazette h1 { color: #1e1b4b; font-family: 'DM Serif Display', serif; text-transform: uppercase; font-weight: 800; font-size: 2.5rem; border-bottom: 2px solid #1e1b4b; padding-bottom: 8px; width: 90%; }
+    .theme-retro-gazette h2 { color: #1e1b4b; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; text-transform: uppercase; font-size: 1.05rem; letter-spacing: 0.08em; margin-top: 10px; }
+    .theme-retro-gazette .scan { color: #1e1b4b; font-family: 'DM Serif Display', serif; text-transform: uppercase; letter-spacing: 0.05em; font-size: 1.3rem; }
+    .theme-retro-gazette .qr-container { border: 4px solid #1e1b4b; border-radius: 4px; background: #ffffff; padding: 12px; }
+    .theme-retro-gazette p { color: #4338ca; font-family: 'Lora', serif; font-size: 0.95rem; }
+    .theme-retro-gazette .url { color: #1e1b4b; border-top: 1px dashed #1e1b4b; padding-top: 8px; font-weight: bold; }
+    .theme-retro-gazette .news-halftone {
+      display: block;
+      background-image: radial-gradient(rgba(0,0,0,0.02) 1px, transparent 0);
+      background-size: 4px 4px;
+    }
+
+    /* Theme 18: Magical Aurora (Northern Lights Gradient Shift) */
+    .poster.theme-aurora {
+      background: linear-gradient(135deg, #03081e 0%, #0c2b3e 40%, #1c0e35 70%, #03081e 100%);
+      background-size: 400% 400%;
+      border-color: #10b981;
+      box-shadow: 0 25px 70px rgba(16, 185, 129, 0.25);
+      color: #ffffff;
+      font-family: 'Marcellus', serif;
+      animation: aurora-move 15s ease infinite alternate;
+    }
+    .theme-aurora h1 { color: #ffffff; font-family: 'Marcellus', serif; text-shadow: 0 0 15px rgba(16, 185, 129, 0.4); text-transform: uppercase; font-size: 2.3rem; letter-spacing: 0.08em; }
+    .theme-aurora h2 { color: #34d399; font-family: 'WindSong', cursive; font-size: 2.4rem; text-transform: none; margin: 4px 0 14px; }
+    .theme-aurora .scan { color: #10b981; text-shadow: 0 0 8px rgba(16,185,129,0.3); }
+    .theme-aurora .qr-container { border: 4px solid #10b981; background: #03081e; box-shadow: 0 0 20px rgba(16, 185, 129, 0.2); }
+    .theme-aurora p { color: #a7f3d0; font-family: 'Lora', serif; }
+    .theme-aurora .url { color: #34d399; }
+    .theme-aurora .deco-star-1 { display: block; opacity: 0.6; left: 10%; top: 15%; color: #34d399; font-size: 1.2rem; animation: stars-twinkle 3s infinite; }
+    .theme-aurora .deco-star-2 { display: block; opacity: 0.6; right: 10%; bottom: 15%; color: #a7f3d0; font-size: 1.2rem; animation: stars-twinkle 4.2s infinite; }
+
+    /* Theme 19: Boho Meadow (Sage & Clay Geometric Arches) */
+    .poster.theme-boho-meadow {
+      background: radial-gradient(circle at top, #faf7f2 0%, #f3ead8 100%);
+      border-color: #8c7b60;
+      box-shadow: 0 25px 60px rgba(140, 123, 96, 0.15);
+      font-family: 'Lora', Georgia, serif;
+      animation: boho-sway 10s infinite ease-in-out;
+    }
+    .theme-boho-meadow h1 { color: #4a3e3d; font-family: 'Lora', serif; font-weight: 800; letter-spacing: -0.02em; }
+    .theme-boho-meadow h2 { color: #c27d58; font-style: italic; font-family: 'Lora', serif; margin: 8px 0 16px; }
+    .theme-boho-meadow .scan { color: #8c7b60; font-family: 'Lora', serif; font-weight: 700; }
+    .theme-boho-meadow .qr-container { border: 4px solid #d4c2ab; background: #ffffff; }
+    .theme-boho-meadow p { color: #7a6e67; }
+    .theme-boho-meadow .url { color: #c27d58; }
+    .theme-boho-meadow .svg-arch {
+      display: block;
+      opacity: 0.08;
+      top: 30%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 360px;
+      height: 380px;
+      color: #c27d58;
+    }
+    .theme-boho-meadow .deco-leaf-1 { display: block; opacity: 0.6; left: 12%; top: 15%; font-size: 1.4rem; filter: sepia(0.6) hue-rotate(-20deg); animation: float 6s infinite; }
+    .theme-boho-meadow .deco-leaf-2 { display: block; opacity: 0.6; right: 12%; bottom: 15%; font-size: 1.4rem; filter: sepia(0.6) hue-rotate(-20deg); animation: float 5s infinite; }
+
+    /* Theme 20: Cherry Blossom (Sakura Petal Breeze) */
+    .poster.theme-cherry-blossom {
+      background: radial-gradient(circle at center, #fff5f6 0%, #ffd1d7 100%);
+      border-color: #f43f5e;
+      box-shadow: 0 25px 70px rgba(244, 63, 94, 0.15);
+      font-family: 'Montserrat', sans-serif;
+      animation: warm-pulse 8s ease-in-out infinite;
+    }
+    .theme-cherry-blossom h1 { color: #9f1239; font-family: 'WindSong', cursive; font-size: 3.8rem; font-weight: normal; margin-bottom: 2px; }
+    .theme-cherry-blossom h2 { color: #f43f5e; font-family: 'Lora', serif; font-weight: 700; font-style: italic; margin-top: 0; }
+    .theme-cherry-blossom .scan { color: #e11d48; font-weight: 800; }
+    .theme-cherry-blossom .qr-container { border: 4px solid #fda4af; animation: float 5.5s ease-in-out infinite; }
+    .theme-cherry-blossom p { color: #881337; font-family: 'Lora', serif; }
+    .theme-cherry-blossom .url { color: #be185d; }
+    .theme-cherry-blossom .sakura-container {
+      display: block;
+    }
+
+    /* Theme 21: Royal Emerald (Regal Gold Corner Filigree) */
+    .poster.theme-royal-emerald {
+      background: linear-gradient(135deg, #022c22 0%, #064e3b 100%);
+      border-color: #fbbf24;
+      box-shadow: 0 25px 70px rgba(6, 78, 59, 0.4);
+      color: #faf5e8;
+      font-family: 'Cinzel', serif;
+      animation: gentle-sway 11s ease-in-out infinite;
+    }
+    .theme-royal-emerald h1 { color: #fbbf24; font-family: 'Cinzel', serif; font-weight: 900; text-shadow: 0 2px 10px rgba(251,191,36,0.3); }
+    .theme-royal-emerald h2 { color: #ffffff; font-family: 'Marcellus', serif; text-transform: uppercase; letter-spacing: 0.08em; }
+    .theme-royal-emerald .scan { color: #fbbf24; font-family: 'Cinzel', serif; letter-spacing: 0.05em; }
+    .theme-royal-emerald .qr-container { border: 4px solid #fbbf24; background: #022c22; }
+    .theme-royal-emerald p { color: #a7f3d0; }
+    .theme-royal-emerald .url { color: #fbbf24; }
+    .theme-royal-emerald .svg-corner-tl { display: block; opacity: 0.25; top: 15px; left: 15px; width: 60px; color: #fbbf24; }
+    .theme-royal-emerald .svg-corner-tr { display: block; opacity: 0.25; top: 15px; right: 15px; width: 60px; color: #fbbf24; }
+    .theme-royal-emerald .svg-corner-bl { display: block; opacity: 0.25; bottom: 15px; left: 15px; width: 60px; color: #fbbf24; }
+    .theme-royal-emerald .svg-corner-br { display: block; opacity: 0.25; bottom: 15px; right: 15px; width: 60px; color: #fbbf24; }
+
+    /* Theme 22: Modern Sleek Arch (Minimal Architectural Shadow) */
+    .poster.theme-minimal-arch {
+      background: #faf9f6;
+      border-color: #18181b;
+      border-width: 10px;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.08);
+      font-family: 'Montserrat', sans-serif;
+    }
+    .theme-minimal-arch h1 { color: #18181b; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; font-size: 2.2rem; }
+    .theme-minimal-arch h2 { color: #52525b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; font-size: 1.1rem; }
+    .theme-minimal-arch .scan { color: #18181b; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; }
+    .theme-minimal-arch .qr-container { border: 4px solid #18181b; background: #ffffff; border-radius: 0; }
+    .theme-minimal-arch p { color: #52525b; font-family: 'Plus Jakarta Sans', sans-serif; }
+    .theme-minimal-arch .url { color: #18181b; font-weight: 700; text-decoration: underline; }
+    .theme-minimal-arch .svg-arch {
+      display: block;
+      opacity: 0.12;
+      top: 26%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 320px;
+      height: 400px;
+      color: #18181b;
+    }
+
+    /* Theme 23: Baroque Gold (Deep Burgundy Luxury Ornaments) */
+    .poster.theme-baroque-gold {
+      background: radial-gradient(circle, #58051a 0%, #2e010c 100%);
+      border-color: #d4af37;
+      border-width: 15px;
+      border-style: double;
+      box-shadow: 0 25px 70px rgba(46, 1, 12, 0.4);
+      color: #faf5e8;
+      font-family: 'Cinzel', serif;
+      animation: warm-pulse 6s infinite ease-in-out;
+    }
+    .theme-baroque-gold h1 { color: #d4af37; font-family: 'Great Vibes', cursive; font-size: 4rem; text-transform: none; text-shadow: 0 2px 10px rgba(212,175,55,0.2); }
+    .theme-baroque-gold h2 { color: #ffffff; font-family: 'Cinzel', serif; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; margin-top: -10px; }
+    .theme-baroque-gold .scan { color: #d4af37; font-family: 'Cinzel', serif; letter-spacing: 0.08em; text-transform: uppercase; }
+    .theme-baroque-gold .qr-container { border: 4px solid #d4af37; background: #2e010c; padding: 18px; }
+    .theme-baroque-gold p { color: #fecdd3; font-family: 'Lora', serif; }
+    .theme-baroque-gold .url { color: #d4af37; font-weight: bold; }
+    .theme-baroque-gold .svg-corner-tl { display: block; opacity: 0.35; top: 12px; left: 12px; width: 50px; color: #d4af37; }
+    .theme-baroque-gold .svg-corner-tr { display: block; opacity: 0.35; top: 12px; right: 12px; width: 50px; color: #d4af37; }
+    .theme-baroque-gold .svg-corner-bl { display: block; opacity: 0.35; bottom: 12px; left: 12px; width: 50px; color: #d4af37; }
+    .theme-baroque-gold .svg-corner-br { display: block; opacity: 0.35; bottom: 12px; right: 12px; width: 50px; color: #d4af37; }
+
+    /* Theme 24: Retro 70s Disco (Groovy Magenta & Yellow Waves) */
+    .poster.theme-retro-70s {
+      background: #fef3c7;
+      border-color: #db2777;
+      box-shadow: 0 25px 70px rgba(219, 39, 119, 0.15);
+      font-family: 'DM Serif Display', Georgia, serif;
+    }
+    .theme-retro-70s h1 { color: #9d174d; font-family: 'DM Serif Display', serif; font-size: 3.2rem; font-weight: 800; letter-spacing: -0.02em; animation: retro-wiggle 4s infinite ease-in-out; }
+    .theme-retro-70s h2 { color: #d97706; font-family: 'DM Serif Display', serif; font-size: 1.8rem; margin: 4px 0 14px; }
+    .theme-retro-70s .scan { color: #db2777; font-family: 'DM Serif Display', serif; }
+    .theme-retro-70s .qr-container { border: 5px solid #d97706; background: #ffffff; border-radius: 30px; animation: float 6.5s infinite; }
+    .theme-retro-70s p { color: #9d174d; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; }
+    .theme-retro-70s .url { color: #db2777; font-weight: bold; }
+    .theme-retro-70s .retro-waves {
+      display: block;
+      opacity: 0.1;
+    }
+    .theme-retro-70s .wave {
+      position: absolute;
+      width: 200%;
+      height: 200%;
+      background: repeating-linear-gradient(45deg, #f59e0b, #f59e0b 20px, #db2777 20px, #db2777 40px);
+      left: -50%;
+      top: -50%;
+      animation: waves-move 20s linear infinite;
+    }
+
+
+    /* Wave animations and keyframes */
+    @keyframes waves-move {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes retro-wiggle {
+      0%, 100% { transform: rotate(-1deg); }
+      50% { transform: rotate(1deg); }
+    }
+    @keyframes aurora-move {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    @keyframes scanline-move {
+      0% { top: 0%; }
+      100% { top: 100%; }
+    }
+    @keyframes fall-and-sway {
+      0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0; }
+      10% { opacity: 0.8; }
+      90% { opacity: 0.8; }
+      100% { transform: translateY(600px) translateX(60px) rotate(360deg); opacity: 0; }
+    }
+    @keyframes rotate-sparkle {
+      0% { transform: rotate(0deg) scale(1); opacity: 0.5; }
+      50% { transform: rotate(180deg) scale(1.2); opacity: 0.8; }
+      100% { transform: rotate(360deg) scale(1); opacity: 0.5; }
+    }
+
+
+    /* ==========================================================================
+       CONTROL BAR & MENU
+       ========================================================================== */
+    .control-bar {
+      max-width: 840px;
+      width: 100%;
+      margin: 20px auto 0;
+      padding: 16px 24px;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+    }
+    
+    .selector-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    
+    .theme-btn {
+      border: 0;
+      border-radius: 99px;
+      padding: 8px 14px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      background: #f1f5f9;
+      color: #475569;
+      transition: all 0.2s ease;
+    }
+    
+    .theme-btn:hover {
+      background: #e2e8f0;
+      transform: translateY(-1px);
+    }
+    
+    .theme-btn.active {
+      background: #b83280;
+      color: white;
+      box-shadow: 0 4px 12px rgba(184, 50, 128, 0.20);
+    }
+    
+    .btn {
+      border: 0;
+      border-radius: 999px;
+      padding: 10px 20px;
+      background: linear-gradient(135deg, #b83280, #ff7a59);
+      color: white;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(184, 50, 128, 0.25);
+    }
+
     @media print {
-      body { background:#fff; }
-      .actions { display:none; }
-      .page { padding:0; }
-      .poster { width:100vw; min-height:100vh; border-radius:0; box-shadow:none; }
+      body { background: white !important; }
+      .control-bar { display: none !important; }
+      .page { padding: 0; }
+      .poster { 
+        width: 100vw; 
+        min-height: 100vh; 
+        border-radius: 0; 
+        box-shadow: none !important; 
+        border-width: 24px; 
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="actions"><button onclick="window.print()">Print / Save PDF</button></div>
+
+  <!-- Floating theme selection control panel -->
+  <div class="control-bar">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800;">Custom Wedding QR Poster Generator</h3>
+        <p style="margin: 2px 0 0; font-size: 0.85rem; color: #64748b;">Select from 24 customizable design themes below, then print or save as PDF.</p>
+      </div>
+      <button class="btn" onclick="window.print()">🖨️ Print / Save PDF</button>
+    </div>
+    
+    <div class="selector-row">
+      <button class="theme-btn active" data-theme="theme-royal-rose">💍 Royal Rose</button>
+      <button class="theme-btn" data-theme="theme-minimal-dark">🌌 Neon Dark</button>
+      <button class="theme-btn" data-theme="theme-botanical">🌿 Botanical</button>
+      <button class="theme-btn" data-theme="theme-sunset">🌅 Sunset Bliss</button>
+      <button class="theme-btn" data-theme="theme-vintage">📜 Vintage Craft</button>
+      <button class="theme-btn" data-theme="theme-starry">✨ Starry Night</button>
+      <button class="theme-btn" data-theme="theme-lavender">💜 Lavender Love</button>
+      <button class="theme-btn" data-theme="theme-marble">🏛️ Luxury Marble</button>
+      <button class="theme-btn" data-theme="theme-bollywood">💃 Bollywood Glam</button>
+      <button class="theme-btn" data-theme="theme-indigo">🔵 Modern Indigo</button>
+      <button class="theme-btn" data-theme="theme-boho">🌾 Boho Terracotta</button>
+      <button class="theme-btn" data-theme="theme-ocean">🌊 Ocean Breeze</button>
+      <button class="theme-btn" data-theme="theme-midnight-forest">🌲 Midnight Forest</button>
+      <button class="theme-btn" data-theme="theme-cyberpunk">⚡ Cyberpunk Neon</button>
+      <button class="theme-btn" data-theme="theme-golden-hour">☀️ Golden Hour</button>
+      <button class="theme-btn" data-theme="theme-rose-gold">🌸 Rose Gold</button>
+      <button class="theme-btn" data-theme="theme-retro-gazette">📰 Retro Gazette</button>
+      <button class="theme-btn" data-theme="theme-aurora">🌌 Magical Aurora</button>
+      <button class="theme-btn" data-theme="theme-boho-meadow">🌾 Boho Meadow</button>
+      <button class="theme-btn" data-theme="theme-cherry-blossom">💮 Cherry Blossom</button>
+      <button class="theme-btn" data-theme="theme-royal-emerald">👑 Royal Emerald</button>
+      <button class="theme-btn" data-theme="theme-minimal-arch">🏛️ Sleek Arch</button>
+      <button class="theme-btn" data-theme="theme-baroque-gold">⚜️ Baroque Gold</button>
+      <button class="theme-btn" data-theme="theme-retro-70s">🕺 Retro 70s</button>
+    </div>
+  </div>
+
   <main class="page">
-    <section class="poster">
+    <section class="poster theme-royal-rose">
+      <!-- Premium Visual Decorations & Keyframe Animation Elements -->
+      <div class="decorations">
+        <!-- Floating emoji/symbols for specific theme styles -->
+        <span class="deco-leaf deco-leaf-1">🍃</span>
+        <span class="deco-leaf deco-leaf-2">🌿</span>
+        <span class="deco-flower deco-flower-1">🌸</span>
+        <span class="deco-flower deco-flower-2">💮</span>
+        <span class="deco-sparkle deco-sparkle-1">✨</span>
+        <span class="deco-sparkle deco-sparkle-2">✨</span>
+        <span class="deco-heart deco-heart-1">💖</span>
+        <span class="deco-star deco-star-1">⭐</span>
+        <span class="deco-star deco-star-2">⭐</span>
+        
+        <!-- High-fidelity vector SVG decorations -->
+        <!-- Botanical Vines -->
+        <svg class="svg-decor svg-vine-left" viewBox="0 0 120 200" width="100%" height="100%"><path d="M10,10 Q40,80 15,140 T50,220" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M22,45 C35,40 40,55 25,60 C15,62 10,48 22,45 Z" fill="currentColor"/><path d="M12,95 C-2,90 -8,105 5,110 C15,112 18,98 12,95 Z" fill="currentColor"/><path d="M25,160 C38,150 48,165 30,175 C20,180 18,165 25,160 Z" fill="currentColor"/></svg>
+        <svg class="svg-decor svg-vine-right" viewBox="0 0 120 200" width="100%" height="100%"><path d="M110,10 Q80,80 105,140 T70,220" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M98,45 C85,40 80,55 95,60 C105,62 110,48 98,45 Z" fill="currentColor"/><path d="M108,95 C122,90 128,105 115,110 C105,112 102,98 108,95 Z" fill="currentColor"/><path d="M95,160 C82,150 72,165 90,175 C100,180 102,165 95,160 Z" fill="currentColor"/></svg>
+        
+        <!-- Wedding Rings -->
+        <svg class="svg-decor svg-rings" viewBox="0 0 100 60" width="100%" height="100%"><circle cx="38" cy="30" r="20" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="62" cy="30" r="20" fill="none" stroke="currentColor" stroke-width="3"/></svg>
+        
+        <!-- Classical Ornate Corners -->
+        <svg class="svg-decor svg-corner-tl" viewBox="0 0 100 100" width="100%" height="100%"><path d="M10,90 L10,10 L90,10 M20,80 L20,20 L80,20" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        <svg class="svg-decor svg-corner-tr" viewBox="0 0 100 100" width="100%" height="100%"><path d="M90,90 L90,10 L10,10 M80,80 L80,20 L20,20" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        <svg class="svg-decor svg-corner-bl" viewBox="0 0 100 100" width="100%" height="100%"><path d="M10,10 L10,90 L90,90 M20,20 L20,80 L80,80" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        <svg class="svg-decor svg-corner-br" viewBox="0 0 100 100" width="100%" height="100%"><path d="M90,10 L90,90 L10,90 M80,20 L80,80 L20,80" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        
+        <!-- Architectural Arch Backdrop -->
+        <svg class="svg-decor svg-arch" viewBox="0 0 100 150" preserveAspectRatio="none" width="100%" height="100%"><path d="M0,150 L0,50 A50,50 0 0,1 100,50 L100,150 Z" fill="currentColor"/></svg>
+        
+        <!-- Theme-specific Animated Overlays -->
+        <div class="cyber-grid"></div>
+        <div class="cyber-scanline"></div>
+        <div class="news-halftone"></div>
+        
+        <div class="retro-waves">
+          <div class="wave"></div>
+        </div>
+
+        <div class="sakura-container">
+          <span class="sakura-petal petal-1">🌸</span>
+          <span class="sakura-petal petal-2">🌸</span>
+          <span class="sakura-petal petal-3">🌸</span>
+          <span class="sakura-petal petal-4">🌸</span>
+          <span class="sakura-petal petal-5">🌸</span>
+        </div>
+      </div>
+
       <h1>Share Your Memories</h1>
       <h2><%= event.title %></h2>
-      <img class="qr" src="<%= qrDataUrl %>" alt="Wedding upload QR">
+      <div class="qr-container">
+        <img class="qr" src="<%= qrDataUrl %>" alt="Wedding upload QR">
+      </div>
       <div class="scan">Scan QR & Upload Photos</div>
       <p>No login required. Photos/videos couple ke private approval dashboard me jayenge.</p>
       <p class="url"><%= uploadLink %></p>
     </section>
   </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const poster = document.querySelector('.poster');
+      const buttons = document.querySelectorAll('.theme-btn');
+      
+      const themeBackgrounds = {
+        'theme-royal-rose': '#f8fafc',
+        'theme-minimal-dark': '#090d16',
+        'theme-botanical': '#fafdfb',
+        'theme-sunset': '#fffbf0',
+        'theme-vintage': '#faf6ee',
+        'theme-starry': '#060818',
+        'theme-lavender': '#faf7ff',
+        'theme-marble': '#eceef2',
+        'theme-bollywood': '#fffaf5',
+        'theme-indigo': '#eef2ff',
+        'theme-boho': '#fafaf9',
+        'theme-ocean': '#e0f7fa',
+        'theme-midnight-forest': '#030f0a',
+        'theme-cyberpunk': '#090011',
+        'theme-golden-hour': '#fff7ed',
+        'theme-rose-gold': '#fff1f2',
+        'theme-retro-gazette': '#f4ebd9',
+        'theme-aurora': '#050811',
+        'theme-boho-meadow': '#faf7f2',
+        'theme-cherry-blossom': '#fff5f6',
+        'theme-royal-emerald': '#021a14',
+        'theme-minimal-arch': '#faf9f6',
+        'theme-baroque-gold': '#3b0212',
+        'theme-retro-70s': '#fef3c7'
+      };
+
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          // Remove active class from all buttons
+          buttons.forEach(b => b.classList.remove('active'));
+          // Add active class to clicked button
+          btn.classList.add('active');
+          
+          // Clear all theme classes from poster
+          poster.className = 'poster';
+          // Add selected theme class
+          const theme = btn.getAttribute('data-theme');
+          poster.classList.add(theme);
+          
+          // Dynamically change body background to match selected theme vibe
+          document.body.style.background = themeBackgrounds[theme] || '#f8fafc';
+        });
+      });
+    });
+  </script>
 </body>
 </html>

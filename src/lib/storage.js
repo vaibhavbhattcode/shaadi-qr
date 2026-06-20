@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { Readable } from 'node:stream';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -10,6 +11,8 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } fro
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { stripMetadata } from './metadata.js';
 import sharp from 'sharp';
+import { detectNudity } from './moderation.js';
+import { getValidAccessToken, uploadFile, downloadFile } from './google-drive.js';
 
 export const s3Client = (config.storageProvider === 'r2' || config.storageProvider === 's3')
   ? new S3Client({
@@ -209,18 +212,31 @@ export async function validateAndStoreUploads({ event, folderId, uploaderName, u
   const insert = db.prepare(`
     INSERT INTO media (
       id, event_id, folder_id, uploader_name, uploader_side, original_name, stored_name, storage_path,
-      mime_type, media_type, size_bytes, sha256, status, created_at, thumbnail_path
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+      mime_type, media_type, size_bytes, sha256, status, created_at, thumbnail_path, is_nsfw
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   for (const item of candidates) {
     const mediaId = randomId(12);
     const storedName = `${mediaId}${item.detected.extension}`;
     const sanitizedName = sanitizeOriginalName(item.file.originalname);
-    
-    const relativePath = s3Client
-      ? `events/${event.id}/${folderSlug}/${mediaId}-${sanitizedName}`
-      : path.join('media', String(event.id), storedName).replaceAll('\\', '/');
+
+    let isNsfw = 0;
+    let classification = { isNsfw: false, confidence: 0, reason: 'Not analyzed' };
+    if (item.detected.mediaType === 'image') {
+      classification = await detectNudity(item.file.path, sanitizedName);
+      if (classification.isNsfw) {
+        isNsfw = 1;
+      }
+    }
+
+    const relativePath = isNsfw
+      ? (s3Client
+          ? `flagged/${event.id}/${mediaId}-${sanitizedName}`
+          : path.join('media', 'flagged', String(event.id), storedName).replaceAll('\\', '/'))
+      : (s3Client
+          ? `events/${event.id}/${folderSlug}/${mediaId}-${sanitizedName}`
+          : path.join('media', String(event.id), storedName).replaceAll('\\', '/'));
       
     const destination = s3Client ? null : resolveStoragePath(relativePath);
     try {
@@ -265,8 +281,34 @@ export async function validateAndStoreUploads({ event, folderId, uploaderName, u
     }
 
     let saved = false;
+    let finalStoragePath = relativePath;
     try {
-      if (s3Client) {
+      if (event.storage_provider === 'google_drive') {
+        const configData = JSON.parse(event.storage_config || '{}');
+        if (configData.mock) {
+          const destDir = path.dirname(destination);
+          await fsp.mkdir(destDir, { recursive: true });
+          await fsp.rename(item.file.path, destination);
+          saved = true;
+          finalStoragePath = relativePath;
+          console.log(`[GOOGLE DRIVE MOCK] Saved file locally: ${destination}`);
+        } else {
+          const accessToken = await getValidAccessToken(event.id);
+          const fileBuffer = await fsp.readFile(item.file.path);
+          
+          const fileId = await uploadFile({
+            name: storedName,
+            mimeType: item.detected.mime,
+            buffer: fileBuffer,
+            accessToken
+          });
+          
+          await safeUnlink(item.file.path);
+          saved = true;
+          finalStoragePath = fileId;
+          console.log(`[GOOGLE DRIVE] Successfully uploaded file ID: ${fileId}`);
+        }
+      } else if (s3Client) {
         const fileStream = fs.createReadStream(item.file.path);
         await s3Client.send(new PutObjectCommand({
           Bucket: config.s3.bucketName,
@@ -276,11 +318,13 @@ export async function validateAndStoreUploads({ event, folderId, uploaderName, u
         }));
         await safeUnlink(item.file.path);
         saved = true;
+        finalStoragePath = relativePath;
       } else {
-        const eventDir = path.join(MEDIA_ROOT, String(event.id));
-        await fsp.mkdir(eventDir, { recursive: true });
+        const destDir = path.dirname(destination);
+        await fsp.mkdir(destDir, { recursive: true });
         await fsp.rename(item.file.path, destination);
         saved = true;
+        finalStoragePath = relativePath;
       }
       
       insert.run(
@@ -291,14 +335,26 @@ export async function validateAndStoreUploads({ event, folderId, uploaderName, u
         uploaderSide || null,
         sanitizedName,
         storedName,
-        relativePath,
+        finalStoragePath,
         item.detected.mime,
         item.detected.mediaType,
         item.file.size,
         item.sha256,
+        isNsfw ? 'rejected' : 'pending',
         nowIso(),
-        thumbnailPath
+        thumbnailPath,
+        isNsfw
       );
+
+      if (isNsfw) {
+        logAudit({
+          actorUserId: null,
+          eventId: event.id,
+          action: 'media_flagged_nsfw',
+          metadata: { mediaId, confidence: classification.confidence, reason: classification.reason },
+          ip: req ? req.ip : null
+        });
+      }
       accepted.push({ id: mediaId, name: sanitizedName, size: item.file.size });
     } catch (error) {
       if (saved && !s3Client) await safeUnlink(destination);
@@ -382,6 +438,39 @@ export function contentDispositionInline(filename) {
 }
 
 export async function sendMediaFile(res, mediaRow, options = {}) {
+  const event = db.prepare('SELECT storage_provider, storage_config FROM events WHERE id = ?').get(mediaRow.event_id);
+  
+  if (event && event.storage_provider === 'google_drive') {
+    const configData = JSON.parse(event.storage_config || '{}');
+    if (configData.mock) {
+      const abs = resolveStoragePath(mediaRow.storage_path);
+      res.setHeader('Content-Type', mediaRow.mime_type);
+      res.setHeader('Content-Length', mediaRow.size_bytes);
+      res.setHeader('Content-Disposition', options.download ? `attachment; filename="${sanitizeOriginalName(mediaRow.original_name)}"` : contentDispositionInline(mediaRow.original_name));
+      res.setHeader('Cache-Control', options.private ? 'private, max-age=300' : 'public, max-age=3600');
+      return res.sendFile(abs);
+    } else {
+      try {
+        const accessToken = await getValidAccessToken(mediaRow.event_id);
+        const driveResponse = await downloadFile({ fileId: mediaRow.storage_path, accessToken });
+        
+        res.setHeader('Content-Type', mediaRow.mime_type);
+        const cl = driveResponse.headers.get('content-length');
+        if (cl) res.setHeader('Content-Length', cl);
+        
+        res.setHeader('Content-Disposition', options.download 
+          ? `attachment; filename="${sanitizeOriginalName(mediaRow.original_name)}"` 
+          : contentDispositionInline(mediaRow.original_name));
+        res.setHeader('Cache-Control', 'private, max-age=300');
+        
+        return Readable.fromWeb(driveResponse.body).pipe(res);
+      } catch (err) {
+        console.error('[GOOGLE DRIVE SEND FILE ERROR]', err);
+        return res.status(500).send('Failed to stream file from Google Drive');
+      }
+    }
+  }
+
   if (s3Client) {
     const disposition = options.download
       ? `attachment; filename="${sanitizeOriginalName(mediaRow.original_name)}"`

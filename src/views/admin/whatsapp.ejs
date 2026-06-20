@@ -1,0 +1,85 @@
+<div class="admin-toolbar">
+  <div>
+    <span class="eyebrow">System Services</span>
+    <h1>WhatsApp Gateway</h1>
+    <p>Baileys library based connection manage karein. Linked device se guests ko OTP aur alerts message direct send hote hain.</p>
+  </div>
+</div>
+
+<section class="grid grid-2" style="margin-top: 24px; align-items: flex-start; gap: 24px;">
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Connection Status</h2>
+      <p>Live pairing state metrics.</p>
+    </div>
+
+    <div class="info-list" style="margin: 20px 0;">
+      <div>
+        <span>Connection State</span>
+        <strong>
+          <% if (status === 'connected') { %>
+            <span class="badge approved" style="font-size: 0.9rem; padding: 6px 12px;">● Connected</span>
+          <% } else if (status === 'connecting') { %>
+            <span class="badge pending" style="font-size: 0.9rem; padding: 6px 12px;">⏳ Connecting...</span>
+          <% } else { %>
+            <span class="badge rejected" style="font-size: 0.9rem; padding: 6px 12px;">✕ Disconnected</span>
+          <% } %>
+        </strong>
+      </div>
+      <% if (status === 'connected' && pairedNumber) { %>
+        <div>
+          <span>Linked Phone Number</span>
+          <strong class="mono" style="font-size: 1.1rem; color: var(--brand);">+<%= pairedNumber %></strong>
+        </div>
+      <% } %>
+      <div>
+        <span>Auth Mode</span>
+        <strong>Baileys (Free Multi-Device Web Sim)</strong>
+      </div>
+      <div>
+        <span>Credentials Path</span>
+        <code class="mono" style="font-size: 0.8rem; background: #fff5fa; padding: 3px 6px; border-radius: 6px;">storage/whatsapp-auth/</code>
+      </div>
+    </div>
+
+    <% if (status === 'connected') { %>
+      <div class="divider"></div>
+      <form action="/admin/whatsapp/logout" method="post" onsubmit="return confirm('Are you sure you want to disconnect this WhatsApp number?');">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="btn danger" style="width: 100%;">Disconnect Number</button>
+      </form>
+    <% } else { %>
+      <div style="display: flex; gap: 10px; margin-top: 14px;">
+        <a href="/admin/whatsapp" class="btn" style="width: 100%;">Refresh Status</a>
+      </div>
+    <% } %>
+  </div>
+
+  <div class="panel" style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 380px;">
+    <% if (status === 'connected') { %>
+      <div style="font-size: 5rem; margin-bottom: 12px;">✅</div>
+      <h3>WhatsApp is Connected!</h3>
+      <p class="muted" style="max-width: 320px; font-size: 0.95rem;">Platform is fully authenticated. OTP messages will be successfully routed via +<%= pairedNumber %>.</p>
+    <% } else if (status === 'connecting' && qrDataUrl) { %>
+      <div class="panel" style="background: white; border: 1px solid var(--border); display: inline-block; padding: 14px; border-radius: var(--radius-sm); box-shadow: var(--shadow-soft);">
+        <img src="<%= qrDataUrl %>" alt="Scan QR Code" style="display: block; width: 280px; height: 280px;" />
+      </div>
+      <h3 style="margin-top: 18px; margin-bottom: 6px;">Link WhatsApp Device</h3>
+      <p class="muted" style="max-width: 380px; font-size: 0.9rem; line-height: 1.5;">Apne mobile me WhatsApp open karein -> Settings -> Linked Devices (Linked Devices) -> Scan QR Code par click karein aur is image ko scan karein.</p>
+      <p class="hint" style="color: var(--brand); font-weight: 800; margin-top: 8px;">⏳ QR codes change automatically. Please scan promptly.</p>
+    <% } else if (status === 'connecting') { %>
+      <div class="progress" style="width: 80px; margin-bottom: 16px;"><span></span></div>
+      <h3>Generating QR Code...</h3>
+      <p class="muted" style="max-width: 320px;">Fetching new credentials key from WhatsApp server. Pls wait a few seconds and refresh if it doesn't appear.</p>
+      <a href="/admin/whatsapp" class="btn secondary small" style="margin-top: 12px;">Reload Screen</a>
+    <% } else { %>
+      <div style="font-size: 4rem; margin-bottom: 12px; filter: grayscale(1);">🔌</div>
+      <h3>Gateway Offline</h3>
+      <p class="muted" style="max-width: 340px; font-size: 0.95rem; margin-bottom: 18px;">Authentication session is closed. Click below to initialize a new login connection loop.</p>
+      <form action="/admin/whatsapp/logout" method="post" style="width: 100%; max-width: 260px;">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="btn" style="width: 100%;">Initialize Connection</button>
+      </form>
+    <% } %>
+  </div>
+</section>

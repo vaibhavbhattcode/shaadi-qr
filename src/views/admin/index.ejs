@@ -24,6 +24,58 @@
   <article class="stat-card"><span>Suspended Users</span><strong><%= stats.suspendedUsers %></strong><small>Blocked from login/uploads</small></article>
 </section>
 
+<section class="grid grid-2" style="margin-top: 24px; gap: 24px; align-items: stretch;">
+  <!-- Financial Breakdown -->
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>Revenue by Plan</h2>
+        <p>Earnings breakdown by plan type.</p>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 16px; margin-top: 12px;">
+      <% ['Basic', 'Premium', 'Royal'].forEach(planName => { %>
+        <% const record = stats.plansBreakdown.find(p => p.plan_name.toLowerCase() === planName.toLowerCase()) || { count: 0, revenue: 0 }; %>
+        <% const pct = stats.paymentRevenue > 0 ? Math.round((record.revenue / stats.paymentRevenue) * 100) : 0; %>
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: bold; margin-bottom: 6px;">
+            <span><%= planName %> Plan (<%= record.count %> Sales)</span>
+            <span class="mono">₹<%= record.revenue.toLocaleString('en-IN') %> (<%= pct %>%)</span>
+          </div>
+          <div style="background: var(--border); height: 10px; border-radius: 99px; overflow: hidden;">
+            <div style="background: linear-gradient(90deg, #b83280, #ff7a59); width: <%= pct %>%; height: 100%; border-radius: 99px;"></div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+
+  <!-- Subscription Plan Distribution -->
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>Active Subscriptions</h2>
+        <p>Wedding events distribution across plans.</p>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 16px; margin-top: 12px;">
+      <% ['basic', 'premium', 'royal'].forEach(planSlug => { %>
+        <% const record = stats.eventPlansBreakdown.find(p => p.plan === planSlug) || { count: 0 }; %>
+        <% const pct = stats.eventCount > 0 ? Math.round((record.count / stats.eventCount) * 100) : 0; %>
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: bold; margin-bottom: 6px;">
+            <span style="text-transform: capitalize;"><%= planSlug %> Package</span>
+            <span class="mono"><%= record.count %> Events (<%= pct %>%)</span>
+          </div>
+          <div style="background: var(--border); height: 10px; border-radius: 99px; overflow: hidden;">
+            <div style="background: linear-gradient(90deg, #319795, #4fd1c5); width: <%= pct %>%; height: 100%; border-radius: 99px;"></div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</section>
+
 <section class="grid grid-2" style="margin-top:24px; align-items:start;">
   <div class="panel">
     <div class="panel-head">

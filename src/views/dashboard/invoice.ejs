@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Invoice #<%= payment.id %> · ShaadiShots</title>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 40px;
+      color: #333;
+      background: #fff;
+    }
+    .invoice-box {
+      max-width: 800px;
+      margin: auto;
+      padding: 30px;
+      border: 1px solid #eee;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+      border-radius: 12px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 40px;
+    }
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #b83280;
+      text-decoration: none;
+    }
+    .invoice-title {
+      text-align: right;
+    }
+    .invoice-title h1 {
+      margin: 0;
+      font-size: 2rem;
+      font-weight: 900;
+      color: #555;
+      letter-spacing: -0.03em;
+    }
+    .invoice-title p {
+      margin: 5px 0 0;
+      color: #777;
+    }
+    .details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 40px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 24px;
+    }
+    .details h3 {
+      margin: 0 0 10px;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #888;
+    }
+    .details p {
+      margin: 4px 0;
+      line-height: 1.4;
+      font-size: 0.95rem;
+    }
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+    }
+    .table th, .table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    .table th {
+      background: #fdfafd;
+      color: #666;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+    }
+    .table td {
+      font-size: 0.95rem;
+    }
+    .total-box {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+    .total-table {
+      width: 250px;
+      font-size: 0.95rem;
+    }
+    .total-table tr td {
+      padding: 8px 12px;
+    }
+    .total-table tr.grand-total {
+      font-weight: 900;
+      font-size: 1.2rem;
+      border-top: 2px solid #b83280;
+      color: #b83280;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      font-weight: 800;
+      font-size: 0.8rem;
+      border-radius: 99px;
+      text-transform: uppercase;
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #bbf7d0;
+      margin-top: 10px;
+    }
+    .actions-bar {
+      max-width: 800px;
+      margin: 20px auto 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 20px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      border-radius: 99px;
+      border: 0;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn.primary {
+      background: linear-gradient(135deg, #b83280, #ff7a59);
+      color: white;
+    }
+    .btn.secondary {
+      background: white;
+      border: 1px solid #ccc;
+      color: #555;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 60px;
+      color: #999;
+      font-size: 0.85rem;
+    }
+
+    @media print {
+      body {
+        padding: 0;
+      }
+      .invoice-box {
+        border: 0;
+        box-shadow: none;
+        padding: 0;
+      }
+      .actions-bar {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="invoice-box">
+    <!-- Header -->
+    <div class="header">
+      <div>
+        <a href="/" class="logo">💍 ShaadiShots</a>
+        <p style="margin: 5px 0 0; color: #777; font-size: 0.9rem;">Wedding Memories SaaS Portal</p>
+      </div>
+      <div class="invoice-title">
+        <h1>INVOICE</h1>
+        <p style="margin: 4px 0 0; font-family: monospace; font-size: 0.95rem; font-weight: bold; color: #b83280;">
+          INV-2026-<%= String(payment.id).padStart(5, '0') %>
+        </p>
+        <span class="status-badge">Paid</span>
+      </div>
+    </div>
+
+    <!-- Details -->
+    <div class="details">
+      <div>
+        <h3>Issued By</h3>
+        <p><strong>ShaadiShots Technologies Private Limited</strong></p>
+        <p>GSTIN: 27AASCS7421H1Z0</p>
+        <p>Tower B, Ground Floor, WebHub Park</p>
+        <p>Mumbai, Maharashtra - 400051</p>
+        <p>Support: <a href="mailto:support@shaadishots.com" style="color: inherit;">support@shaadishots.com</a></p>
+      </div>
+      <div>
+        <h3>Billed To</h3>
+        <p><strong><%= buyer.name %></strong></p>
+        <p>Email: <%= buyer.email %></p>
+        <% if (buyer.phone_number) { %>
+          <p>Phone: +<%= buyer.phone_number %></p>
+        <% } %>
+        <p style="margin-top: 15px;"><strong>Invoice Date:</strong> <%= helpers.formatDate(payment.created_at) %></p>
+        <p><strong>Payment Mode:</strong> <%= String(payment.provider).toUpperCase() %> (<%= payment.provider_payment_id || 'Cash/Manual' %>)</p>
+      </div>
+    </div>
+
+    <!-- Items Table -->
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th style="text-align: center; width: 80px;">Qty</th>
+          <th style="text-align: right; width: 140px;">Rate</th>
+          <th style="text-align: right; width: 140px;">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <strong>ShaadiShots <%= payment.plan_name %> Plan Upgrade</strong>
+            <div style="font-size: 0.85rem; color: #777; margin-top: 4px;">
+              Album Upgrade for Event: <em><%= eventTitle || 'Wedding Album' %></em>. Enhanced upload limits and secure verification storage.
+            </div>
+          </td>
+          <td style="text-align: center;">1</td>
+          <td style="text-align: right;"><%= payment.currency %> <%= (payment.amount / 1.18).toFixed(2) %></td>
+          <td style="text-align: right;"><%= payment.currency %> <%= (payment.amount / 1.18).toFixed(2) %></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Totals -->
+    <div class="total-box">
+      <table class="total-table">
+        <tr>
+          <td>Subtotal (Tax Excl.):</td>
+          <td style="text-align: right;"><%= payment.currency %> <%= (payment.amount / 1.18).toFixed(2) %></td>
+        </tr>
+        <tr>
+          <td>CGST (9%):</td>
+          <td style="text-align: right;"><%= payment.currency %> <%= (payment.amount * 0.09 / 1.18).toFixed(2) %></td>
+        </tr>
+        <tr>
+          <td>SGST (9%):</td>
+          <td style="text-align: right;"><%= payment.currency %> <%= (payment.amount * 0.09 / 1.18).toFixed(2) %></td>
+        </tr>
+        <tr class="grand-total">
+          <td>Total (Tax Incl.):</td>
+          <td style="text-align: right;"><%= payment.currency %> <%= payment.amount %>.00</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>This is a computer-generated tax invoice. No signature required.</p>
+      <p style="font-weight: bold; color: #555; margin-top: 10px;">Thank you for using ShaadiShots to preserve your wedding highlights!</p>
+    </div>
+  </div>
+
+  <!-- Print Action Buttons -->
+  <div class="actions-bar">
+    <button class="btn secondary" onclick="window.close()">← Close Window</button>
+    <button class="btn primary" onclick="window.print()">🖨️ Print Invoice</button>
+  </div>
+
+</body>
+</html>

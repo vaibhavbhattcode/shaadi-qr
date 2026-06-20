@@ -53,7 +53,7 @@ export function authContext(req, res, next) {
       audience: 'wedding-admin',
     });
     const user = db
-      .prepare('SELECT id, name, email, role, status, created_at, last_login_at, two_factor_secret, two_factor_enabled FROM users WHERE id = ?')
+      .prepare('SELECT id, name, email, role, status, phone_number, google_id, created_at, last_login_at, two_factor_secret, two_factor_enabled FROM users WHERE id = ?')
       .get(Number(payload.sub));
 
     if (user && user.status === 'active') {

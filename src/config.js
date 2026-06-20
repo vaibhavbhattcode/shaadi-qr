@@ -63,6 +63,10 @@ export const config = {
     keyId: process.env.RAZORPAY_KEY_ID || null,
     keySecret: process.env.RAZORPAY_KEY_SECRET || null,
   },
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID || null,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET || null,
+  },
 };
 
 export const PLAN_LIMITS = {

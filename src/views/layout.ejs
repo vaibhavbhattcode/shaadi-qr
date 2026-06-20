@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf-token" content="<%= csrfToken %>">
   <title><%= title ? `${title} · ${appName}` : appName %></title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     :root {
       --bg: #fff7f2;
@@ -92,6 +93,7 @@
     .alert { border-radius: 18px; padding: 13px 15px; margin-bottom: 18px; border: 1px solid; font-weight: 800; }
     .alert.success { background: #ecfdf5; color: #065f46; border-color: #bbf7d0; }
     .alert.error { background: #fff1f2; color: #9f1239; border-color: #fecdd3; }
+    .alert.warning { background: #fffbeb; color: #78350f; border-color: #fef3c7; }
     .badge { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 6px 10px; font-size: .82rem; font-weight: 900; background: #fff; border: 1px solid var(--border); color: var(--muted); text-transform: capitalize; width: fit-content; }
     .badge.pending { color: var(--gold); border-color: #f7df9e; background: #fffbeb; }
     .badge.approved { color: var(--green); border-color: #bbf7d0; background: #ecfdf5; }
@@ -198,6 +200,12 @@
     <%- include('partials/flash') %>
     <%- body %>
   </main>
-  <footer class="footer">Secure wedding memory collection SaaS · <%= appName %></footer>
+  <footer class="footer">
+    <div style="margin-bottom: 8px; font-weight: 800;">
+      <a href="/privacy" style="margin: 0 10px; color: var(--muted);">Privacy Policy</a> · 
+      <a href="/contact" style="margin: 0 10px; color: var(--muted);">Contact Us / Support</a>
+    </div>
+    <div>Secure wedding memory collection SaaS · <%= appName %></div>
+  </footer>
 </body>
 </html>

@@ -86,6 +86,7 @@ export function migrate() {
       approved_at TEXT,
       rejected_at TEXT,
       thumbnail_path TEXT,
+      is_nsfw INTEGER NOT NULL DEFAULT 0,
       FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
       FOREIGN KEY (folder_id) REFERENCES folders(id) ON DELETE CASCADE
     );
@@ -139,6 +140,16 @@ export function migrate() {
       blocked_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
+    CREATE TABLE IF NOT EXISTS otp_verifications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      phone_number TEXT NOT NULL,
+      code TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_otp_phone ON otp_verifications(phone_number);
+
     CREATE TABLE IF NOT EXISTS password_resets (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -183,6 +194,14 @@ export function migrate() {
   ensureColumn('events', 'storage_provider', "TEXT NOT NULL DEFAULT 'platform'");
   ensureColumn('events', 'storage_config', 'TEXT');
   ensureColumn('media', 'thumbnail_path', 'TEXT');
+  ensureColumn('users', 'phone_number', 'TEXT');
+  ensureColumn('users', 'google_id', 'TEXT');
+  ensureColumn('media', 'is_nsfw', 'INTEGER NOT NULL DEFAULT 0');
+
+  db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone ON users(phone_number) WHERE phone_number IS NOT NULL;
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google ON users(google_id) WHERE google_id IS NOT NULL;
+  `);
 
   // Seed default plans if empty
   const plansCount = db.prepare('SELECT COUNT(*) AS count FROM plans').get().count;

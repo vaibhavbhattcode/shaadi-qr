@@ -1,0 +1,45 @@
+<section class="card" style="max-width: 800px; margin: 40px auto; padding: 40px; line-height: 1.7;">
+  <span class="badge" style="margin-bottom: 12px;">Legal & Security</span>
+  <h1 style="font-size: 2.8rem; letter-spacing: -.05em; margin: 0 0 24px; line-height: 1.1;">Privacy Policy</h1>
+  
+  <p class="muted" style="font-size: 1.1rem; margin-bottom: 30px;">Last updated: June 20, 2026</p>
+
+  <p>Welcome to <strong><%= appName %></strong>. We are committed to protecting your personal information and your wedding memories. This Privacy Policy describes how we collect, use, and safeguard your data when you use our platform.</p>
+
+  <div class="divider"></div>
+
+  <h2 style="font-size: 1.5rem; letter-spacing: -.03em; margin: 30px 0 12px; color: var(--text);">1. Information We Collect</h2>
+  <p>We collect information in the following categories:</p>
+  <ul>
+    <li><strong>Account Information:</strong> When couples register, we collect their name, email address, password hash, phone number, and Google ID (if Google Sign-In is used).</li>
+    <li><strong>Event Details:</strong> Event titles, dates, venues, cities, and custom folder layouts.</li>
+    <li><strong>Media Uploads:</strong> Photos and videos uploaded by guests. We automatically strip JPEG EXIF metadata (including GPS location data) upon upload to protect guest privacy.</li>
+    <li><strong>Audit Logs:</strong> We log activity details (IP addresses, action names, timestamps) to monitor for security threats, fraud, or misuse.</li>
+  </ul>
+
+  <h2 style="font-size: 1.5rem; letter-spacing: -.03em; margin: 30px 0 12px; color: var(--text);">2. How We Use Your Information</h2>
+  <p>We use the collected information to:</p>
+  <ul>
+    <li>Provide, operate, and maintain the wedding memory collection platform.</li>
+    <li>Authenticate users and enforce plan limits (storage limits, file sizes).</li>
+    <li>Allow couples to moderate and manage guest uploads.</li>
+    <li>Prevent duplicate file uploads using secure cryptographic hash checks (SHA-256).</li>
+    <li>Secure the platform from spam using rate limits, IP blocklists, and CAPTCHAs.</li>
+  </ul>
+
+  <h2 style="font-size: 1.5rem; letter-spacing: -.03em; margin: 30px 0 12px; color: var(--text);">3. Storage and Data Retention</h2>
+  <p>All media uploaded to ShaadiShots is kept secure. Media files are stored either in a private directory on our local servers or inside secure cloud buckets (Amazon S3 or Cloudflare R2) depending on platform configuration. Media files are only public if the couple enables the public gallery. Deleted media files and deleted events are permanently removed from our active files immediately.</p>
+
+  <h2 style="font-size: 1.5rem; letter-spacing: -.03em; margin: 30px 0 12px; color: var(--text);">4. Sharing of Data</h2>
+  <p>We do not sell, trade, or rent personal data or wedding media to third parties. Payments are securely processed through Razorpay; we do not store full credit card details or payment credentials on our servers.</p>
+
+  <h2 style="font-size: 1.5rem; letter-spacing: -.03em; margin: 30px 0 12px; color: var(--text);">5. Security Measures</h2>
+  <p>We utilize multi-layer security protections including HTTPS, signed HTTP-only cookies, timing-safe CSRF checks, secure JWT verification, and Two-Factor Authentication (2FA) to ensure that only authorized owners can manage wedding content.</p>
+
+  <h2 style="font-size: 1.5rem; letter-spacing: -.03em; margin: 30px 0 12px; color: var(--text);">6. Your Rights</h2>
+  <p>Couples and users have the right to edit their accounts, download their entire album as a ZIP file, or delete their events at any time. For questions regarding privacy or to request manual deletion of guest data, please submit a request on our <a href="/contact">Contact Page</a>.</p>
+
+  <div style="margin-top: 40px; text-align: center;">
+    <a href="/" class="btn secondary">Back to home</a>
+  </div>
+</section>
