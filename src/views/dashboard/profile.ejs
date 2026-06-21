@@ -1,7 +1,7 @@
 <div class="admin-toolbar">
   <div>
     <span class="eyebrow">Account Settings</span>
-    <h1>Manage Profile</h1>
+    <h1 style="font-size: clamp(1.6rem, 4vw, 3.65rem);">Manage Profile</h1>
     <p>Apna name, email aur verify kiya hua WhatsApp phone number update karein, aur subscription payment invoices access karein.</p>
   </div>
 </div>
@@ -17,8 +17,10 @@
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     
     <div class="panel-head" style="margin-bottom: 8px;">
-      <h2>Profile Details</h2>
-      <p>Secure details management.</p>
+      <div>
+        <h2>Profile Details</h2>
+        <p>Secure details management.</p>
+      </div>
     </div>
 
     <label>Full Name
@@ -46,8 +48,10 @@
   <!-- Payment & Invoice History Panel -->
   <div class="panel">
     <div class="panel-head" style="margin-bottom: 12px;">
-      <h2>Billing & Invoices</h2>
-      <p>Album upgrade transactions history.</p>
+      <div>
+        <h2>Billing & Invoices</h2>
+        <p>Album upgrade transactions history.</p>
+      </div>
     </div>
 
     <% if (payments && payments.length > 0) { %>

@@ -1,29 +1,31 @@
-<nav class="nav">
-  <div class="nav-inner">
-    <a class="brand" href="/">
-      <span class="brand-mark">💍</span>
-      <span><%= appName %></span>
+<header class="sticky top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-primary/10 shadow-sm">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center gap-3">
+    <a class="flex items-center gap-2 sm:gap-3" href="/">
+      <svg class="w-8 h-8 sm:w-10 sm:h-10 p-1 rounded-lg bg-white border border-primary/15 flex-shrink-0" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="roseGradientNavHeader" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#b83280;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#ff7a59;stop-opacity:1" />
+          </linearGradient>
+        </defs>
+        <path d="M50 15 C30 15 15 30 15 50 C15 70 30 85 50 85 C70 85 85 70 85 50 C85 30 70 15 50 15" fill="none" stroke="url(#roseGradientNavHeader)" stroke-width="3"/>
+        <circle cx="50" cy="50" r="12" fill="url(#roseGradientNavHeader)"/>
+        <path d="M45 40 Q50 30 55 40 T65 50 Q60 60 55 50 T45 40" fill="#b83280" opacity="0.6"/>
+      </svg>
+      <span class="font-headline text-xl sm:text-2xl font-bold text-primary tracking-tight">ShaadiShots</span>
     </a>
-    <div class="nav-links">
+    
+    <div class="flex items-center gap-1 sm:gap-2">
       <% if (currentUser) { %>
         <% if (isSuperAdmin) { %>
-          <a class="btn ghost" href="/admin">Super Admin</a>
-          <a class="btn ghost" href="/admin/users">Users</a>
-          <a class="btn ghost" href="/admin/events">Events</a>
-          <a class="btn ghost" href="/admin/whatsapp">WhatsApp</a>
+          <a class="hidden sm:inline-flex items-center text-xs font-bold text-slate-600 hover:text-primary transition-colors px-3 py-2 rounded-lg" href="/admin">Super Admin</a>
         <% } %>
-        <a class="btn ghost" href="/dashboard">Owner Dashboard</a>
-        <a class="btn ghost" href="/dashboard/security">Security Settings</a>
-        <a class="btn ghost" href="/dashboard/profile">My Profile</a>
-        <a class="btn secondary" href="/dashboard/events/new">New event</a>
-        <form action="/logout" method="post" style="margin:0">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-          <button class="btn ghost" type="submit">Logout</button>
-        </form>
+        <a class="hidden sm:inline-flex items-center text-xs font-bold text-slate-600 hover:text-primary transition-colors px-3 py-2 rounded-lg" href="/dashboard">Dashboard</a>
+        <a class="bg-gradient-wedding text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-full text-[11px] sm:text-xs font-bold shadow-md hover:shadow-xl transition-all whitespace-nowrap" href="/dashboard">My Account</a>
       <% } else { %>
-        <a class="btn ghost" href="/login">Login</a>
-        <a class="btn secondary" href="/register">Create account</a>
+        <a class="text-xs font-bold text-slate-600 hover:text-primary transition-colors px-2 sm:px-3 py-2 rounded-lg" href="/login">Login</a>
+        <a class="bg-gradient-wedding text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-full text-[11px] sm:text-xs font-bold shadow-md hover:shadow-xl transition-all whitespace-nowrap" href="/register">Get Started</a>
       <% } %>
     </div>
   </div>
-</nav>
+</header>

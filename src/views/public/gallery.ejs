@@ -1,45 +1,68 @@
-<section class="between">
-  <div>
-    <span class="badge">Approved gallery</span>
-    <h1 style="margin:10px 0 4px; letter-spacing:-.04em;"><%= event.title %></h1>
-    <p class="muted">Only couple/admin approved memories are visible here.</p>
+<section class="glass-card p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 bg-white/70 backdrop-blur-xl border border-primary/10">
+  <div class="space-y-1.5">
+    <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 rounded-full text-primary text-xs font-bold shadow-sm border border-primary/15">
+      ✨ Approved Gallery
+    </span>
+    <h1 class="font-headline text-3xl sm:text-4xl font-bold text-primary leading-none tracking-tight"><%= event.title %></h1>
+    <p class="text-slate-500 text-sm leading-relaxed">
+      Welcome to the live memory chronicle. Only approved memories from the guests are displayed here.
+    </p>
   </div>
-  <div class="row">
-    <% if (event.public_download_enabled) { %>
-      <a class="btn" href="/e/<%= event.slug %>/download.zip">Download ZIP</a>
-    <% } %>
-  </div>
+  
+  <% if (event.public_download_enabled && media.length) { %>
+    <div class="pt-2 sm:pt-0">
+      <a class="inline-flex items-center gap-2 bg-gradient-wedding text-white px-6 py-3 rounded-full font-bold text-sm shadow-md hover:shadow-xl transition-all" href="/e/<%= event.slug %>/download.zip">
+        <span class="material-symbols-outlined text-sm">download</span>
+        <span>Download All ZIP</span>
+      </a>
+    </div>
+  <% } %>
 </section>
 
 <% if (!media.length) { %>
-  <div class="empty" style="margin-top:24px;">
-    <h2>Gallery empty hai</h2>
-    <p class="muted">Admin approve karne ke baad photos/videos yahan show honge.</p>
+  <div class="glass-card p-12 rounded-2xl text-center border border-primary/10 bg-white/70 backdrop-blur-xl max-w-lg mx-auto space-y-4">
+    <div class="w-16 h-16 rounded-full bg-primary/5 text-primary flex items-center justify-center mx-auto">
+      <span class="material-symbols-outlined text-3xl">photo_library</span>
+    </div>
+    <h2 class="font-headline text-2xl font-bold text-slate-800">Gallery is Empty</h2>
+    <p class="text-slate-500 text-sm leading-relaxed">
+      No memories have been approved yet. Scan the QR code to upload photos and videos!
+    </p>
   </div>
 <% } else { %>
-  <% folders.forEach((folder) => { const items = media.filter((m) => m.folder_id === folder.id); if (!items.length) return; %>
-    <section style="margin-top:28px;">
-      <div class="between" style="margin-bottom:12px;">
-        <h2 style="margin:0;"><%= folder.name %></h2>
-        <span class="badge"><%= items.length %> memories</span>
-      </div>
-      <div class="media-grid">
-        <% items.forEach((item) => { %>
-          <article class="media-card">
-            <div class="thumb">
-              <% if (item.media_type === 'image') { %>
-                <a target="_blank" href="/e/<%= event.slug %>/media/<%= item.id %>"><img loading="lazy" src="/e/<%= event.slug %>/media/<%= item.id %>/thumbnail" alt="<%= item.original_name %>"></a>
-              <% } else { %>
-                <video src="/e/<%= event.slug %>/media/<%= item.id %>" controls preload="metadata"></video>
-              <% } %>
+  <div class="space-y-10 relative z-10">
+    <% folders.forEach((folder) => { %>
+      <% const items = media.filter((m) => m.folder_id === folder.id); %>
+      <% if (!items.length) return; %>
+      
+      <section class="space-y-4">
+        <div class="flex items-center justify-between border-b border-primary/10 pb-3">
+          <h2 class="font-headline text-2xl text-primary font-bold"><%= folder.name %></h2>
+          <span class="px-3 py-1 bg-primary/5 text-primary border border-primary/15 rounded-full text-xs font-bold">
+            <%= items.length %> Memories
+          </span>
+        </div>
+        
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <% items.forEach((item) => { %>
+            <div class="glass-card relative group rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer bg-white/60">
+              <div class="aspect-square w-full bg-primary/5 flex items-center justify-center overflow-hidden relative">
+                <% if (item.media_type === 'image') { %>
+                  <a target="_blank" href="/e/<%= event.slug %>/media/<%= item.id %>" class="w-full h-full">
+                    <img loading="lazy" src="/e/<%= event.slug %>/media/<%= item.id %>/thumbnail" alt="<%= item.original_name %>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                  </a>
+                <% } else { %>
+                  <video src="/e/<%= event.slug %>/media/<%= item.id %>" controls preload="metadata" class="w-full h-full object-cover"></video>
+                <% } %>
+              </div>
+              <div class="p-3 bg-white border-t border-primary/5">
+                <p class="text-xs font-bold text-slate-800 truncate" title="<%= item.original_name %>"><%= item.original_name %></p>
+                <p class="text-[10px] text-slate-400 font-semibold mt-0.5">By <%= item.uploader_name || 'Guest' %> <%= item.uploader_side ? `· ${item.uploader_side.replace('_', ' ')}` : '' %></p>
+              </div>
             </div>
-            <div class="body">
-              <strong title="<%= item.original_name %>" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><%= item.original_name %></strong>
-              <span class="hint"><%= helpers.formatBytes(item.size_bytes) %> · By <%= item.uploader_name || 'Guest' %></span>
-            </div>
-          </article>
-        <% }) %>
-      </div>
-    </section>
-  <% }) %>
+          <% }) %>
+        </div>
+      </section>
+    <% }) %>
+  </div>
 <% } %>

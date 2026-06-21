@@ -1,7 +1,7 @@
 <section class="between">
   <div>
     <span class="badge">Owner dashboard</span>
-    <h1 style="margin:10px 0 4px; letter-spacing:-.04em;">Your wedding events</h1>
+    <h1 style="margin:10px 0 4px; letter-spacing:-.04em; font-size: clamp(1.6rem, 4vw, 2.5rem);">Your wedding events</h1>
     <p class="muted">QR links, storage, approvals and gallery controls.</p>
   </div>
   <a class="btn" href="/dashboard/events/new">+ Create event</a>
@@ -9,32 +9,33 @@
 
 <% if (!events.length) { %>
   <div class="empty" style="margin-top:24px;">
-    <h2>No events yet</h2>
-    <p class="muted">Pehla wedding event create karke QR code download karein.</p>
+    <div style="font-size: 3rem; margin-bottom: 12px; opacity: 0.5;">📷</div>
+    <h2 style="margin: 0 0 8px;">No events yet</h2>
+    <p class="muted" style="margin: 0 0 16px;">Pehla wedding event create karke QR code download karein.</p>
     <a class="btn" href="/dashboard/events/new">Create wedding QR</a>
   </div>
 <% } else { %>
   <section class="grid grid-2" style="margin-top:22px;">
     <% events.forEach((event) => { %>
-      <article class="card">
+      <article class="card" style="display: flex; flex-direction: column; gap: 12px;">
         <div class="between">
           <div>
             <span class="badge"><%= event.stats.planLabel %></span>
-            <h2 style="margin:10px 0 4px;"><%= event.title %></h2>
+            <h2 style="margin:10px 0 4px; font-size: clamp(1.2rem, 3vw, 1.5rem);"><%= event.title %></h2>
             <p class="muted"><%= event.city || 'No city' %> <%= event.wedding_date ? `· ${event.wedding_date}` : '' %></p>
           </div>
           <a class="btn secondary" href="/dashboard/events/<%= event.id %>">Manage</a>
         </div>
-        <div class="grid grid-3" style="margin-top:16px;">
+        <div class="grid grid-3" style="margin-top:4px;">
           <div class="metric"><div class="num"><%= event.stats.counts.pending %></div><div class="muted">Pending</div></div>
           <div class="metric"><div class="num"><%= event.stats.counts.approved %></div><div class="muted">Approved</div></div>
           <div class="metric"><div class="num"><%= event.stats.counts.total %></div><div class="muted">Total</div></div>
         </div>
-        <div style="margin-top:14px;">
+        <div>
           <div class="between"><span class="hint">Storage</span><span class="hint"><%= event.stats.usedHuman %> / <%= event.stats.limitHuman %></span></div>
           <div class="progress"><span style="width:<%= event.stats.percent %>%"></span></div>
         </div>
-        <div class="row" style="margin-top:16px;">
+        <div class="row" style="margin-top:4px;">
           <a class="btn small" href="/dashboard/events/<%= event.id %>/media">Review uploads</a>
           <a class="btn small secondary" target="_blank" href="/e/<%= event.slug %>/gallery">Gallery</a>
           <a class="btn small secondary" href="/dashboard/events/<%= event.id %>/qr.png?download=1">QR PNG</a>

@@ -1,212 +1,275 @@
-<section class="between">
-  <div>
-    <span class="badge"><%= stats.planLabel %></span>
-    <h1 style="margin:10px 0 4px; letter-spacing:-.04em;"><%= event.title %></h1>
-    <p class="muted"><%= event.venue || 'Venue not set' %> <%= event.city ? `· ${event.city}` : '' %> <%= event.wedding_date ? `· ${event.wedding_date}` : '' %></p>
+<!-- Page Header -->
+<section class="glass-card p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 bg-white/70 backdrop-blur-xl border border-primary/10">
+  <div class="space-y-1">
+    <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 rounded-full text-primary text-xs font-bold shadow-sm border border-primary/15">
+      👑 <%= stats.planLabel %> Package
+    </span>
+    <h1 class="font-headline text-3xl font-bold text-primary tracking-tight mt-2"><%= event.title %></h1>
+    <p class="text-slate-500 text-xs font-medium">
+      <%= event.venue || 'Venue not set' %> <%= event.city ? `· ${event.city}` : '' %> <%= event.wedding_date ? `· ${helpers.formatDate(event.wedding_date)}` : '' %>
+    </p>
   </div>
-  <div class="row">
-    <a class="btn secondary" href="/dashboard">Dashboard</a>
-    <a class="btn" href="/dashboard/events/<%= event.id %>/media">Review media</a>
+  <div class="flex flex-wrap gap-2.5 pt-2 sm:pt-0">
+    <a class="border border-primary/20 bg-white hover:bg-slate-50 text-primary px-5 py-2.5 rounded-full font-bold text-xs shadow-sm transition-all" href="/dashboard">
+      Back to Dashboard
+    </a>
+    <a class="bg-gradient-wedding text-white px-5 py-2.5 rounded-full font-bold text-xs shadow-md hover:shadow-xl transition-all" href="/dashboard/events/<%= event.id %>/media">
+      Review Media Uploads
+    </a>
   </div>
 </section>
 
-<section class="grid grid-4" style="margin-top:22px;">
-  <div class="metric"><div class="num"><%= stats.counts.pending %></div><div class="muted">Pending</div></div>
-  <div class="metric"><div class="num"><%= stats.counts.approved %></div><div class="muted">Approved</div></div>
-  <div class="metric"><div class="num"><%= stats.counts.rejected %></div><div class="muted">Rejected</div></div>
-  <div class="metric"><div class="num"><%= stats.counts.total %></div><div class="muted">Total uploads</div></div>
+<!-- Overview Statistics Bento Grid -->
+<section class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+  <div class="glass-card p-6 rounded-xl text-center hover:shadow-md transition-all border-l-4 border-l-primary/60 bg-white/60">
+    <div class="text-3xl font-black text-primary leading-none"><%= stats.counts.pending %></div>
+    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-2">Pending Media</div>
+  </div>
+  
+  <div class="glass-card p-6 rounded-xl text-center hover:shadow-md transition-all border-l-4 border-l-green-500 bg-white/60">
+    <div class="text-3xl font-black text-green-600 leading-none"><%= stats.counts.approved %></div>
+    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-2">Approved Media</div>
+  </div>
+  
+  <div class="glass-card p-6 rounded-xl text-center hover:shadow-md transition-all border-l-4 border-l-red-500 bg-white/60">
+    <div class="text-3xl font-black text-red-600 leading-none"><%= stats.counts.rejected %></div>
+    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-2">Rejected Media</div>
+  </div>
+  
+  <div class="glass-card p-6 rounded-xl text-center hover:shadow-md transition-all border-l-4 border-l-slate-500 bg-white/60">
+    <div class="text-3xl font-black text-slate-800 leading-none"><%= stats.counts.total %></div>
+    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-2">Total Uploads</div>
+  </div>
 </section>
 
-<section class="grid grid-2" style="margin-top:22px; align-items:start;">
-  <div class="card">
-    <div class="between">
-      <div>
-        <h2 style="margin:0 0 6px;">Upload QR</h2>
-        <p class="muted">Is QR ko print karke venue par lagao ya WhatsApp group me share karo.</p>
-      </div>
-      <span class="badge <%= event.upload_enabled ? 'approved' : 'rejected' %>"><%= event.upload_enabled ? 'Uploads open' : 'Uploads closed' %></span>
-    </div>
-    <div style="display:grid; place-items:center; padding:16px;">
-      <img src="<%= qrDataUrl %>" alt="Upload QR" style="max-width:280px; width:100%; border-radius:18px; border:1px solid var(--border); background:white; padding:10px;">
-    </div>
-    <div class="copy-box">
-      <input readonly id="uploadLink" value="<%= uploadLink %>">
-      <button class="btn secondary" type="button" onclick="copyValue('uploadLink')">Copy</button>
-    </div>
-    <div class="row" style="margin-top:12px;">
-      <a class="btn small" href="/dashboard/events/<%= event.id %>/qr.png?download=1">Download QR PNG</a>
-      <a class="btn small secondary" target="_blank" href="/dashboard/events/<%= event.id %>/poster">Printable poster</a>
-      <a class="btn small secondary" target="_blank" href="/e/<%= event.slug %>/upload?token=<%= encodeURIComponent(event.upload_token) %>">Test upload</a>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2 style="margin-top:0;">Storage</h2>
-    <div class="between"><span class="hint">Used storage</span><span class="hint"><%= stats.usedHuman %> / <%= stats.limitHuman %></span></div>
-    <div class="progress"><span style="width:<%= stats.percent %>%"></span></div>
-    <div class="grid grid-2" style="margin-top:16px;">
-      <div class="metric"><div class="num"><%= stats.percent %>%</div><div class="muted">Quota used</div></div>
-      <div class="metric" style="display:flex; flex-direction:column; justify-content:space-between; align-items:start; min-height:100px;">
+<!-- Main Details Layout (Two Columns) -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+  
+  <!-- Column 1: QR codes and Printable poster -->
+  <div class="space-y-8">
+    <div class="glass-card p-6 rounded-2xl border border-primary/10 bg-white/70 backdrop-blur-xl space-y-4">
+      <div class="flex items-start justify-between">
         <div>
-          <div class="num" style="line-height:1.2;"><%= stats.planLabel %></div>
-          <div class="muted">Current plan</div>
+          <h2 class="font-headline text-xl font-bold text-slate-800">Wedding QR Code</h2>
+          <p class="text-xs text-slate-500 mt-1">Print this QR for guest tables or share on WhatsApp groups.</p>
         </div>
-        <a class="btn small" href="/dashboard/events/<%= event.id %>/upgrade" style="margin-top:10px; width:100%; text-align:center;">Upgrade Plan</a>
+        <span class="px-2.5 py-1 text-[10px] font-bold rounded-full <%= event.upload_enabled ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200' %>">
+          <%= event.upload_enabled ? 'Uploads Active' : 'Uploads Locked' %>
+        </span>
+      </div>
+      
+      <div class="flex flex-col items-center justify-center p-4 bg-white/40 border border-primary/5 rounded-xl">
+        <img src="<%= qrDataUrl %>" alt="Upload QR Code" class="w-48 h-48 rounded-lg border border-primary/10 bg-white p-2 shadow-sm">
+      </div>
+      
+      <div class="space-y-1.5">
+        <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Upload Page URL</label>
+        <div class="flex gap-2">
+          <input readonly id="uploadLink" value="<%= uploadLink %>" class="flex-1 bg-white/50 border border-primary/15 rounded-lg px-4 py-2 focus:ring-primary focus:border-primary text-xs font-semibold truncate">
+          <button class="bg-gradient-wedding text-white px-5 py-2 rounded-lg font-bold text-xs shadow-md transition-all active:scale-95" type="button" onclick="copyValue('uploadLink')">Copy</button>
+        </div>
+      </div>
+      
+      <div class="flex flex-wrap gap-2 pt-2">
+        <a class="bg-primary/10 hover:bg-primary/15 text-primary text-xs font-bold px-4 py-2.5 rounded-full shadow-sm transition-all" href="/dashboard/events/<%= event.id %>/qr.png?download=1">Download QR PNG</a>
+        <a class="border border-primary/15 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-full shadow-sm transition-all" target="_blank" href="/dashboard/events/<%= event.id %>/poster">Printable Poster</a>
+        <a class="border border-primary/15 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-full shadow-sm transition-all" target="_blank" href="/e/<%= event.slug %>/upload?token=<%= encodeURIComponent(event.upload_token) %>">Test Upload Link</a>
       </div>
     </div>
-    <div class="divider"></div>
-    <h3>Gallery link</h3>
-    <div class="copy-box">
-      <input readonly id="galleryLink" value="<%= galleryLink %>">
-      <button class="btn secondary" type="button" onclick="copyValue('galleryLink')">Copy</button>
-    </div>
-    <div class="row" style="margin-top:12px;">
-      <a class="btn small secondary" target="_blank" href="/e/<%= event.slug %>/gallery">Open gallery</a>
-      <a class="btn small secondary" href="/dashboard/events/<%= event.id %>/download.zip?status=approved">Download approved ZIP</a>
-    </div>
-  </div>
-</section>
 
-<section class="grid grid-2" style="margin-top:22px; align-items:start;">
-  <form class="card grid" method="post" action="/dashboard/events/<%= event.id %>/settings" novalidate>
-    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-    <h2 style="margin:0;">Event settings</h2>
-    <label>Wedding title
-      <input name="title" value="<%= event.title || '' %>" maxlength="120" required>
-      <% if (errors.title) { %><span class="error-text"><%= errors.title[0] %></span><% } %>
-    </label>
-    <div class="grid grid-2">
-      <label>Bride name
-        <input name="bride_name" value="<%= event.bride_name || '' %>" maxlength="80">
-      </label>
-      <label>Groom name
-        <input name="groom_name" value="<%= event.groom_name || '' %>" maxlength="80">
-      </label>
-    </div>
-    <div class="grid grid-2">
-      <label>Date
-        <input type="date" name="wedding_date" value="<%= event.wedding_date || '' %>">
-      </label>
-      <label>City
-        <input name="city" value="<%= event.city || '' %>" maxlength="80">
-      </label>
-    </div>
-    <label>Venue
-      <input name="venue" value="<%= event.venue || '' %>" maxlength="160">
-    </label>
-    <div class="grid grid-3">
-      <label class="row" style="font-weight:800;"><input style="width:auto" type="checkbox" name="upload_enabled" <%= event.upload_enabled ? 'checked' : '' %>> Uploads open</label>
-      <label class="row" style="font-weight:800;"><input style="width:auto" type="checkbox" name="gallery_enabled" <%= event.gallery_enabled ? 'checked' : '' %>> Gallery enabled</label>
-      <label class="row" style="font-weight:800;"><input style="width:auto" type="checkbox" name="public_download_enabled" <%= event.public_download_enabled ? 'checked' : '' %>> Public ZIP download</label>
-    </div>
-    <label>Gallery PIN <span class="hint">optional</span>
-      <input name="gallery_pin" inputmode="numeric" pattern="[0-9]{4,12}" maxlength="12" placeholder="Set new PIN, e.g. 1234">
-      <span class="hint"><%= event.gallery_pin_hash ? 'PIN is currently enabled.' : 'No PIN set. Gallery can be opened by link if enabled.' %></span>
-    </label>
-    <% if (event.gallery_pin_hash) { %>
-      <label class="row" style="font-weight:800;"><input style="width:auto" type="checkbox" name="clear_pin"> Clear existing PIN</label>
-    <% } %>
-    <button class="btn" type="submit">Save settings</button>
-  </form>
-
-  <div class="card">
-    <div class="between">
-      <div>
-        <h2 style="margin:0;">Folders</h2>
-        <p class="muted">Guests upload ke time folder choose karenge.</p>
-      </div>
-    </div>
-    <div class="grid" style="margin-top:14px;">
-      <% folders.forEach((folder) => { %>
-        <div class="between metric">
-          <strong><%= folder.name %></strong>
-          <form method="post" action="/dashboard/events/<%= event.id %>/folders/<%= folder.id %>/delete" onsubmit="return confirm('Delete this folder? It must be empty.')">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <button class="btn small danger" type="submit">Delete</button>
-          </form>
-        </div>
-      <% }) %>
-    </div>
-    <form method="post" action="/dashboard/events/<%= event.id %>/folders" class="row" style="margin-top:16px;">
+    <!-- Event Settings Form -->
+    <form class="glass-card p-6 rounded-2xl border border-primary/10 bg-white/70 backdrop-blur-xl space-y-4" method="post" action="/dashboard/events/<%= event.id %>/settings" novalidate>
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <input name="name" maxlength="50" placeholder="New folder name" style="flex:1; min-width:200px;">
-      <button class="btn secondary" type="submit">Add folder</button>
+      <h2 class="font-headline text-xl font-bold text-slate-800">Wedding Configuration</h2>
+      
+      <div class="space-y-1.5">
+        <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Wedding Title</label>
+        <input name="title" value="<%= event.title || '' %>" maxlength="120" required class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm">
+        <% if (errors.title) { %><span class="text-xs text-red-600 font-semibold"><%= errors.title[0] %></span><% } %>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="space-y-1.5">
+          <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Bride Name</label>
+          <input name="bride_name" value="<%= event.bride_name || '' %>" maxlength="80" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm">
+        </div>
+        <div class="space-y-1.5">
+          <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Groom Name</label>
+          <input name="groom_name" value="<%= event.groom_name || '' %>" maxlength="80" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="space-y-1.5">
+          <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Wedding Date</label>
+          <input type="date" name="wedding_date" value="<%= event.wedding_date || '' %>" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm">
+        </div>
+        <div class="space-y-1.5">
+          <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">City / Venue Location</label>
+          <input name="city" value="<%= event.city || '' %>" maxlength="80" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm">
+        </div>
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Banquet / Venue Name</label>
+        <input name="venue" value="<%= event.venue || '' %>" maxlength="160" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm">
+      </div>
+
+      <div class="flex flex-col gap-2 pt-2">
+        <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-700">
+          <input type="checkbox" name="upload_enabled" <%= event.upload_enabled ? 'checked' : '' %> class="rounded border-primary/20 text-primary focus:ring-primary">
+          <span>Uploads Open (Guests can add media)</span>
+        </label>
+        <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-700">
+          <input type="checkbox" name="gallery_enabled" <%= event.gallery_enabled ? 'checked' : '' %> class="rounded border-primary/20 text-primary focus:ring-primary">
+          <span>Public Gallery Active (Approved media is visible)</span>
+        </label>
+        <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-700">
+          <input type="checkbox" name="public_download_enabled" <%= event.public_download_enabled ? 'checked' : '' %> class="rounded border-primary/20 text-primary focus:ring-primary">
+          <span>Enable Public ZIP Download for Guests</span>
+        </label>
+      </div>
+
+      <div class="space-y-1.5 pt-2">
+        <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Gallery PIN Protection <span class="text-slate-400 font-normal lowercase">(optional)</span></label>
+        <input name="gallery_pin" inputmode="numeric" pattern="[0-9]{4,12}" maxlength="12" placeholder="e.g. 1234" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm">
+        <p class="text-[10px] text-slate-400 font-semibold"><%= event.gallery_pin_hash ? '🟢 PIN is currently set and active.' : 'No PIN protection set.' %></p>
+      </div>
+      <% if (event.gallery_pin_hash) { %>
+        <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-700">
+          <input type="checkbox" name="clear_pin" class="rounded border-primary/20 text-primary focus:ring-primary">
+          <span>Clear existing gallery PIN protection</span>
+        </label>
+      <% } %>
+      
+      <button class="w-full bg-gradient-wedding text-white px-6 py-3 rounded-full font-bold text-sm shadow-md hover:shadow-xl transition-all" type="submit">Save Configuration</button>
     </form>
   </div>
-</section>
 
-<section class="grid grid-2" style="margin-top:22px; align-items:start;">
-  <div class="card">
-    <h2 style="margin-top:0;">Storage Integrations</h2>
-    <p class="muted" style="margin-bottom:20px;">Apne guest uploads ka storage location select karein. Basic plan users apna Google Drive connect karke free unlimited hosting enable kar sakte hain.</p>
-    
-    <div class="info-list">
-      <div style="flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 16px; display: flex;">
-        <div class="between" style="width: 100%;">
-          <strong>Platform Secure Cloud</strong>
-          <% if (event.storage_provider === 'platform') { %>
-            <span class="badge approved">Active</span>
-          <% } else { %>
-            <span class="badge secondary">Available</span>
-          <% } %>
+  <!-- Column 2: Storage meter, active subscriptions, folders, integrations -->
+  <div class="space-y-8">
+    <div class="glass-card p-6 rounded-2xl border border-primary/10 bg-white/70 backdrop-blur-xl space-y-5">
+      <h2 class="font-headline text-xl font-bold text-slate-800">Storage Statistics</h2>
+      
+      <div>
+        <div class="flex justify-between text-xs font-semibold text-slate-500 mb-1.5">
+          <span>Storage Quota</span>
+          <span><%= stats.usedHuman %> / <%= stats.limitHuman %></span>
         </div>
-        <p class="hint" style="margin: 0;">Wedding images are stored securely on ShaadiShots cloud servers. Isolation: <code class="mono" style="font-size: 0.85em;">events/<%= event.id %>/*</code></p>
+        <div class="w-full bg-primary/10 h-2.5 rounded-full overflow-hidden">
+          <div class="bg-gradient-wedding h-full rounded-full" style="width: <%= stats.percent %>%"></div>
+        </div>
       </div>
 
-      <div style="flex-direction: column; align-items: flex-start; gap: 8px; border-top: 1px solid var(--border); padding-top: 16px; margin-bottom: 16px; display: flex;">
-        <div class="between" style="width: 100%;">
-          <strong>Google Drive</strong>
-          <% if (event.storage_provider === 'google_drive') { %>
-            <span class="badge approved">Active (Connected)</span>
-          <% } else { %>
-            <span class="badge secondary">Available</span>
-          <% } %>
+      <div class="grid grid-cols-2 gap-4 pt-2">
+        <div class="bg-white/40 border border-primary/5 rounded-xl p-4 flex flex-col justify-between">
+          <div class="text-2xl font-black text-primary"><%= stats.percent %>%</div>
+          <div class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-1">Quota Used</div>
         </div>
-        <p class="hint" style="margin: 0; margin-bottom: 10px;">Store wedding images directly in your own Google Drive. No premium subscription required.</p>
         
-        <% if (event.storage_provider === 'google_drive') { %>
-          <% const configData = JSON.parse(event.storage_config || '{}'); %>
-          <div class="alert success" style="margin: 0; width: 100%; box-sizing: border-box;">
-            <p class="hint" style="margin: 0; color: var(--green); font-weight: bold;">
-              🟢 <%= configData.mock ? 'Sandbox Mock Drive Connected' : 'Google Drive Account Connected' %>
-            </p>
-            <p class="hint" style="margin: 4px 0 0;">
-              Guest uploads are being saved to your Google Drive securely.
-            </p>
+        <div class="bg-white/40 border border-primary/5 rounded-xl p-4 flex flex-col justify-between">
+          <div>
+            <div class="text-base font-extrabold text-slate-800"><%= stats.planLabel %></div>
+            <div class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Active Package</div>
           </div>
-          <form method="post" action="/dashboard/events/<%= event.id %>/google-drive/disconnect" style="margin: 10px 0 0; width: 100%;">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <button class="btn danger small" type="submit" style="width: 100%; min-height: 32px;">Disconnect Google Drive</button>
-          </form>
-        <% } else { %>
-          <a class="btn small" href="/dashboard/events/<%= event.id %>/google-drive/auth" style="display: block; width: 100%; text-align: center; text-decoration: none; line-height: 2;">
-            🔗 Connect Google Drive
-          </a>
-        <% } %>
+          <a class="bg-gradient-wedding text-white text-center py-2.5 rounded-full font-bold text-[10px] uppercase tracking-wider shadow-sm hover:shadow-md transition-all mt-4" href="/dashboard/events/<%= event.id %>/upgrade">Upgrade Package</a>
+        </div>
       </div>
-    </div>
-  </div>
 
-  <div class="card">
-    <h2 style="margin-top:0;">Storage Status</h2>
-    <div style="display: flex; flex-direction: column; gap: 14px;">
-      <label>Active Storage Provider
-        <input type="text" readonly value="<%= event.storage_provider === 'google_drive' ? 'Google Drive' : 'ShaadiShots Cloud (Default)' %>" style="background: var(--border); cursor: not-allowed; width: 100%; box-sizing: border-box;">
-      </label>
-      <div class="alert" style="background: rgba(255,255,255,0.5); border-color: var(--border); margin-bottom: 0;">
-        <% if (event.storage_provider === 'google_drive') { %>
-          <p class="hint" style="margin: 0; font-weight: 500;">
-            Photos will bypass platform limits and go directly to your linked Google Drive folder privately. Private streaming proxy protects your file links.
-          </p>
-        <% } else { %>
-          <p class="hint" style="margin: 0; font-weight: 500;">
-            Currently saving to ShaadiShots Secure S3. Connect Google Drive to redirect storage or upgrade plan to extend platform limits.
-          </p>
-        <% } %>
+      <div class="divider border-b border-primary/10 pt-2"></div>
+
+      <h3 class="font-headline text-lg font-bold text-slate-800">Gallery Share Link</h3>
+      <div class="copy-box">
+        <input readonly id="galleryLink" value="<%= galleryLink %>" class="flex-1 bg-white/50 border border-primary/15 rounded-lg px-4 py-2 focus:ring-primary focus:border-primary text-xs font-semibold truncate">
+        <button class="bg-gradient-wedding text-white px-5 py-2 rounded-lg font-bold text-xs shadow-md transition-all active:scale-95" type="button" onclick="copyValue('galleryLink')">Copy</button>
+      </div>
+
+      <div class="flex flex-wrap gap-2 pt-2">
+        <a class="border border-primary/15 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-full shadow-sm transition-all" target="_blank" href="/e/<%= event.slug %>/gallery">Open Gallery</a>
+        <a class="border border-primary/15 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-full shadow-sm transition-all" href="/dashboard/events/<%= event.id %>/download.zip?status=approved">Download Approved ZIP</a>
+      </div>
+    </div>
+
+    <!-- Folders Management -->
+    <div class="glass-card p-6 rounded-2xl border border-primary/10 bg-white/70 backdrop-blur-xl space-y-4">
+      <div>
+        <h2 class="font-headline text-xl font-bold text-slate-800">Ceremony Folders</h2>
+        <p class="text-xs text-slate-500 mt-1">Guests will select these folders during file uploads.</p>
+      </div>
+
+      <div class="space-y-3 pt-2">
+        <% folders.forEach((folder) => { %>
+          <div class="flex justify-between items-center bg-white/50 border border-primary/5 rounded-xl p-3 shadow-sm">
+            <span class="text-sm font-bold text-slate-800"><%= folder.name %></span>
+            <form method="post" action="/dashboard/events/<%= event.id %>/folders/<%= folder.id %>/delete" onsubmit="return confirm('Delete this folder? It must be empty.')" class="m-0">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button class="bg-red-50 text-red-600 hover:bg-red-100 text-xs font-bold px-3 py-1.5 rounded-full border border-red-200" type="submit">Delete</button>
+            </form>
+          </div>
+        <% }) %>
+      </div>
+
+      <form method="post" action="/dashboard/events/<%= event.id %>/folders" class="flex gap-2 pt-2">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input name="name" maxlength="50" placeholder="New folder name" class="flex-1 bg-white/50 border border-primary/15 rounded-lg px-4 py-2 focus:ring-primary focus:border-primary text-xs">
+        <button class="bg-gradient-wedding text-white px-5 py-2 rounded-lg font-bold text-xs shadow-md transition-all active:scale-95" type="submit">Add Folder</button>
+      </form>
+    </div>
+
+    <!-- Storage Integrations -->
+    <div class="glass-card p-6 rounded-2xl border border-primary/10 bg-white/70 backdrop-blur-xl space-y-5">
+      <div>
+        <h2 class="font-headline text-xl font-bold text-slate-800">External Storage Integrations</h2>
+        <p class="text-xs text-slate-500 mt-1">Link your personal Google Drive account to store guest media files directly for free.</p>
+      </div>
+
+      <div class="space-y-4">
+        <!-- Platform default -->
+        <div class="flex flex-col gap-1.5 p-4 bg-white/40 border border-primary/5 rounded-xl">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-bold text-slate-800">Platform Secure Cloud Storage</span>
+            <% if (event.storage_provider === 'platform') { %>
+              <span class="px-2.5 py-0.5 text-[9px] font-extrabold bg-green-50 text-green-700 border border-green-200 rounded-full uppercase">Active</span>
+            <% } else { %>
+              <span class="px-2.5 py-0.5 text-[9px] font-extrabold bg-slate-50 text-slate-500 border border-slate-200 rounded-full uppercase">Available</span>
+            <% } %>
+          </div>
+          <p class="text-[10px] text-slate-400 font-semibold">Media files will be stored securely on ShaadiShots cloud hosting buckets.</p>
+        </div>
+
+        <!-- Google Drive Integration -->
+        <div class="flex flex-col gap-3 p-4 bg-white/40 border border-primary/5 rounded-xl">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-bold text-slate-800">Google Drive Connect</span>
+            <% if (event.storage_provider === 'google_drive') { %>
+              <span class="px-2.5 py-0.5 text-[9px] font-extrabold bg-green-50 text-green-700 border border-green-200 rounded-full uppercase">Connected</span>
+            <% } else { %>
+              <span class="px-2.5 py-0.5 text-[9px] font-extrabold bg-slate-50 text-slate-500 border border-slate-200 rounded-full uppercase">Available</span>
+            <% } %>
+          </div>
+          <p class="text-[10px] text-slate-400 font-semibold leading-relaxed">Direct connection to your Google account bypasses all local platform storage limits.</p>
+          
+          <% if (event.storage_provider === 'google_drive') { %>
+            <% const configData = JSON.parse(event.storage_config || '{}'); %>
+            <div class="p-3.5 bg-green-50/50 text-green-700 border border-green-150 rounded-xl text-xs space-y-1">
+              <p class="font-bold">🟢 <%= configData.mock ? 'Sandbox Mock Drive Connected' : 'Google Drive Active' %></p>
+              <p class="text-[10px] text-green-600 font-medium">Guest photos are syncing straight to your designated Google Drive folder.</p>
+            </div>
+            
+            <form method="post" action="/dashboard/events/<%= event.id %>/google-drive/disconnect" class="m-0">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button class="w-full bg-red-50 text-red-600 hover:bg-red-100 text-xs font-bold py-2.5 rounded-full border border-red-200" type="submit">Disconnect Google Drive</button>
+            </form>
+          <% } else { %>
+            <a class="bg-gradient-wedding text-white text-center py-2.5 rounded-full font-bold text-xs shadow-md hover:shadow-xl transition-all" href="/dashboard/events/<%= event.id %>/google-drive/auth">
+              🔗 Connect Google Drive
+            </a>
+          <% } %>
+        </div>
       </div>
     </div>
   </div>
-</section>
+</div>
 
 <script>
   function copyValue(id) {

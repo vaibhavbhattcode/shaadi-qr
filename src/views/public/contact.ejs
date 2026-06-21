@@ -1,21 +1,21 @@
-<section class="grid grid-2" style="align-items: flex-start; max-width: 1040px; margin: 40px auto; gap: 40px;">
+<section class="grid grid-2" style="align-items: flex-start; max-width: 1040px; margin: 20px auto; gap: 30px; padding: 0 4px;">
   <div>
     <span class="badge" style="margin-bottom: 12px;">Get in touch</span>
-    <h1 style="font-size: 3rem; letter-spacing: -.06em; margin: 0 0 16px; line-height: 1.1;">Support & Contact</h1>
-    <p class="muted" style="font-size: 1.12rem; line-height: 1.6; margin-bottom: 30px;">
+    <h1 style="font-size: clamp(1.8rem, 5vw, 3rem); letter-spacing: -.06em; margin: 0 0 16px; line-height: 1.1;">Support & Contact</h1>
+    <p class="muted" style="font-size: clamp(.9rem, 2.5vw, 1.12rem); line-height: 1.6; margin-bottom: 30px;">
       Wedding settings setup me problem aa rahi hai? Ya business packages ke baare me discuss karna chahte ho? Hamein message bhejein, support team aapse jald hi contact karegi.
     </p>
 
     <div class="card soft" style="display: grid; gap: 20px; padding: 24px;">
       <div style="display: flex; align-items: center; gap: 14px;">
-        <div style="font-size: 1.6rem; background: #ffeef6; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 12px; color: var(--brand);">✉</div>
+        <div style="font-size: 1.6rem; background: #ffeef6; width: 48px; height: 48px; min-width: 48px; display: grid; place-items: center; border-radius: 12px; color: var(--brand);">✉</div>
         <div>
           <span style="font-size: .85rem; font-weight: 800; text-transform: uppercase; color: var(--muted);">Email Support</span>
           <strong style="display: block; font-size: 1.05rem; margin-top: 2px;"><a href="mailto:support@shaadishots.com">support@shaadishots.com</a></strong>
         </div>
       </div>
       <div style="display: flex; align-items: center; gap: 14px;">
-        <div style="font-size: 1.6rem; background: #ecfdf5; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 12px; color: var(--green);">💬</div>
+        <div style="font-size: 1.6rem; background: #ecfdf5; width: 48px; height: 48px; min-width: 48px; display: grid; place-items: center; border-radius: 12px; color: var(--green);">💬</div>
         <div>
           <span style="font-size: .85rem; font-weight: 800; text-transform: uppercase; color: var(--muted);">Live WhatsApp Help</span>
           <strong style="display: block; font-size: 1.05rem; margin-top: 2px;">Available in Owner Dashboard</strong>
@@ -24,7 +24,7 @@
     </div>
   </div>
 
-  <form class="card" method="post" action="/contact" novalidate style="width: 100%; padding: 32px;">
+  <form class="card" method="post" action="/contact" novalidate style="width: 100%; padding: 24px;">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <div class="grid" style="gap: 20px;">
       <label>Your Name

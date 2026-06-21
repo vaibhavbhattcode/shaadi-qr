@@ -1,10 +1,10 @@
-<section class="grid grid-2" style="align-items:center; max-width: 980px; margin: 20px auto; gap: 30px;">
+<section class="grid grid-2" style="align-items:center; max-width: 980px; margin: 20px auto; gap: 24px; padding: 0 16px;">
   <div>
     <span class="badge"><%= isAdminMode ? 'Staff Portal' : 'Secure Login' %></span>
-    <h1 style="font-size:clamp(2rem,5vw,3.6rem); line-height:1; letter-spacing:-.05em; margin:14px 0;">
+    <h1 style="font-size:clamp(1.6rem,5vw,3.6rem); line-height:1.05; letter-spacing:-.05em; margin:14px 0;">
       <%= isAdminMode ? 'Super Admin Login' : 'Login to ShaadiShots' %>
     </h1>
-    <p class="muted">
+    <p class="muted" style="font-size: clamp(.88rem, 2.5vw, 1rem);">
       <%= isAdminMode ? 'Enter email credentials to access the platform administrative console.' : 'OTP verification or Google accounts securely link wedding albums instantly.' %>
     </p>
   </div>

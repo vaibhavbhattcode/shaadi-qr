@@ -2,7 +2,7 @@
   <div class="between">
     <div>
       <span class="badge">Security settings</span>
-      <h1 style="margin:10px 0 4px; letter-spacing:-.04em;">Multi-Factor Authentication (2FA)</h1>
+      <h1 style="margin:10px 0 4px; letter-spacing:-.04em; font-size: clamp(1.4rem, 4vw, 2.2rem);">Multi-Factor Authentication (2FA)</h1>
       <p class="muted">Apne account ki security double karne ke liye 2FA enable karein.</p>
     </div>
     <a class="btn secondary" href="/dashboard">Back to Dashboard</a>
@@ -23,7 +23,7 @@
       <h3 style="margin-top:0;">Enable 2FA</h3>
       <p>Apne Authenticator app (jaise Google Authenticator, Microsoft Authenticator, ya Authy) se niche diya gaya QR code scan karein, ya secret key manual enter karein.</p>
 
-      <div style="display:grid; grid-template-columns: 200px 1fr; gap: 20px; align-items: center; margin: 20px 0; background: rgba(255,255,255,0.4); padding: 15px; border-radius: 18px; border: 1px solid var(--border);">
+      <div style="display:grid; grid-template-columns: 160px 1fr; gap: 20px; align-items: center; margin: 20px 0; background: rgba(255,255,255,0.4); padding: 15px; border-radius: 18px; border: 1px solid var(--border);" class="grid-2">
         <div style="background: white; padding: 10px; border-radius: 14px; border: 1px solid var(--border); display: grid; place-items: center;">
           <img src="<%= qrDataUrl %>" alt="Scan QR Code" style="width: 100%; max-width: 180px;">
         </div>
