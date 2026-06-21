@@ -10,6 +10,9 @@
   </div>
   
   <div class="card" style="padding: 28px;">
+    <!-- Dynamic Error Alert Box -->
+    <div id="login-error-alert" class="alert error" style="display: none; padding: 12px; margin-bottom: 16px; font-weight: 800;"></div>
+
     <% if (isAdminMode) { %>
       <!-- Admin Email Login Form -->
       <form class="grid" method="post" action="/login" novalidate style="gap: 16px;">
@@ -101,6 +104,17 @@
   let countdownInterval = null;
   let cooldownInterval = null;
 
+  function showLoginError(msg) {
+    const errorAlert = document.getElementById('login-error-alert');
+    if (errorAlert) {
+      errorAlert.innerText = msg;
+      errorAlert.style.display = 'block';
+      errorAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else {
+      alert(msg);
+    }
+  }
+
   function startTimers() {
     // Reset any running interval tasks
     clearInterval(countdownInterval);
@@ -146,6 +160,10 @@
   }
 
   function handleCredentialResponse(response) {
+    // Clear previous errors
+    const errorAlert = document.getElementById('login-error-alert');
+    if (errorAlert) errorAlert.style.display = 'none';
+
     fetch('/auth/google', {
       method: 'POST',
       headers: {
@@ -159,16 +177,20 @@
       if (data.ok) {
         window.location.href = data.redirectUrl || '/dashboard';
       } else {
-        alert(data.error || 'Google Login failed');
+        showLoginError(data.error || 'Google Login failed');
       }
     })
     .catch(err => {
       console.error(err);
-      alert('Google validation request failed.');
+      showLoginError('Google validation request failed.');
     });
   }
 
   function mockGoogleLogin() {
+    // Clear previous errors
+    const errorAlert = document.getElementById('login-error-alert');
+    if (errorAlert) errorAlert.style.display = 'none';
+
     fetch('/auth/google/mock', {
       method: 'POST',
       headers: {
@@ -181,15 +203,19 @@
       if (data.ok) {
         window.location.href = data.redirectUrl || '/dashboard';
       } else {
-        alert(data.error || 'Mock Login failed');
+        showLoginError(data.error || 'Mock Login failed');
       }
     });
   }
 
   function sendOtp() {
+    // Clear previous errors
+    const errorAlert = document.getElementById('login-error-alert');
+    if (errorAlert) errorAlert.style.display = 'none';
+
     const phone = document.getElementById('phone-input').value.trim();
     if (!phone) {
-      alert('Please enter your WhatsApp phone number');
+      showLoginError('Please enter your WhatsApp phone number');
       return;
     }
     
@@ -226,7 +252,7 @@
         // Start/Reset Timers
         startTimers();
       } else {
-        alert(data.error || 'Failed to send OTP. Verify code format and retry.');
+        showLoginError(data.error || 'Failed to send OTP. Verify code format and retry.');
         sendBtn.disabled = false;
         sendBtn.innerText = 'Send OTP via WhatsApp';
         resendBtn.disabled = false;
@@ -234,7 +260,7 @@
     })
     .catch(err => {
       console.error(err);
-      alert('Error requesting OTP.');
+      showLoginError('Error requesting OTP.');
       sendBtn.disabled = false;
       sendBtn.innerText = 'Send OTP via WhatsApp';
       resendBtn.disabled = false;
@@ -242,10 +268,14 @@
   }
 
   function verifyOtp() {
+    // Clear previous errors
+    const errorAlert = document.getElementById('login-error-alert');
+    if (errorAlert) errorAlert.style.display = 'none';
+
     const phone = document.getElementById('phone-input').value.trim();
     const code = document.getElementById('otp-code-input').value.trim();
     if (!code || code.length !== 6) {
-      alert('Enter valid 6-digit OTP code');
+      showLoginError('Enter valid 6-digit OTP code');
       return;
     }
 
@@ -266,18 +296,19 @@
       if (data.ok) {
         window.location.href = data.redirectUrl || '/dashboard';
       } else {
-        alert(data.error || 'Incorrect verification code. Please try again.');
+        showLoginError(data.error || 'Incorrect verification code. Please try again.');
         verifyBtn.disabled = false;
         verifyBtn.innerText = 'Verify & Login';
       }
     })
     .catch(err => {
       console.error(err);
-      alert('Verification request failed.');
+      showLoginError('Verification request failed.');
       verifyBtn.disabled = false;
       verifyBtn.innerText = 'Verify & Login';
     });
   }
+
 
   // Bind Event Listeners securely after DOM loads
   document.addEventListener('DOMContentLoaded', () => {

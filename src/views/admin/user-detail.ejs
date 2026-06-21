@@ -4,94 +4,271 @@
   actions: '<a class="btn secondary" href="/admin/users">Back to users</a>'
 }) %>
 
-<section class="grid grid-4">
-  <div class="stat-card"><span>Role</span><strong style="font-size:1.6rem;"><%= user.role === 'super_admin' ? 'Super Admin' : 'Owner' %></strong><small>Current access level</small></div>
-  <div class="stat-card"><span>Status</span><strong style="font-size:1.6rem;"><%= user.status %></strong><small><%= user.status === 'active' ? 'Can login' : 'Blocked' %></small></div>
-  <div class="stat-card"><span>Events</span><strong><%= events.length %></strong><small>Wedding albums</small></div>
-  <div class="stat-card"><span>Storage</span><strong style="font-size:1.7rem;"><%= helpers.formatBytes(storageUsed) %></strong><small>Total usage</small></div>
+<!-- Overview Stats Grid -->
+<section class="grid grid-4" style="margin-bottom: 24px;">
+  <div class="stat-card">
+    <span>Role</span>
+    <strong style="font-size:1.6rem;"><%= user.role === 'super_admin' ? 'Super Admin' : 'Owner' %></strong>
+    <small>Current access level</small>
+  </div>
+  <div class="stat-card">
+    <span>Status</span>
+    <strong style="font-size:1.6rem; color: <%= user.status === 'active' ? 'var(--green)' : 'var(--red)' %>;">
+      <%= user.status.toUpperCase() %>
+    </strong>
+    <small><%= user.status === 'active' ? 'Authorized to log in' : 'Access suspended' %></small>
+  </div>
+  <div class="stat-card">
+    <span>Events Owned</span>
+    <strong style="font-size:1.6rem;"><%= events.length %></strong>
+    <small>Wedding albums created</small>
+  </div>
+  <div class="stat-card">
+    <span>Total Storage Used</span>
+    <strong style="font-size:1.6rem;"><%= helpers.formatBytes(storageUsed) %></strong>
+    <small>Across all events</small>
+  </div>
 </section>
 
-<section class="grid grid-2" style="margin-top:24px; align-items:start;">
+<!-- Details & Control Panel Grid -->
+<section class="grid grid-2" style="align-items: start; margin-bottom: 24px;">
+  
+  <!-- Left Column: Edit Details Form -->
   <div class="panel">
-    <div class="panel-head"><div><h2>Account controls</h2><p>Use carefully. These affect customer access immediately.</p></div></div>
-    <div class="grid">
-      <form method="post" action="/admin/users/<%= user.id %>/status" class="control-card">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <label>Status
-          <select name="status">
+    <div class="panel-head" style="margin-bottom: 20px;">
+      <div>
+        <h2>Edit User Profile</h2>
+        <p>Update contact information, change role access, or suspension state.</p>
+      </div>
+    </div>
+    <form method="post" action="/admin/users/<%= user.id %>/edit" class="grid" style="gap: 16px;">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      
+      <div>
+        <label for="name">Full Name</label>
+        <input type="text" id="name" name="name" value="<%= user.name %>" required placeholder="User name">
+      </div>
+
+      <div>
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" value="<%= user.email %>" required placeholder="User email">
+      </div>
+
+      <div>
+        <label for="phone_number">Phone Number (Optional)</label>
+        <input type="text" id="phone_number" name="phone_number" value="<%= user.phone_number || '' %>" placeholder="e.g. +919988776655">
+        <p class="hint">Must include country code for WhatsApp OTP delivery.</p>
+      </div>
+
+      <div class="grid grid-2" style="gap: 16px;">
+        <div>
+          <label for="role">Account Role</label>
+          <select id="role" name="role">
+            <option value="owner" <%= user.role === 'owner' ? 'selected' : '' %>>Owner (Standard)</option>
+            <option value="super_admin" <%= user.role === 'super_admin' ? 'selected' : '' %>>Super Admin</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="status">Account Status</label>
+          <select id="status" name="status">
             <option value="active" <%= user.status === 'active' ? 'selected' : '' %>>Active</option>
             <option value="suspended" <%= user.status === 'suspended' ? 'selected' : '' %>>Suspended</option>
           </select>
-        </label>
-        <p class="hint">Suspended users cannot login. Their public upload/gallery links are blocked.</p>
-        <button class="btn" type="submit">Update status</button>
-      </form>
+        </div>
+      </div>
 
-      <form method="post" action="/admin/users/<%= user.id %>/role" class="control-card">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <label>Role
-          <select name="role">
-            <option value="owner" <%= user.role === 'owner' ? 'selected' : '' %>>Owner</option>
-            <option value="super_admin" <%= user.role === 'super_admin' ? 'selected' : '' %>>Super Admin</option>
-          </select>
-        </label>
-        <p class="hint">Super admins can manage all users, events, payments, media and audit logs.</p>
-        <button class="btn secondary" type="submit">Update role</button>
-      </form>
-    </div>
+      <div style="margin-top: 10px;">
+        <button class="btn" type="submit" style="width: 100%;">Save Changes</button>
+      </div>
+    </form>
   </div>
 
-  <div class="panel">
-    <div class="panel-head"><div><h2>Profile metadata</h2><p>Account timestamps and login status.</p></div></div>
-    <div class="info-list">
-      <div><span>Created</span><strong><%= helpers.formatDate(user.created_at) %></strong></div>
-      <div><span>Updated</span><strong><%= helpers.formatDate(user.updated_at) %></strong></div>
-      <div><span>Last login</span><strong><%= helpers.formatDate(user.last_login_at) %></strong></div>
-      <div><span>Suspended at</span><strong><%= helpers.formatDate(user.suspended_at) %></strong></div>
+  <!-- Right Column: Metadata & Security Center -->
+  <div style="display: grid; gap: 24px;">
+    
+    <!-- Profile Metadata -->
+    <div class="panel">
+      <div class="panel-head" style="margin-bottom: 16px;">
+        <div>
+          <h2>Account Details</h2>
+          <p>Registration source, activity history and logs.</p>
+        </div>
+      </div>
+      <div class="info-list" style="display: grid; gap: 12px;">
+        <div class="between">
+          <span class="hint">Login Provider</span>
+          <strong>
+            <% if (user.google_id) { %>
+              <span class="badge approved" style="font-size: 0.75rem;">Google Sign-In</span>
+            <% } else { %>
+              <span class="badge" style="font-size: 0.75rem;">Email & Password / OTP</span>
+            <% } %>
+          </strong>
+        </div>
+        <div class="between">
+          <span class="hint">Registered On</span>
+          <strong><%= helpers.formatDate(user.created_at) %></strong>
+        </div>
+        <div class="between">
+          <span class="hint">Last Modified</span>
+          <strong><%= helpers.formatDate(user.updated_at) %></strong>
+        </div>
+        <div class="between">
+          <span class="hint">Last Login Activity</span>
+          <strong><%= helpers.formatDate(user.last_login_at) %></strong>
+        </div>
+        <% if (user.status === 'suspended') { %>
+          <div class="between">
+            <span class="hint" style="color: var(--red);">Suspended On</span>
+            <strong style="color: var(--red);"><%= helpers.formatDate(user.suspended_at) %></strong>
+          </div>
+        <% } %>
+      </div>
     </div>
+
+    <!-- Danger Zone Panel -->
+    <div class="panel" style="border: 1px solid #ffd0cc; background: rgba(255, 241, 242, 0.5);">
+      <div class="panel-head" style="margin-bottom: 12px;">
+        <div>
+          <h2 style="color: var(--red);">Danger Zone</h2>
+          <p style="color: #9f1239;">Permanently delete this user account and clean up all their stored media assets.</p>
+        </div>
+      </div>
+      <p class="hint" style="margin-bottom: 16px; font-size: 0.85rem; line-height: 1.4;">
+        Deleting this account will permanently destroy all events, guest lists, folders, and payments associated with this user. 
+        <strong>All physical uploads will be deleted from AWS S3, Google Drive, or Local directories.</strong> This action is irreversible.
+      </p>
+      
+      <form method="post" action="/admin/users/<%= user.id %>/delete" class="grid" style="gap: 12px;">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div>
+          <label for="confirmation" class="hint" style="font-weight: 700; margin-bottom: 6px;">
+            Type user's email <code style="background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px;"><%= user.email %></code> to confirm:
+          </label>
+          <input type="text" id="confirmation" name="confirmation" required placeholder="<%= user.email %>" style="border-color: #fca5a5;">
+        </div>
+        <button class="btn danger" type="submit" style="width: 100%; font-weight: 900;">
+          Permanently Delete User Account
+        </button>
+      </form>
+    </div>
+
   </div>
 </section>
 
-<section class="panel" style="margin-top:24px;">
-  <div class="panel-head"><div><h2>User events</h2><p>All wedding albums owned by this customer.</p></div></div>
+<!-- Events Table Section with plan edit capability -->
+<section class="panel" style="margin-bottom: 24px;">
+  <div class="panel-head" style="margin-bottom: 16px;">
+    <div>
+      <h2>User Wedding Events</h2>
+      <p>Albums, media size, and plan controls for each project.</p>
+    </div>
+  </div>
   <div class="table-wrap">
     <table class="table-like pro-table">
-      <thead><tr><th>Wedding</th><th>Plan</th><th>Uploads</th><th>Media</th><th>Storage</th><th>Created</th><th></th></tr></thead>
+      <thead>
+        <tr>
+          <th>Wedding Event Title</th>
+          <th style="min-width: 210px;">Subscription Plan</th>
+          <th>Upload Status</th>
+          <th>Total Media</th>
+          <th>Storage Space</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
       <tbody>
         <% events.forEach((event) => { %>
           <tr>
-            <td><a class="strong-link" href="/admin/events/<%= event.id %>"><%= event.title %></a><div class="hint"><%= event.slug %></div></td>
-            <td><span class="badge"><%= helpers.planLabel(event.plan) %></span></td>
-            <td><span class="badge <%= event.upload_enabled ? 'approved' : 'rejected' %>"><%= event.upload_enabled ? 'open' : 'closed' %></span></td>
-            <td><%= event.media_count || 0 %> <span class="hint">(<%= event.pending_count || 0 %> pending)</span></td>
+            <td>
+              <a class="strong-link" href="/admin/events/<%= event.id %>"><%= event.title %></a>
+              <div class="hint" style="font-size: 0.8rem;"><%= event.slug %></div>
+            </td>
+            <td>
+              <form method="post" action="/admin/events/<%= event.id %>/plan" style="display: inline-flex; align-items: center; gap: 8px;">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <select name="plan" style="padding: 6px 10px; border-radius: 10px; font-size: 0.85rem; width: auto; background: white; border: 1px solid var(--border);">
+                  <% plans.forEach((p) => { %>
+                    <option value="<%= p.slug %>" <%= event.plan === p.slug ? 'selected' : '' %>>
+                      <%= p.name %> (₹<%= p.price %>)
+                    </option>
+                  <% }) %>
+                </select>
+                <button type="submit" class="btn small secondary" style="padding: 6px 12px; min-height: 28px; border-radius: 8px;">
+                  Update
+                </button>
+              </form>
+            </td>
+            <td>
+              <span class="badge <%= event.upload_enabled ? 'approved' : 'rejected' %>">
+                <%= event.upload_enabled ? 'Open' : 'Closed' %>
+              </span>
+            </td>
+            <td>
+              <%= event.media_count || 0 %> items
+              <div class="hint" style="font-size: 0.75rem;"><%= event.pending_count || 0 %> pending review</div>
+            </td>
             <td><%= helpers.formatBytes(event.storage_used || 0) %></td>
             <td><%= helpers.formatDate(event.created_at) %></td>
-            <td><a class="btn small secondary" href="/admin/events/<%= event.id %>">Manage</a></td>
+            <td>
+              <a class="btn small secondary" href="/admin/events/<%= event.id %>">Manage</a>
+            </td>
           </tr>
         <% }) %>
       </tbody>
     </table>
   </div>
-  <% if (!events.length) { %><div class="empty">No events created by this user yet.</div><% } %>
+  <% if (!events.length) { %>
+    <div class="empty">No wedding albums created by this user yet.</div>
+  <% } %>
 </section>
 
-<section class="panel" style="margin-top:24px;">
-  <div class="panel-head"><div><h2>Payment records</h2><p>Recent manual/Razorpay records attached to this customer.</p></div><a class="btn small secondary" href="/admin/payments">Manage payments</a></div>
+<!-- Payments Table Section -->
+<section class="panel">
+  <div class="panel-head" style="margin-bottom: 16px; justify-content: space-between; align-items: center; display: flex;">
+    <div>
+      <h2>User Payments Log</h2>
+      <p>Revenue history generated from this user.</p>
+    </div>
+    <a class="btn small secondary" href="/admin/payments">Record Manual Payment</a>
+  </div>
   <div class="table-wrap">
     <table class="table-like pro-table">
-      <thead><tr><th>Plan</th><th>Event</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+      <thead>
+        <tr>
+          <th>Plan Purchased</th>
+          <th>Wedding Event</th>
+          <th>Transaction Value</th>
+          <th>Payment Gateway Status</th>
+          <th>Payment Provider</th>
+          <th>Receipt Date</th>
+        </tr>
+      </thead>
       <tbody>
         <% payments.forEach((payment) => { %>
           <tr>
-            <td><%= payment.plan_name %></td>
+            <td><strong><%= payment.plan_name %></strong></td>
             <td><%= payment.event_title || '—' %></td>
             <td>₹<%= Number(payment.amount || 0).toLocaleString('en-IN') %></td>
-            <td><span class="badge <%= payment.payment_status === 'paid' ? 'approved' : payment.payment_status === 'failed' ? 'rejected' : 'pending' %>"><%= payment.payment_status %></span></td>
+            <td>
+              <span class="badge <%= payment.payment_status === 'paid' ? 'approved' : (payment.payment_status === 'failed' ? 'rejected' : 'pending') %>">
+                <%= payment.payment_status %>
+              </span>
+            </td>
+            <td>
+              <span class="hint" style="text-transform: uppercase; font-size: 0.8rem;"><%= payment.provider || 'manual' %></span>
+              <% if (payment.provider_payment_id) { %>
+                <div class="hint" style="font-size: 0.7rem;"><%= payment.provider_payment_id %></div>
+              <% } %>
+            </td>
             <td><%= helpers.formatDate(payment.created_at) %></td>
           </tr>
         <% }) %>
       </tbody>
     </table>
   </div>
-  <% if (!payments.length) { %><div class="empty">No payment records for this user.</div><% } %>
+  <% if (!payments.length) { %>
+    <div class="empty">No payment transactions found for this user.</div>
+  <% } %>
 </section>

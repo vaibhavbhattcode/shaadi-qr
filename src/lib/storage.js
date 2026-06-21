@@ -12,7 +12,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { stripMetadata } from './metadata.js';
 import sharp from 'sharp';
 import { detectNudity } from './moderation.js';
-import { getValidAccessToken, uploadFile, downloadFile } from './google-drive.js';
+import { getValidAccessToken, uploadFile, downloadFile, deleteFile } from './google-drive.js';
 
 export const s3Client = (config.storageProvider === 'r2' || config.storageProvider === 's3')
   ? new S3Client({
@@ -387,7 +387,39 @@ export async function validateAndStoreUploads({ event, folderId, uploaderName, u
 
 export async function deleteMediaFileAndRow(mediaRow, actorUserId = null, req = null) {
   if (!mediaRow) return;
-  if (s3Client) {
+  
+  const event = db.prepare('SELECT storage_provider, storage_config FROM events WHERE id = ?').get(mediaRow.event_id);
+  
+  if (event && event.storage_provider === 'google_drive') {
+    const configData = JSON.parse(event.storage_config || '{}');
+    if (!configData.mock) {
+      try {
+        const accessToken = await getValidAccessToken(mediaRow.event_id);
+        await deleteFile({ fileId: mediaRow.storage_path, accessToken });
+        if (mediaRow.thumbnail_path) {
+          await deleteFile({ fileId: mediaRow.thumbnail_path, accessToken });
+        }
+      } catch (err) {
+        console.error('Failed to delete Google Drive file:', err);
+      }
+    } else {
+      // Mock mode - delete local files simulating Google Drive
+      try {
+        const abs = resolveStoragePath(mediaRow.storage_path);
+        await safeUnlink(abs);
+      } catch (err) {
+        console.error('Failed to delete local mock file:', err);
+      }
+      if (mediaRow.thumbnail_path) {
+        try {
+          const abs = resolveStoragePath(mediaRow.thumbnail_path);
+          await safeUnlink(abs);
+        } catch (err) {
+          console.error('Failed to delete local mock thumbnail:', err);
+        }
+      }
+    }
+  } else if (s3Client) {
     try {
       await s3Client.send(new DeleteObjectCommand({
         Bucket: config.s3.bucketName,

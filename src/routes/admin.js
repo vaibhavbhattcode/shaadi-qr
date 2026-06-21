@@ -156,7 +156,7 @@ adminRouter.get('/admin/users', (req, res) => {
 
 adminRouter.get('/admin/users/:userId', (req, res) => {
   const userId = Number(req.params.userId);
-  const user = db.prepare('SELECT id, name, email, role, status, created_at, updated_at, last_login_at, suspended_at FROM users WHERE id = ?').get(userId);
+  const user = db.prepare('SELECT id, name, email, phone_number, google_id, role, status, created_at, updated_at, last_login_at, suspended_at FROM users WHERE id = ?').get(userId);
   if (!user) return res.status(404).render('error', { title: 'Not found', message: 'User not found.' });
 
   const events = db.prepare(`
@@ -181,43 +181,160 @@ adminRouter.get('/admin/users/:userId', (req, res) => {
   `).all(user.id);
 
   const storageUsed = events.reduce((sum, event) => sum + Number(event.storage_used || 0), 0);
-  res.render('admin/user-detail', { title: user.name, user, events, payments, storageUsed });
+  res.render('admin/user-detail', { title: user.name, user, events, payments, storageUsed, plans: listPlans() });
 });
 
-adminRouter.post('/admin/users/:userId/status', requireCsrf, (req, res) => {
+const userEditSchema = z.object({
+  name: z.string().trim().min(2, 'Name is required').max(100),
+  email: z.string().trim().email('Valid email is required').max(160).transform((v) => v.toLowerCase()),
+  phone_number: z.string().trim().max(30).optional().nullable().transform((v) => v ? v : null),
+  role: z.enum(['owner', 'super_admin']),
+  status: z.enum(['active', 'suspended']),
+});
+
+adminRouter.post('/admin/users/:userId/edit', requireCsrf, (req, res) => {
   const userId = Number(req.params.userId);
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
   if (!user) return res.status(404).render('error', { title: 'Not found', message: 'User not found.' });
-  if (user.id === req.user.id) {
-    setFlash(res, 'error', 'You cannot suspend your own super admin account.');
+
+  const parsed = userEditSchema.safeParse(req.body);
+  if (!parsed.success) {
+    const errors = parsed.error.flatten().fieldErrors;
+    const errorMsg = Object.values(errors).flat().join(', ');
+    setFlash(res, 'error', `Validation failed: ${errorMsg}`);
     return res.redirect(`/admin/users/${user.id}`);
   }
-  const status = req.body.status === 'suspended' ? 'suspended' : 'active';
-  db.prepare('UPDATE users SET status = ?, suspended_at = ?, updated_at = ? WHERE id = ?').run(
+
+  const { name, email, phone_number, role, status } = parsed.data;
+
+  // Safety checks for self-editing
+  if (user.id === req.user.id) {
+    if (role !== 'super_admin') {
+      setFlash(res, 'error', 'You cannot demote your own super admin account.');
+      return res.redirect(`/admin/users/${user.id}`);
+    }
+    if (status !== 'active') {
+      setFlash(res, 'error', 'You cannot suspend your own super admin account.');
+      return res.redirect(`/admin/users/${user.id}`);
+    }
+  }
+
+  // Check unique email
+  const existingEmail = db.prepare('SELECT id FROM users WHERE email = ? AND id != ?').get(email, user.id);
+  if (existingEmail) {
+    setFlash(res, 'error', 'This email is already in use by another account.');
+    return res.redirect(`/admin/users/${user.id}`);
+  }
+
+  // Check unique phone number
+  if (phone_number) {
+    const existingPhone = db.prepare('SELECT id FROM users WHERE phone_number = ? AND id != ?').get(phone_number, user.id);
+    if (existingPhone) {
+      setFlash(res, 'error', 'This phone number is already in use by another account.');
+      return res.redirect(`/admin/users/${user.id}`);
+    }
+  }
+
+  const isSuspending = user.status === 'active' && status === 'suspended';
+  const isActivating = user.status === 'suspended' && status === 'active';
+
+  db.prepare(`
+    UPDATE users 
+    SET name = ?, email = ?, phone_number = ?, role = ?, status = ?, 
+        suspended_at = ?, updated_at = ?
+    WHERE id = ?
+  `).run(
+    name, 
+    email, 
+    phone_number, 
+    role, 
     status,
-    status === 'suspended' ? nowIso() : null,
+    isSuspending ? nowIso() : (isActivating ? null : user.suspended_at),
     nowIso(),
     user.id
   );
-  logAudit({ actorUserId: req.user.id, action: 'super_admin_user_status_update', metadata: { userId: user.id, status }, ip: req.ip });
-  setFlash(res, 'success', `User ${status === 'active' ? 'activated' : 'suspended'}.`);
+
+  logAudit({
+    actorUserId: req.user.id,
+    action: 'super_admin_user_edit',
+    metadata: { userId: user.id, name, email, phone_number, role, status },
+    ip: req.ip
+  });
+
+  setFlash(res, 'success', 'User details updated successfully.');
   return res.redirect(`/admin/users/${user.id}`);
 });
 
-adminRouter.post('/admin/users/:userId/role', requireCsrf, (req, res) => {
+adminRouter.post('/admin/users/:userId/delete', requireCsrf, asyncHandler(async (req, res) => {
   const userId = Number(req.params.userId);
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
   if (!user) return res.status(404).render('error', { title: 'Not found', message: 'User not found.' });
+
   if (user.id === req.user.id) {
-    setFlash(res, 'error', 'You cannot change your own role here.');
+    setFlash(res, 'error', 'You cannot delete your own active super admin account.');
     return res.redirect(`/admin/users/${user.id}`);
   }
-  const role = req.body.role === 'super_admin' ? 'super_admin' : 'owner';
-  db.prepare('UPDATE users SET role = ?, updated_at = ? WHERE id = ?').run(role, nowIso(), user.id);
-  logAudit({ actorUserId: req.user.id, action: 'super_admin_user_role_update', metadata: { userId: user.id, role }, ip: req.ip });
-  setFlash(res, 'success', `User role updated to ${role}.`);
-  return res.redirect(`/admin/users/${user.id}`);
+
+  const confirmation = String(req.body.confirmation || '').trim();
+  if (confirmation.toLowerCase() !== user.email.toLowerCase()) {
+    setFlash(res, 'error', `Type the user's email address "${user.email}" to confirm deletion.`);
+    return res.redirect(`/admin/users/${user.id}`);
+  }
+
+  // Deleting user's wedding media assets from Google Drive / S3 / local disk
+  const userEvents = db.prepare('SELECT * FROM events WHERE owner_id = ?').all(user.id);
+  let deletedMediaCount = 0;
+  for (const event of userEvents) {
+    const mediaRows = db.prepare('SELECT * FROM media WHERE event_id = ?').all(event.id);
+    for (const media of mediaRows) {
+      await deleteMediaFileAndRow(media, req.user.id, req);
+      deletedMediaCount++;
+    }
+    // Delete event row (the cascade will handle folders, payments, and audit logs)
+    db.prepare('DELETE FROM events WHERE id = ?').run(event.id);
+  }
+
+  // Delete the user
+  db.prepare('DELETE FROM users WHERE id = ?').run(user.id);
+
+  logAudit({
+    actorUserId: req.user.id,
+    action: 'super_admin_user_delete',
+    metadata: { userId: user.id, email: user.email, name: user.name, eventsDeleted: userEvents.length, mediaDeleted: deletedMediaCount },
+    ip: req.ip
+  });
+
+  setFlash(res, 'success', `User ${user.email} and all associated data permanently deleted.`);
+  return res.redirect('/admin/users');
+}));
+
+adminRouter.post('/admin/events/:eventId/plan', requireAdminEvent, requireCsrf, (req, res) => {
+  const planSlug = String(req.body.plan || '').trim();
+  const plan = getPlan(planSlug);
+  if (!plan) {
+    setFlash(res, 'error', 'Invalid plan selected.');
+    return res.redirect(req.get('referer') || `/admin/events/${req.adminEvent.id}`);
+  }
+  const used = getStorageUsage(req.adminEvent.id);
+  const storageLimit = Math.max(plan.storageLimitBytes, used);
+  
+  db.prepare(`
+    UPDATE events SET plan = ?, storage_limit_bytes = ?, updated_at = ?
+    WHERE id = ?
+  `).run(planSlug, storageLimit, nowIso(), req.adminEvent.id);
+
+  logAudit({
+    actorUserId: req.user.id,
+    eventId: req.adminEvent.id,
+    action: 'super_admin_event_plan_update',
+    metadata: { plan: planSlug, storageLimit },
+    ip: req.ip
+  });
+
+  setFlash(res, 'success', `Plan updated to ${plan.label} successfully.`);
+  return res.redirect(req.get('referer') || `/admin/events/${req.adminEvent.id}`);
 });
+
 
 adminRouter.get('/admin/events', (req, res) => {
   const q = String(req.query.q || '').trim();

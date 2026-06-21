@@ -160,3 +160,20 @@ export async function getValidAccessToken(eventId) {
 
   return newAccessToken;
 }
+
+/**
+ * Deletes a file from Google Drive.
+ */
+export async function deleteFile({ fileId, accessToken }) {
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`
+    }
+  });
+  if (!res.ok && res.status !== 404) {
+    throw new Error(`Failed to delete file from Google Drive: ${res.statusText}`);
+  }
+  return true;
+}
+
