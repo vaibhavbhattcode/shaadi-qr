@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { config, PLAN_LIMITS } from './config.js';
+import bcrypt from 'bcryptjs';
 
 fs.mkdirSync(path.dirname(config.databasePath), { recursive: true });
 
@@ -226,6 +227,15 @@ export function migrate() {
     insertSetting.run('brand_name', 'ShaadiShots', 'string');
     insertSetting.run('support_email', 'support@shaadishots.com', 'string');
     insertSetting.run('allowed_file_types', 'image/jpeg,image/png,image/webp,image/heic,image/heif,video/mp4,video/quicktime,video/webm', 'string');
+  }
+
+  // Seed default super admin user if users table is empty
+  const usersCount = db.prepare('SELECT COUNT(*) AS count FROM users').get().count;
+  if (usersCount === 0) {
+    const passwordHash = bcrypt.hashSync('SuperAdmin123!', 12);
+    db.prepare("INSERT INTO users (name, email, password_hash, role, status) VALUES (?, ?, ?, 'super_admin', 'active')")
+      .run('Platform Super Admin', 'superadmin@example.com', passwordHash);
+    console.log('[DATABASE SEED] Seeded default super admin user: superadmin@example.com / SuperAdmin123!');
   }
 }
 
