@@ -20,6 +20,11 @@
       <input style="width:auto" type="checkbox" name="registration_enabled" <%= settings.registration_enabled === 'true' ? 'checked' : '' %>> Allow Open Owner Registrations (`/register` route is active)
     </label>
 
+    <label class="row" style="font-weight:800; margin: 10px 0;">
+      <input style="width:auto" type="checkbox" name="whatsapp_login_enabled" <%= settings.whatsapp_login_enabled === 'true' ? 'checked' : '' %>> Enable WhatsApp OTP Login (shows phone input on login page)
+      <span class="hint" style="display:block; margin-top:4px;">Disable this if WhatsApp service is unreliable or you prefer email/Google login only.</span>
+    </label>
+
     <label>Allowed Guest Upload File Types
       <textarea name="allowed_file_types" rows="3" required><%= settings.allowed_file_types || 'image/jpeg,image/png,image/webp,image/heic,image/heif,video/mp4,video/quicktime,video/webm' %></textarea>
       <span class="hint">Comma separated list of mime types. Default: image/jpeg,image/png,image/webp,image/heic,image/heif,video/mp4,video/quicktime,video/webm</span>

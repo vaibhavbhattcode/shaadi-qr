@@ -836,16 +836,16 @@ adminRouter.get('/admin/settings', (req, res) => {
 });
 
 adminRouter.post('/admin/settings', requireCsrf, (req, res) => {
-  const keys = ['registration_enabled', 'brand_name', 'support_email', 'allowed_file_types'];
+  const keys = ['registration_enabled', 'whatsapp_login_enabled', 'brand_name', 'support_email', 'allowed_file_types'];
   const updateSetting = db.prepare('INSERT OR REPLACE INTO platform_settings (key, value, type, updated_at) VALUES (?, ?, ?, ?)');
 
   db.transaction(() => {
     keys.forEach((key) => {
       let val = req.body[key] || '';
-      if (key === 'registration_enabled') {
+      if (key === 'registration_enabled' || key === 'whatsapp_login_enabled') {
         val = req.body[key] === 'on' ? 'true' : 'false';
       }
-      updateSetting.run(key, val, key === 'registration_enabled' ? 'boolean' : 'string', nowIso());
+      updateSetting.run(key, val, (key === 'registration_enabled' || key === 'whatsapp_login_enabled') ? 'boolean' : 'string', nowIso());
     });
   })();
 

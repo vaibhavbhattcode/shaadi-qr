@@ -40,11 +40,12 @@ authRouter.get('/register', redirectIfAuthenticated, (req, res) => {
 });
 
 authRouter.post('/register', redirectIfAuthenticated, (req, res) => {
-  return res.status(400).render('error', { title: 'Registration disabled', message: 'Email registration is disabled. Please create an account using Google or WhatsApp OTP.' });
+  return res.status(400).render('error', { title: 'Registration disabled', message: 'Email registration is disabled. Please use Google login to create an account.' });
 });
 
 authRouter.get('/login', redirectIfAuthenticated, (req, res) => {
-  return res.render('auth/login', { title: 'Login', values: { next: req.query.next || '' }, errors: {}, isAdminMode: req.query.admin === '1' });
+  const whatsappEnabled = getSettingBool('whatsapp_login_enabled', true);
+  return res.render('auth/login', { title: 'Login', values: { next: req.query.next || '' }, errors: {}, isAdminMode: req.query.admin === '1', whatsappEnabled });
 });
 
 authRouter.post('/login', redirectIfAuthenticated, authLimiter, requireCsrf, asyncHandler(async (req, res) => {
@@ -326,6 +327,9 @@ authRouter.post('/auth/google/mock', authLimiter, asyncHandler(async (req, res) 
 }));
 
 authRouter.post('/auth/whatsapp/send-otp', authLimiter, asyncHandler(async (req, res) => {
+  if (!getSettingBool('whatsapp_login_enabled', true)) {
+    return res.status(403).json({ ok: false, error: 'WhatsApp OTP login is disabled by the administrator.' });
+  }
   const { phone } = req.body;
   if (!phone || typeof phone !== 'string') {
     return res.status(400).json({ ok: false, error: 'Phone number is required.' });

@@ -229,6 +229,12 @@ export function migrate() {
     insertSetting.run('allowed_file_types', 'image/jpeg,image/png,image/webp,image/heic,image/heif,video/mp4,video/quicktime,video/webm', 'string');
   }
 
+  // Ensure whatsapp_login_enabled setting exists
+  const whatsappSetting = db.prepare("SELECT key FROM platform_settings WHERE key = 'whatsapp_login_enabled'").get();
+  if (!whatsappSetting) {
+    db.prepare("INSERT INTO platform_settings (key, value, type) VALUES ('whatsapp_login_enabled', 'true', 'boolean')").run();
+  }
+
   // Seed default super admin user if users table is empty
   const usersCount = db.prepare('SELECT COUNT(*) AS count FROM users').get().count;
   if (usersCount === 0) {

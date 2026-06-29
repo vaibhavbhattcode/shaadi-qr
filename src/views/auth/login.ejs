@@ -32,9 +32,19 @@
         <button class="btn" type="submit">Verify Admin Access</button>
         <p class="hint" style="text-align: center;"><a href="/login">← Back to Regular Login</a></p>
       </form>
-    <% } else { %>
-      <!-- Public WhatsApp OTP & Google Login Form -->
+    <% } else if (!whatsappEnabled && !googleClientId) { %>
+      <!-- No login methods available -->
       <div class="grid" style="gap: 16px;">
+        <div class="alert warning" style="text-align:center; padding:20px;">
+          <strong>No login method available.</strong><br>
+          <span class="hint">Contact the administrator to enable Google or WhatsApp login.</span>
+        </div>
+        <a class="btn" href="/login?admin=1" style="text-align:center;">Staff Portal Login</a>
+      </div>
+    <% } else { %>
+      <!-- Public Login Form -->
+      <div class="grid" style="gap: 16px;">
+        <% if (whatsappEnabled) { %>
         <div id="phone-field-wrapper">
           <label>WhatsApp Phone Number
             <input type="tel" id="phone-input" placeholder="E.g. +91 98765 43210" required>
@@ -59,12 +69,15 @@
             <button id="resend-otp-btn" class="btn secondary small" style="padding: 4px 12px; min-height: 30px; font-size: 0.8rem;" disabled>Resend OTP</button>
           </div>
         </div>
+        <% } %>
 
+        <% if (whatsappEnabled && googleClientId) { %>
         <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 14px; margin-bottom: 10px;">
           <div style="flex: 1; height: 1px; background: var(--border);"></div>
           <span class="hint">or continue with</span>
           <div style="flex: 1; height: 1px; background: var(--border);"></div>
         </div>
+        <% } %>
 
         <% if (googleClientId) { %>
           <div id="g_id_onload"
