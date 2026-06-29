@@ -235,6 +235,12 @@ export function migrate() {
     db.prepare("INSERT INTO platform_settings (key, value, type) VALUES ('whatsapp_login_enabled', 'true', 'boolean')").run();
   }
 
+  // Ensure email_login_enabled setting exists
+  const emailSetting = db.prepare("SELECT key FROM platform_settings WHERE key = 'email_login_enabled'").get();
+  if (!emailSetting) {
+    db.prepare("INSERT INTO platform_settings (key, value, type) VALUES ('email_login_enabled', 'true', 'boolean')").run();
+  }
+
   // Seed default super admin user if users table is empty
   const usersCount = db.prepare('SELECT COUNT(*) AS count FROM users').get().count;
   if (usersCount === 0) {

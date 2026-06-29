@@ -25,6 +25,11 @@
       <span class="hint" style="display:block; margin-top:4px;">Disable this if WhatsApp service is unreliable or you prefer email/Google login only.</span>
     </label>
 
+    <label class="row" style="font-weight:800; margin: 10px 0;">
+      <input style="width:auto" type="checkbox" name="email_login_enabled" <%= settings.email_login_enabled === 'true' ? 'checked' : '' %>> Enable Email & Password Login (shows email/password inputs on login page)
+      <span class="hint" style="display:block; margin-top:4px;">Allows album owners and users to log in using standard email and password.</span>
+    </label>
+
     <label>Allowed Guest Upload File Types
       <textarea name="allowed_file_types" rows="3" required><%= settings.allowed_file_types || 'image/jpeg,image/png,image/webp,image/heic,image/heif,video/mp4,video/quicktime,video/webm' %></textarea>
       <span class="hint">Comma separated list of mime types. Default: image/jpeg,image/png,image/webp,image/heic,image/heif,video/mp4,video/quicktime,video/webm</span>

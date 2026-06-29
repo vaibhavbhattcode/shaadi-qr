@@ -32,51 +32,93 @@
         <button class="btn" type="submit">Verify Admin Access</button>
         <p class="hint" style="text-align: center;"><a href="/login">← Back to Regular Login</a></p>
       </form>
-    <% } else if (!whatsappEnabled && !googleClientId) { %>
+    <% } else if (!whatsappEnabled && !emailLoginEnabled && !googleClientId) { %>
       <!-- No login methods available -->
       <div class="grid" style="gap: 16px;">
         <div class="alert warning" style="text-align:center; padding:20px;">
           <strong>No login method available.</strong><br>
-          <span class="hint">Contact the administrator to enable Google or WhatsApp login.</span>
+          <span class="hint">Contact the administrator to enable Google, WhatsApp, or Email login.</span>
         </div>
         <a class="btn" href="/login?admin=1" style="text-align:center;">Staff Portal Login</a>
       </div>
     <% } else { %>
-      <!-- Public Login Form -->
+      <!-- Public Login Form Container -->
       <div class="grid" style="gap: 16px;">
-        <% if (whatsappEnabled) { %>
-        <div id="phone-field-wrapper">
-          <label>WhatsApp Phone Number
-            <input type="tel" id="phone-input" placeholder="E.g. +91 98765 43210" required>
-            <span class="hint">Includes country code (e.g. +91 for India). Default: +91</span>
-          </label>
-        </div>
-
-        <div id="otp-info-msg" class="alert success" style="display: none; padding: 10px; font-size: 0.9rem; margin: 4px 0;"></div>
-
-        <button id="send-otp-btn" class="btn">Send OTP via WhatsApp</button>
-
-        <div id="otp-verify-section" class="grid" style="display: none; gap: 16px;">
-          <label>Verification Code
-            <input type="text" id="otp-code-input" placeholder="Enter 6-digit code" maxlength="6" style="text-align: center; letter-spacing: 0.3em; font-weight: 800; font-size: 1.2rem;">
-          </label>
-          <button id="verify-otp-btn" class="btn green">Verify & Login</button>
-          
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; flex-wrap: wrap; gap: 10px;">
-            <span class="hint" style="color: var(--muted); font-weight: 700;">
-              Expires in: <strong id="otp-countdown" style="color: var(--brand);">10:00</strong>
-            </span>
-            <button id="resend-otp-btn" class="btn secondary small" style="padding: 4px 12px; min-height: 30px; font-size: 0.8rem;" disabled>Resend OTP</button>
+        
+        <!-- Tab Swapper (only shown if both WhatsApp and Email logins are enabled) -->
+        <% if (whatsappEnabled && emailLoginEnabled) { %>
+          <div class="login-tabs" style="display: flex; border-bottom: 2px solid var(--border); margin-bottom: 12px;">
+            <button type="button" class="tab-btn active" id="tab-otp-btn" onclick="switchLoginTab('otp')" style="flex: 1; padding: 12px; border: none; background: none; font-weight: 700; cursor: pointer; color: var(--brand); border-bottom: 2px solid var(--brand); outline: none;">
+              📱 Phone OTP
+            </button>
+            <button type="button" class="tab-btn" id="tab-email-btn" onclick="switchLoginTab('email')" style="flex: 1; padding: 12px; border: none; background: none; font-weight: 700; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; outline: none;">
+              ✉️ Email & Password
+            </button>
           </div>
-        </div>
         <% } %>
 
-        <% if (whatsappEnabled && googleClientId) { %>
-        <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 14px; margin-bottom: 10px;">
-          <div style="flex: 1; height: 1px; background: var(--border);"></div>
-          <span class="hint">or continue with</span>
-          <div style="flex: 1; height: 1px; background: var(--border);"></div>
-        </div>
+        <!-- 1. WhatsApp OTP login tab content -->
+        <% if (whatsappEnabled) { %>
+          <div id="tab-otp-content" class="grid" style="gap: 16px; display: none;">
+            <div id="phone-field-wrapper">
+              <label>WhatsApp Phone Number
+                <input type="tel" id="phone-input" placeholder="E.g. +91 98765 43210" required>
+                <span class="hint">Includes country code (e.g. +91 for India). Default: +91</span>
+              </label>
+            </div>
+
+            <div id="otp-info-msg" class="alert success" style="display: none; padding: 10px; font-size: 0.9rem; margin: 4px 0;"></div>
+
+            <button id="send-otp-btn" class="btn" style="width: 100%; margin-top: 8px;">Send OTP via WhatsApp</button>
+
+            <div id="otp-verify-section" class="grid" style="display: none; gap: 16px; margin-top: 16px;">
+              <label>Verification Code
+                <input type="text" id="otp-code-input" placeholder="Enter 6-digit code" maxlength="6" style="text-align: center; letter-spacing: 0.3em; font-weight: 800; font-size: 1.2rem;">
+              </label>
+              <button id="verify-otp-btn" class="btn green">Verify & Login</button>
+              
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; flex-wrap: wrap; gap: 10px;">
+                <span class="hint" style="color: var(--muted); font-weight: 700;">
+                  Expires in: <strong id="otp-countdown" style="color: var(--brand);">10:00</strong>
+                </span>
+                <button id="resend-otp-btn" class="btn secondary small" style="padding: 4px 12px; min-height: 30px; font-size: 0.8rem;" disabled>Resend OTP</button>
+              </div>
+            </div>
+          </div>
+        <% } %>
+
+        <!-- 2. Email & Password login tab content -->
+        <% if (emailLoginEnabled) { %>
+          <div id="tab-email-content" class="grid" style="gap: 16px; display: none;">
+            <form class="grid" method="post" action="/login" novalidate style="gap: 16px;">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="hidden" name="next" value="<%= values.next || '' %>">
+              
+              <label>Email Address
+                <input type="email" name="email" autocomplete="email" value="<%= values.email || '' %>" required placeholder="name@example.com">
+                <% if (errors.email) { %><span class="error-text"><%= errors.email[0] %></span><% } %>
+              </label>
+              
+              <label>Password
+                <input type="password" name="password" autocomplete="current-password" required placeholder="••••••••">
+                <% if (errors.password) { %><span class="error-text"><%= errors.password[0] %></span><% } %>
+              </label>
+              
+              <button class="btn" type="submit">Verify & Login</button>
+              <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
+                <a class="hint" href="/forgot-password">Forgot password?</a>
+              </div>
+            </form>
+          </div>
+        <% } %>
+
+        <!-- Google SSO Section / Divider -->
+        <% if ((whatsappEnabled || emailLoginEnabled) && googleClientId) { %>
+          <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 14px; margin-bottom: 10px;">
+            <div style="flex: 1; height: 1px; background: var(--border);"></div>
+            <span class="hint">or continue with</span>
+            <div style="flex: 1; height: 1px; background: var(--border);"></div>
+          </div>
         <% } %>
 
         <% if (googleClientId) { %>
@@ -114,6 +156,41 @@
 </section>
 
 <script>
+  function switchLoginTab(tab) {
+    const otpContent = document.getElementById('tab-otp-content');
+    const emailContent = document.getElementById('tab-email-content');
+    const otpBtn = document.getElementById('tab-otp-btn');
+    const emailBtn = document.getElementById('tab-email-btn');
+    
+    if (tab === 'otp') {
+      if (otpContent) otpContent.style.display = 'block';
+      if (emailContent) emailContent.style.display = 'none';
+      if (otpBtn) {
+        otpBtn.style.color = 'var(--brand)';
+        otpBtn.style.borderBottomColor = 'var(--brand)';
+        otpBtn.classList.add('active');
+      }
+      if (emailBtn) {
+        emailBtn.style.color = 'var(--muted)';
+        emailBtn.style.borderBottomColor = 'transparent';
+        emailBtn.classList.remove('active');
+      }
+    } else {
+      if (otpContent) otpContent.style.display = 'none';
+      if (emailContent) emailContent.style.display = 'block';
+      if (otpBtn) {
+        otpBtn.style.color = 'var(--muted)';
+        otpBtn.style.borderBottomColor = 'transparent';
+        otpBtn.classList.remove('active');
+      }
+      if (emailBtn) {
+        emailBtn.style.color = 'var(--brand)';
+        emailBtn.style.borderBottomColor = 'var(--brand)';
+        emailBtn.classList.add('active');
+      }
+    }
+  }
+
   let countdownInterval = null;
   let cooldownInterval = null;
 
@@ -325,6 +402,22 @@
 
   // Bind Event Listeners securely after DOM loads
   document.addEventListener('DOMContentLoaded', () => {
+    const hasOtp = <%= whatsappEnabled ? 'true' : 'false' %>;
+    const hasEmail = <%= emailLoginEnabled ? 'true' : 'false' %>;
+    
+    if (hasOtp && hasEmail) {
+      <% if (errors.email || errors.password || (values && values.email)) { %>
+        switchLoginTab('email');
+      <% } else { %>
+        switchLoginTab('otp');
+      <% } %>
+    } else if (hasOtp) {
+      const otpContent = document.getElementById('tab-otp-content');
+      if (otpContent) otpContent.style.display = 'block';
+    } else if (hasEmail) {
+      const emailContent = document.getElementById('tab-email-content');
+      if (emailContent) emailContent.style.display = 'block';
+    }
     const sendOtpBtn = document.getElementById('send-otp-btn');
     const verifyOtpBtn = document.getElementById('verify-otp-btn');
     const resendOtpBtn = document.getElementById('resend-otp-btn');

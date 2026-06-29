@@ -8,58 +8,69 @@
   <div class="card" style="padding: 28px;">
     <!-- Public WhatsApp OTP & Google Login Form -->
     <div class="grid" style="gap: 16px;">
-      <div id="phone-field-wrapper">
-        <label>WhatsApp Phone Number
-          <input type="tel" id="phone-input" placeholder="E.g. +91 98765 43210" required>
-          <span class="hint">Includes country code (e.g. +91 for India). Default: +91</span>
-        </label>
-      </div>
-
-      <div id="otp-info-msg" class="alert success" style="display: none; padding: 10px; font-size: 0.9rem; margin: 4px 0;"></div>
-
-      <button id="send-otp-btn" class="btn">Send OTP via WhatsApp</button>
-
-      <div id="otp-verify-section" class="grid" style="display: none; gap: 16px;">
-        <label>Verification Code
-          <input type="text" id="otp-code-input" placeholder="Enter 6-digit code" maxlength="6" style="text-align: center; letter-spacing: 0.3em; font-weight: 800; font-size: 1.2rem;">
-        </label>
-        <button id="verify-otp-btn" class="btn green">Verify & Sign Up</button>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; flex-wrap: wrap; gap: 10px;">
-          <span class="hint" style="color: var(--muted); font-weight: 700;">
-            Expires in: <strong id="otp-countdown" style="color: var(--brand);">10:00</strong>
-          </span>
-          <button id="resend-otp-btn" class="btn secondary small" style="padding: 4px 12px; min-height: 30px; font-size: 0.8rem;" disabled>Resend OTP</button>
-        </div>
-      </div>
-
-      <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 14px; margin-bottom: 10px;">
-        <div style="flex: 1; height: 1px; background: var(--border);"></div>
-        <span class="hint">or continue with</span>
-        <div style="flex: 1; height: 1px; background: var(--border);"></div>
-      </div>
-
-      <% if (googleClientId) { %>
-        <div id="g_id_onload"
-             data-client_id="<%= googleClientId %>"
-             data-context="signup"
-             data-ux_mode="popup"
-             data-callback="handleCredentialResponse"
-             data-auto_prompt="false">
-        </div>
-        <div class="g_id_signin"
-             data-type="standard"
-             data-shape="pill"
-             data-theme="outline"
-             data-text="signup_with"
-             data-size="large"
-             data-logo_alignment="center"
-             style="display: flex; justify-content: center;">
+      <% if (!whatsappEnabled && !googleClientId) { %>
+        <div class="alert warning" style="text-align:center; padding:20px;">
+          <strong>Registration method unavailable.</strong><br>
+          <span class="hint">Please contact the administrator to set up your album.</span>
         </div>
       <% } else { %>
-        <button id="mock-google-btn" class="btn secondary" style="width: 100%; gap: 10px; border-radius: 999px;">
-          <span style="font-size: 1.2rem;">🔑</span> Sign up with Google (Demo Mock)
-        </button>
+        <% if (whatsappEnabled) { %>
+          <div id="phone-field-wrapper">
+            <label>WhatsApp Phone Number
+              <input type="tel" id="phone-input" placeholder="E.g. +91 98765 43210" required>
+              <span class="hint">Includes country code (e.g. +91 for India). Default: +91</span>
+            </label>
+          </div>
+
+          <div id="otp-info-msg" class="alert success" style="display: none; padding: 10px; font-size: 0.9rem; margin: 4px 0;"></div>
+
+          <button id="send-otp-btn" class="btn" style="width: 100%;">Send OTP via WhatsApp</button>
+
+          <div id="otp-verify-section" class="grid" style="display: none; gap: 16px; margin-top: 16px;">
+            <label>Verification Code
+              <input type="text" id="otp-code-input" placeholder="Enter 6-digit code" maxlength="6" style="text-align: center; letter-spacing: 0.3em; font-weight: 800; font-size: 1.2rem;">
+            </label>
+            <button id="verify-otp-btn" class="btn green">Verify & Sign Up</button>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; flex-wrap: wrap; gap: 10px;">
+              <span class="hint" style="color: var(--muted); font-weight: 700;">
+                Expires in: <strong id="otp-countdown" style="color: var(--brand);">10:00</strong>
+              </span>
+              <button id="resend-otp-btn" class="btn secondary small" style="padding: 4px 12px; min-height: 30px; font-size: 0.8rem;" disabled>Resend OTP</button>
+            </div>
+          </div>
+        <% } %>
+
+        <% if (whatsappEnabled && googleClientId) { %>
+          <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 14px; margin-bottom: 10px;">
+            <div style="flex: 1; height: 1px; background: var(--border);"></div>
+            <span class="hint">or continue with</span>
+            <div style="flex: 1; height: 1px; background: var(--border);"></div>
+          </div>
+        <% } %>
+
+        <% if (googleClientId) { %>
+          <div id="g_id_onload"
+               data-client_id="<%= googleClientId %>"
+               data-context="signup"
+               data-ux_mode="popup"
+               data-callback="handleCredentialResponse"
+               data-auto_prompt="false">
+          </div>
+          <div class="g_id_signin"
+               data-type="standard"
+               data-shape="pill"
+               data-theme="outline"
+               data-text="signup_with"
+               data-size="large"
+               data-logo_alignment="center"
+               style="display: flex; justify-content: center;">
+          </div>
+        <% } else { %>
+          <button id="mock-google-btn" class="btn secondary" style="width: 100%; gap: 10px; border-radius: 999px;">
+            <span style="font-size: 1.2rem;">🔑</span> Sign up with Google (Demo Mock)
+          </button>
+        <% } %>
       <% } %>
       
       <div class="divider" style="margin: 14px 0;"></div>

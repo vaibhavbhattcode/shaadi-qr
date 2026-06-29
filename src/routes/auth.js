@@ -36,7 +36,8 @@ authRouter.get('/register', redirectIfAuthenticated, (req, res) => {
   if (!getSettingBool('registration_enabled', true)) {
     return res.status(403).render('error', { title: 'Registration disabled', message: 'Registration is disabled. Ask the owner to create your account.' });
   }
-  return res.render('auth/register', { title: 'Create account', values: {}, errors: {} });
+  const whatsappEnabled = getSettingBool('whatsapp_login_enabled', true);
+  return res.render('auth/register', { title: 'Create account', values: {}, errors: {}, whatsappEnabled });
 });
 
 authRouter.post('/register', redirectIfAuthenticated, (req, res) => {
@@ -45,17 +46,35 @@ authRouter.post('/register', redirectIfAuthenticated, (req, res) => {
 
 authRouter.get('/login', redirectIfAuthenticated, (req, res) => {
   const whatsappEnabled = getSettingBool('whatsapp_login_enabled', true);
-  return res.render('auth/login', { title: 'Login', values: { next: req.query.next || '' }, errors: {}, isAdminMode: req.query.admin === '1', whatsappEnabled });
+  const emailLoginEnabled = getSettingBool('email_login_enabled', true);
+  return res.render('auth/login', { 
+    title: 'Login', 
+    values: { next: req.query.next || '' }, 
+    errors: {}, 
+    isAdminMode: req.query.admin === '1', 
+    whatsappEnabled,
+    emailLoginEnabled 
+  });
 });
 
 authRouter.post('/login', redirectIfAuthenticated, authLimiter, requireCsrf, asyncHandler(async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
+  const isAdminMode = req.body.admin === '1';
+
+  if (!isAdminMode && !getSettingBool('email_login_enabled', true)) {
+    return res.status(403).render('error', { title: 'Forbidden', message: 'Email/Password login is currently disabled by the administrator.' });
+  }
+
   if (!parsed.success) {
+    const whatsappEnabled = getSettingBool('whatsapp_login_enabled', true);
+    const emailLoginEnabled = getSettingBool('email_login_enabled', true);
     return res.status(400).render('auth/login', {
       title: 'Login',
       values: req.body,
       errors: parsed.error.flatten().fieldErrors,
-      isAdminMode: true,
+      isAdminMode,
+      whatsappEnabled,
+      emailLoginEnabled,
     });
   }
 
@@ -63,21 +82,29 @@ authRouter.post('/login', redirectIfAuthenticated, authLimiter, requireCsrf, asy
   const user = db.prepare('SELECT id, name, email, password_hash, role, status, two_factor_secret, two_factor_enabled FROM users WHERE email = ?').get(email);
   const ok = user ? await verifyPassword(password, user.password_hash) : false;
   if (!ok) {
+    const whatsappEnabled = getSettingBool('whatsapp_login_enabled', true);
+    const emailLoginEnabled = getSettingBool('email_login_enabled', true);
     return res.status(401).render('auth/login', {
       title: 'Login',
       values: { email, next: parsed.data.next || '' },
       errors: { password: ['Invalid email or password.'] },
-      isAdminMode: true,
+      isAdminMode,
+      whatsappEnabled,
+      emailLoginEnabled,
     });
   }
 
   if (user.status !== 'active') {
     logAudit({ actorUserId: user.id, action: 'blocked_login_suspended', ip: req.ip });
+    const whatsappEnabled = getSettingBool('whatsapp_login_enabled', true);
+    const emailLoginEnabled = getSettingBool('email_login_enabled', true);
     return res.status(403).render('auth/login', {
       title: 'Login',
       values: { email, next: parsed.data.next || '' },
       errors: { password: ['This account is suspended. Please contact support.'] },
-      isAdminMode: true,
+      isAdminMode,
+      whatsappEnabled,
+      emailLoginEnabled,
     });
   }
 

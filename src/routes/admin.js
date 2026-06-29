@@ -836,16 +836,18 @@ adminRouter.get('/admin/settings', (req, res) => {
 });
 
 adminRouter.post('/admin/settings', requireCsrf, (req, res) => {
-  const keys = ['registration_enabled', 'whatsapp_login_enabled', 'brand_name', 'support_email', 'allowed_file_types'];
+  const keys = ['registration_enabled', 'whatsapp_login_enabled', 'email_login_enabled', 'brand_name', 'support_email', 'allowed_file_types'];
   const updateSetting = db.prepare('INSERT OR REPLACE INTO platform_settings (key, value, type, updated_at) VALUES (?, ?, ?, ?)');
+
+  const booleanKeys = ['registration_enabled', 'whatsapp_login_enabled', 'email_login_enabled'];
 
   db.transaction(() => {
     keys.forEach((key) => {
       let val = req.body[key] || '';
-      if (key === 'registration_enabled' || key === 'whatsapp_login_enabled') {
+      if (booleanKeys.includes(key)) {
         val = req.body[key] === 'on' ? 'true' : 'false';
       }
-      updateSetting.run(key, val, (key === 'registration_enabled' || key === 'whatsapp_login_enabled') ? 'boolean' : 'string', nowIso());
+      updateSetting.run(key, val, booleanKeys.includes(key) ? 'boolean' : 'string', nowIso());
     });
   })();
 
