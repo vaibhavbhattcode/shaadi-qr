@@ -47,13 +47,15 @@ authRouter.post('/register', redirectIfAuthenticated, (req, res) => {
 authRouter.get('/login', redirectIfAuthenticated, (req, res) => {
   const whatsappEnabled = getSettingBool('whatsapp_login_enabled', true);
   const emailLoginEnabled = getSettingBool('email_login_enabled', true);
+  const registrationEnabled = getSettingBool('registration_enabled', true);
   return res.render('auth/login', { 
     title: 'Login', 
     values: { next: req.query.next || '' }, 
     errors: {}, 
     isAdminMode: req.query.admin === '1', 
     whatsappEnabled,
-    emailLoginEnabled 
+    emailLoginEnabled,
+    registrationEnabled
   });
 });
 
@@ -68,6 +70,7 @@ authRouter.post('/login', redirectIfAuthenticated, authLimiter, requireCsrf, asy
   if (!parsed.success) {
     const whatsappEnabled = getSettingBool('whatsapp_login_enabled', true);
     const emailLoginEnabled = getSettingBool('email_login_enabled', true);
+    const registrationEnabled = getSettingBool('registration_enabled', true);
     return res.status(400).render('auth/login', {
       title: 'Login',
       values: req.body,
@@ -75,6 +78,7 @@ authRouter.post('/login', redirectIfAuthenticated, authLimiter, requireCsrf, asy
       isAdminMode,
       whatsappEnabled,
       emailLoginEnabled,
+      registrationEnabled,
     });
   }
 
@@ -84,6 +88,7 @@ authRouter.post('/login', redirectIfAuthenticated, authLimiter, requireCsrf, asy
   if (!ok) {
     const whatsappEnabled = getSettingBool('whatsapp_login_enabled', true);
     const emailLoginEnabled = getSettingBool('email_login_enabled', true);
+    const registrationEnabled = getSettingBool('registration_enabled', true);
     return res.status(401).render('auth/login', {
       title: 'Login',
       values: { email, next: parsed.data.next || '' },
@@ -91,6 +96,7 @@ authRouter.post('/login', redirectIfAuthenticated, authLimiter, requireCsrf, asy
       isAdminMode,
       whatsappEnabled,
       emailLoginEnabled,
+      registrationEnabled,
     });
   }
 
@@ -98,6 +104,7 @@ authRouter.post('/login', redirectIfAuthenticated, authLimiter, requireCsrf, asy
     logAudit({ actorUserId: user.id, action: 'blocked_login_suspended', ip: req.ip });
     const whatsappEnabled = getSettingBool('whatsapp_login_enabled', true);
     const emailLoginEnabled = getSettingBool('email_login_enabled', true);
+    const registrationEnabled = getSettingBool('registration_enabled', true);
     return res.status(403).render('auth/login', {
       title: 'Login',
       values: { email, next: parsed.data.next || '' },
@@ -105,6 +112,7 @@ authRouter.post('/login', redirectIfAuthenticated, authLimiter, requireCsrf, asy
       isAdminMode,
       whatsappEnabled,
       emailLoginEnabled,
+      registrationEnabled,
     });
   }
 

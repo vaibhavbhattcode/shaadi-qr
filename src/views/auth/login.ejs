@@ -47,11 +47,12 @@
         
         <!-- Tab Swapper (only shown if both WhatsApp and Email logins are enabled) -->
         <% if (whatsappEnabled && emailLoginEnabled) { %>
+          <% const isEmailActive = errors.email || errors.password || (values && values.email); %>
           <div class="login-tabs" style="display: flex; border-bottom: 2px solid var(--border); margin-bottom: 12px;">
-            <button type="button" class="tab-btn active" id="tab-otp-btn" onclick="switchLoginTab('otp')" style="flex: 1; padding: 12px; border: none; background: none; font-weight: 700; cursor: pointer; color: var(--brand); border-bottom: 2px solid var(--brand); outline: none;">
+            <button type="button" class="tab-btn <%= !isEmailActive ? 'active' : '' %>" id="tab-otp-btn" onclick="switchLoginTab('otp')" style="flex: 1; padding: 12px; border: none; background: none; font-weight: 700; cursor: pointer; color: <%= !isEmailActive ? 'var(--brand)' : 'var(--muted)' %>; border-bottom: 2px solid <%= !isEmailActive ? 'var(--brand)' : 'transparent' %>; outline: none;">
               📱 Phone OTP
             </button>
-            <button type="button" class="tab-btn" id="tab-email-btn" onclick="switchLoginTab('email')" style="flex: 1; padding: 12px; border: none; background: none; font-weight: 700; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; outline: none;">
+            <button type="button" class="tab-btn <%= isEmailActive ? 'active' : '' %>" id="tab-email-btn" onclick="switchLoginTab('email')" style="flex: 1; padding: 12px; border: none; background: none; font-weight: 700; cursor: pointer; color: <%= isEmailActive ? 'var(--brand)' : 'var(--muted)' %>; border-bottom: 2px solid <%= isEmailActive ? 'var(--brand)' : 'transparent' %>; outline: none;">
               ✉️ Email & Password
             </button>
           </div>
@@ -59,7 +60,11 @@
 
         <!-- 1. WhatsApp OTP login tab content -->
         <% if (whatsappEnabled) { %>
-          <div id="tab-otp-content" class="grid" style="gap: 16px; display: none;">
+          <% 
+            const showOtpByDefault = !errors.email && !errors.password && !(values && values.email);
+            const otpDisplay = (whatsappEnabled && (!emailLoginEnabled || showOtpByDefault)) ? 'block' : 'none';
+          %>
+          <div id="tab-otp-content" class="grid" style="gap: 16px; display: <%= otpDisplay %>;">
             <div id="phone-field-wrapper">
               <label>WhatsApp Phone Number
                 <input type="tel" id="phone-input" placeholder="E.g. +91 98765 43210" required>
@@ -89,7 +94,11 @@
 
         <!-- 2. Email & Password login tab content -->
         <% if (emailLoginEnabled) { %>
-          <div id="tab-email-content" class="grid" style="gap: 16px; display: none;">
+          <% 
+            const showEmailByDefault = errors.email || errors.password || (values && values.email);
+            const emailDisplay = (emailLoginEnabled && (!whatsappEnabled || showEmailByDefault)) ? 'block' : 'none';
+          %>
+          <div id="tab-email-content" class="grid" style="gap: 16px; display: <%= emailDisplay %>;">
             <form class="grid" method="post" action="/login" novalidate style="gap: 16px;">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <input type="hidden" name="next" value="<%= values.next || '' %>">
@@ -146,8 +155,10 @@
         
         <div class="divider" style="margin: 14px 0;"></div>
         
-        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;">
-          <a class="hint" href="/register">Create new album</a>
+        <div style="display: flex; justify-content: <%= registrationEnabled ? 'space-between' : 'center' %>; align-items: center; font-size: 0.9rem;">
+          <% if (registrationEnabled) { %>
+            <a class="hint" href="/register">Create new album</a>
+          <% } %>
           <a class="hint" href="/login?admin=1" style="color: var(--muted)">Staff Portal Login</a>
         </div>
       </div>
