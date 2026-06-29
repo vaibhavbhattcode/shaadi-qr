@@ -10,6 +10,7 @@ import { asyncHandler } from '../lib/async-handler.js';
 import { verifyTotp } from '../lib/totp.js';
 import { randomToken } from '../lib/helpers.js';
 import { whatsappService } from '../lib/whatsapp.js';
+import { OAuth2Client } from 'google-auth-library';
 
 export const authRouter = express.Router();
 
@@ -239,18 +240,12 @@ authRouter.post('/auth/google', authLimiter, asyncHandler(async (req, res) => {
   }
 
   try {
-    const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error('Google token verification failed:', errText);
-      return res.status(400).json({ ok: false, error: 'Failed to verify Google credential.' });
-    }
-
-    const payload = await response.json();
-    
-    if (config.google.clientId && payload.aud !== config.google.clientId) {
-      return res.status(400).json({ ok: false, error: 'Google Client ID mismatch.' });
-    }
+    const client = new OAuth2Client(config.google.clientId);
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: config.google.clientId,
+    });
+    const payload = ticket.getPayload();
 
     const email = payload.email?.toLowerCase();
     const name = payload.name || 'Google User';
@@ -290,7 +285,7 @@ authRouter.post('/auth/google', authLimiter, asyncHandler(async (req, res) => {
 
   } catch (err) {
     console.error('Google Auth Route Error:', err);
-    return res.status(500).json({ ok: false, error: 'Internal server error during Google validation.' });
+    return res.status(500).json({ ok: false, error: 'Failed to verify Google credential. Please try again.' });
   }
 }));
 
