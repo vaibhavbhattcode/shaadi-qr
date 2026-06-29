@@ -149,13 +149,53 @@
     .btn.green { background: var(--green); box-shadow: none; }
 
     /* Forms — responsive with !important for Tailwind override */
-    input, select, textarea {
+    input:not([type="checkbox"]):not([type="radio"]), select, textarea {
       width: 100%; border: 1px solid var(--border) !important; border-radius: 16px !important; padding: 12px 14px !important; font: inherit; background: rgba(255,255,255,.94) !important; color: var(--text) !important; outline: none; transition: .16s ease;
     }
     textarea { resize: vertical; }
-    input:focus, select:focus, textarea:focus { border-color: var(--brand) !important; box-shadow: 0 0 0 4px rgba(184, 50, 128, .10) !important; }
+    input:not([type="checkbox"]):not([type="radio"]):focus, select:focus, textarea:focus { border-color: var(--brand) !important; box-shadow: 0 0 0 4px rgba(184, 50, 128, .10) !important; }
+    
+    /* Styled custom checkbox */
+    input[type="checkbox"] {
+      width: 20px !important;
+      height: 20px !important;
+      border: 2px solid var(--brand) !important;
+      border-radius: 6px !important;
+      background: rgba(255,255,255,.94) !important;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      transition: all 0.16s ease;
+      vertical-align: middle;
+      flex-shrink: 0;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    input[type="checkbox"]:checked {
+      background: var(--brand) !important;
+      border-color: var(--brand) !important;
+    }
+    input[type="checkbox"]:checked::after {
+      content: "";
+      width: 6px;
+      height: 11px;
+      border: solid #ffffff;
+      border-width: 0 3px 3px 0;
+      transform: rotate(45deg);
+      position: absolute;
+      top: 1px;
+    }
+    input[type="checkbox"]:focus {
+      box-shadow: 0 0 0 3px rgba(184, 50, 128, .2) !important;
+      outline: none;
+    }
+
     label { display: grid; gap: 7px; font-weight: 850; color: #3b2435; }
-    label.row { display: flex; }
+    label.row { display: flex; align-items: center; gap: 10px; }
     
     .hint { color: var(--muted); font-size: .92rem; line-height: 1.5; font-weight: 500; }
     .error-text { color: var(--red); font-weight: 800; font-size: .9rem; }
