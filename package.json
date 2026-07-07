@@ -9,7 +9,8 @@
     "start": "node src/server.js",
     "seed": "node src/scripts/seed.js",
     "create-admin": "node src/scripts/create-admin.js",
-    "create-super-admin": "node src/scripts/create-super-admin.js"
+    "create-super-admin": "node src/scripts/create-super-admin.js",
+    "test": "node tests/test.mjs"
   },
   "keywords": [
     "wedding",
@@ -37,9 +38,11 @@
     "file-type": "^21.3.4",
     "google-auth-library": "^10.9.0",
     "helmet": "^8.1.0",
+    "ioredis": "^5.11.1",
     "jsonwebtoken": "^9.0.2",
     "method-override": "^3.0.0",
     "multer": "^2.1.1",
+    "pg": "^8.22.0",
     "pino": "^10.3.1",
     "qrcode": "^1.5.4",
     "sharp": "^0.35.1",

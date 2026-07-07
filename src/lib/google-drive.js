@@ -127,7 +127,7 @@ export async function downloadFile({ fileId, accessToken }) {
  * Ensures access token is valid (refreshes if close to expiry) and returns it.
  */
 export async function getValidAccessToken(eventId) {
-  const event = db.prepare('SELECT storage_config FROM events WHERE id = ?').get(eventId);
+  const event = await db.prepare('SELECT storage_config FROM events WHERE id = ?').get(eventId);
   if (!event || !event.storage_config) {
     throw new Error('Google Drive is not connected for this event.');
   }
@@ -155,7 +155,7 @@ export async function getValidAccessToken(eventId) {
   configData.access_token = newAccessToken;
   configData.expires_at = newExpiresAt;
 
-  db.prepare("UPDATE events SET storage_config = ?, updated_at = datetime('now') WHERE id = ?")
+  await db.prepare("UPDATE events SET storage_config = ?, updated_at = datetime('now') WHERE id = ?")
     .run(JSON.stringify(configData), eventId);
 
   return newAccessToken;

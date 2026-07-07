@@ -3,7 +3,7 @@ import { stdin as input, stdout as output } from 'node:process';
 import { migrate, db } from '../db.js';
 import { hashPassword } from '../middleware/auth.js';
 
-migrate();
+await migrate();
 
 const rl = readline.createInterface({ input, output });
 const name = await rl.question('Name: ');
@@ -16,12 +16,12 @@ if (!name.trim() || !email.includes('@') || password.length < 8) {
   process.exit(1);
 }
 
-const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+const existing = await db.prepare('SELECT id FROM users WHERE email = ?').get(email);
 if (existing) {
   console.error('User already exists.');
   process.exit(1);
 }
 
 const passwordHash = await hashPassword(password);
-db.prepare('INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)').run(name.trim(), email, passwordHash, 'owner');
+await db.prepare('INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)').run(name.trim(), email, passwordHash, 'owner');
 console.log('Admin account created. You can now login.');

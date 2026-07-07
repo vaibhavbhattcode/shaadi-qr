@@ -51,11 +51,11 @@ export function cleanSlug(input) {
   }).slice(0, 60);
 }
 
-export function uniqueSlug(baseText) {
+export async function uniqueSlug(baseText) {
   const base = cleanSlug(baseText) || `wedding-${Date.now()}`;
   let slug = base;
   let i = 1;
-  while (db.prepare('SELECT id FROM events WHERE slug = ?').get(slug)) {
+  while (await db.prepare('SELECT id FROM events WHERE slug = ?').get(slug)) {
     i += 1;
     slug = `${base}-${i}`;
   }

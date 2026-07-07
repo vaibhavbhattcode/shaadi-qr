@@ -4,13 +4,13 @@ import { db, logAudit, nowIso, getSettingBool } from '../db.js';
 import { config } from '../config.js';
 import { authLimiter } from '../middleware/security.js';
 import { requireCsrf } from '../middleware/csrf.js';
-import { clearAuthCookie, hashPassword, isSuperAdmin, redirectIfAuthenticated, setAuthCookie, verifyPassword } from '../middleware/auth.js';
+import { clearAuthCookie, hashPassword, isSuperAdmin, redirectIfAuthenticated, setAuthCookie } from '../middleware/auth.js';
 import { setFlash } from '../middleware/flash.js';
 import { asyncHandler } from '../lib/async-handler.js';
 import { verifyTotp } from '../lib/totp.js';
 import { randomToken } from '../lib/helpers.js';
-import { whatsappService } from '../lib/whatsapp.js';
-import { OAuth2Client } from 'google-auth-library';
+import { AuthService } from '../services/auth.service.js';
+import { sendEmail } from '../lib/email.js';
 
 export const authRouter = express.Router();
 
@@ -32,22 +32,23 @@ function safeNext(next) {
   return next;
 }
 
-authRouter.get('/register', redirectIfAuthenticated, (req, res) => {
-  if (!getSettingBool('registration_enabled', true)) {
+authRouter.get('/register', redirectIfAuthenticated, asyncHandler(async (req, res) => {
+  if (!(await getSettingBool('registration_enabled', true))) {
     return res.status(403).render('error', { title: 'Registration disabled', message: 'Registration is disabled. Ask the owner to create your account.' });
   }
-  const whatsappEnabled = getSettingBool('whatsapp_login_enabled', true);
-  return res.render('auth/register', { title: 'Create account', values: {}, errors: {}, whatsappEnabled });
-});
+  const whatsappEnabled = await getSettingBool('whatsapp_login_enabled', true);
+  const emailLoginEnabled = await getSettingBool('email_login_enabled', true);
+  return res.render('auth/register', { title: 'Create account', values: {}, errors: {}, whatsappEnabled, emailLoginEnabled });
+}));
 
 authRouter.post('/register', redirectIfAuthenticated, (req, res) => {
-  return res.status(400).render('error', { title: 'Registration disabled', message: 'Email registration is disabled. Please use Google login to create an account.' });
+  return res.status(400).render('error', { title: 'Registration disabled', message: 'Please complete registration using the OTP verification form.' });
 });
 
-authRouter.get('/login', redirectIfAuthenticated, (req, res) => {
-  const whatsappEnabled = getSettingBool('whatsapp_login_enabled', true);
-  const emailLoginEnabled = getSettingBool('email_login_enabled', true);
-  const registrationEnabled = getSettingBool('registration_enabled', true);
+authRouter.get('/login', redirectIfAuthenticated, asyncHandler(async (req, res) => {
+  const whatsappEnabled = await getSettingBool('whatsapp_login_enabled', true);
+  const emailLoginEnabled = await getSettingBool('email_login_enabled', true);
+  const registrationEnabled = await getSettingBool('registration_enabled', true);
   return res.render('auth/login', { 
     title: 'Login', 
     values: { next: req.query.next || '' }, 
@@ -57,20 +58,21 @@ authRouter.get('/login', redirectIfAuthenticated, (req, res) => {
     emailLoginEnabled,
     registrationEnabled
   });
-});
+}));
 
 authRouter.post('/login', redirectIfAuthenticated, authLimiter, requireCsrf, asyncHandler(async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
   const isAdminMode = req.body.admin === '1';
 
-  if (!isAdminMode && !getSettingBool('email_login_enabled', true)) {
+  if (!isAdminMode && !(await getSettingBool('email_login_enabled', true))) {
     return res.status(403).render('error', { title: 'Forbidden', message: 'Email/Password login is currently disabled by the administrator.' });
   }
 
+  const whatsappEnabled = await getSettingBool('whatsapp_login_enabled', true);
+  const emailLoginEnabled = await getSettingBool('email_login_enabled', true);
+  const registrationEnabled = await getSettingBool('registration_enabled', true);
+
   if (!parsed.success) {
-    const whatsappEnabled = getSettingBool('whatsapp_login_enabled', true);
-    const emailLoginEnabled = getSettingBool('email_login_enabled', true);
-    const registrationEnabled = getSettingBool('registration_enabled', true);
     return res.status(400).render('auth/login', {
       title: 'Login',
       values: req.body,
@@ -83,59 +85,44 @@ authRouter.post('/login', redirectIfAuthenticated, authLimiter, requireCsrf, asy
   }
 
   const { email, password } = parsed.data;
-  const user = db.prepare('SELECT id, name, email, password_hash, role, status, two_factor_secret, two_factor_enabled FROM users WHERE email = ?').get(email);
-  const ok = user ? await verifyPassword(password, user.password_hash) : false;
-  if (!ok) {
-    const whatsappEnabled = getSettingBool('whatsapp_login_enabled', true);
-    const emailLoginEnabled = getSettingBool('email_login_enabled', true);
-    const registrationEnabled = getSettingBool('registration_enabled', true);
-    return res.status(401).render('auth/login', {
+  try {
+    const user = await AuthService.verifyCredentials(email, password, isAdminMode);
+
+    if (user.two_factor_enabled === 1) {
+      setAuthCookie(res, user, true);
+      const nextParam = parsed.data.next ? `?next=${encodeURIComponent(parsed.data.next)}` : '';
+      return res.redirect(`/login/2fa${nextParam}`);
+    }
+
+    await AuthService.updateLastLogin(user.id);
+    setAuthCookie(res, user);
+    await logAudit({ actorUserId: user.id, action: 'login', ip: req.ip });
+    setFlash(res, 'success', 'Logged in successfully.');
+    const target = parsed.data.next ? safeNext(parsed.data.next) : (isSuperAdmin(user) ? '/admin' : '/dashboard');
+    return res.redirect(target);
+  } catch (err) {
+    if (err.statusCode === 403 && err.message.includes('suspended')) {
+      const checkUser = await db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+      if (checkUser) await logAudit({ actorUserId: checkUser.id, action: 'blocked_login_suspended', ip: req.ip });
+    }
+    return res.status(err.statusCode || 401).render('auth/login', {
       title: 'Login',
       values: { email, next: parsed.data.next || '' },
-      errors: { password: ['Invalid email or password.'] },
+      errors: { password: [err.message] },
       isAdminMode,
       whatsappEnabled,
       emailLoginEnabled,
       registrationEnabled,
     });
   }
-
-  if (user.status !== 'active') {
-    logAudit({ actorUserId: user.id, action: 'blocked_login_suspended', ip: req.ip });
-    const whatsappEnabled = getSettingBool('whatsapp_login_enabled', true);
-    const emailLoginEnabled = getSettingBool('email_login_enabled', true);
-    const registrationEnabled = getSettingBool('registration_enabled', true);
-    return res.status(403).render('auth/login', {
-      title: 'Login',
-      values: { email, next: parsed.data.next || '' },
-      errors: { password: ['This account is suspended. Please contact support.'] },
-      isAdminMode,
-      whatsappEnabled,
-      emailLoginEnabled,
-      registrationEnabled,
-    });
-  }
-
-  if (user.two_factor_enabled === 1) {
-    setAuthCookie(res, user, true);
-    const nextParam = parsed.data.next ? `?next=${encodeURIComponent(parsed.data.next)}` : '';
-    return res.redirect(`/login/2fa${nextParam}`);
-  }
-
-  db.prepare('UPDATE users SET last_login_at = ?, updated_at = ? WHERE id = ?').run(nowIso(), nowIso(), user.id);
-  setAuthCookie(res, user);
-  logAudit({ actorUserId: user.id, action: 'login', ip: req.ip });
-  setFlash(res, 'success', 'Logged in successfully.');
-  const target = parsed.data.next ? safeNext(parsed.data.next) : (isSuperAdmin(user) ? '/admin' : '/dashboard');
-  return res.redirect(target);
 }));
 
-authRouter.post('/logout', requireCsrf, (req, res) => {
-  if (req.user) logAudit({ actorUserId: req.user.id, action: 'logout', ip: req.ip });
+authRouter.post('/logout', requireCsrf, asyncHandler(async (req, res) => {
+  if (req.user) await logAudit({ actorUserId: req.user.id, action: 'logout', ip: req.ip });
   clearAuthCookie(res);
   setFlash(res, 'success', 'Logged out successfully.');
   return res.redirect('/');
-});
+}));
 
 authRouter.get('/login/2fa', (req, res) => {
   if (req.user) {
@@ -166,10 +153,10 @@ authRouter.post('/login/2fa', authLimiter, requireCsrf, asyncHandler(async (req,
     });
   }
 
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.tempUser.id);
+  const user = await db.prepare('SELECT * FROM users WHERE id = ?').get(req.tempUser.id);
   const isValid = verifyTotp(code, user.two_factor_secret);
   if (!isValid) {
-    logAudit({ actorUserId: user.id, action: 'failed_2fa', ip: req.ip });
+    await logAudit({ actorUserId: user.id, action: 'failed_2fa', ip: req.ip });
     return res.status(401).render('auth/login-2fa', {
       title: 'Two-Factor Verification',
       next: req.body.next || '',
@@ -177,9 +164,9 @@ authRouter.post('/login/2fa', authLimiter, requireCsrf, asyncHandler(async (req,
     });
   }
 
-  db.prepare('UPDATE users SET last_login_at = ?, updated_at = ? WHERE id = ?').run(nowIso(), nowIso(), user.id);
+  await db.prepare('UPDATE users SET last_login_at = ?, updated_at = ? WHERE id = ?').run(nowIso(), nowIso(), user.id);
   setAuthCookie(res, user);
-  logAudit({ actorUserId: user.id, action: 'login', ip: req.ip });
+  await logAudit({ actorUserId: user.id, action: 'login', ip: req.ip });
   setFlash(res, 'success', 'Logged in successfully.');
 
   const target = req.body.next ? safeNext(req.body.next) : (isSuperAdmin(user) ? '/admin' : '/dashboard');
@@ -202,17 +189,38 @@ authRouter.post('/forgot-password', authLimiter, requireCsrf, asyncHandler(async
   }
 
   const email = parsed.data;
-  const user = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+  const user = await db.prepare('SELECT id FROM users WHERE email = ?').get(email);
   if (user) {
     const token = randomToken(32);
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
     
-    db.prepare('DELETE FROM password_resets WHERE user_id = ?').run(user.id);
-    db.prepare('INSERT INTO password_resets (user_id, token, expires_at) VALUES (?, ?, ?)').run(user.id, token, expiresAt);
+    await db.prepare('DELETE FROM password_resets WHERE user_id = ?').run(user.id);
+    await db.prepare('INSERT INTO password_resets (user_id, token, expires_at) VALUES (?, ?, ?)').run(user.id, token, expiresAt);
 
     const resetLink = `${config.appUrl}/reset-password?token=${token}`;
+    
+    // Send transactional email
+    try {
+      await sendEmail({
+        to: email,
+        subject: 'Reset your ShaadiShots Password',
+        html: `
+          <div style="font-family: sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px;">
+            <h2 style="color: #b83280;">Password Reset Request</h2>
+            <p>We received a request to reset your password for your ShaadiShots account. Click the button below to choose a new password:</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetLink}" style="background: linear-gradient(135deg, #b83280 0%, #ff7a59 100%); color: #fff; padding: 12px 30px; text-decoration: none; border-radius: 999px; font-weight: bold; display: inline-block;">Reset Password</a>
+            </div>
+            <p style="color: #666; font-size: 12px;">This link will expire in 60 minutes. If you did not request this, you can safely ignore this email.</p>
+          </div>
+        `
+      });
+    } catch (err) {
+      console.error('Failed to dispatch password reset email:', err);
+    }
+
     console.log(`\n========================================\n[PASSWORD RESET] Link for ${email}:\n${resetLink}\n========================================\n`);
-    logAudit({ actorUserId: user.id, action: 'password_reset_requested', ip: req.ip });
+    await logAudit({ actorUserId: user.id, action: 'password_reset_requested', ip: req.ip });
   }
 
   setFlash(res, 'success', 'If that email exists in our system, we have logged a reset link.');
@@ -226,7 +234,7 @@ authRouter.get('/reset-password', redirectIfAuthenticated, asyncHandler(async (r
     return res.redirect('/login');
   }
 
-  const reset = db.prepare('SELECT * FROM password_resets WHERE token = ?').get(token);
+  const reset = await db.prepare('SELECT * FROM password_resets WHERE token = ?').get(token);
   if (!reset || new Date(reset.expires_at) < new Date()) {
     setFlash(res, 'error', 'Reset token is invalid or has expired.');
     return res.redirect('/login');
@@ -244,7 +252,7 @@ authRouter.post('/reset-password', authLimiter, requireCsrf, asyncHandler(async 
     return res.redirect('/login');
   }
 
-  const reset = db.prepare('SELECT * FROM password_resets WHERE token = ?').get(token);
+  const reset = await db.prepare('SELECT * FROM password_resets WHERE token = ?').get(token);
   if (!reset || new Date(reset.expires_at) < new Date()) {
     setFlash(res, 'error', 'Reset token is invalid or has expired.');
     return res.redirect('/login');
@@ -259,12 +267,17 @@ authRouter.post('/reset-password', authLimiter, requireCsrf, asyncHandler(async 
   }
 
   const passwordHash = await hashPassword(password);
-  db.transaction(() => {
-    db.prepare('UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?').run(passwordHash, nowIso(), reset.user_id);
-    db.prepare('DELETE FROM password_resets WHERE id = ?').run(reset.id);
-  })();
+  await db.transaction(async (txClient) => {
+    if (txClient && typeof txClient.query === 'function') {
+      await txClient.query('UPDATE users SET password_hash = $1, updated_at = $2 WHERE id = $3', [passwordHash, nowIso(), reset.user_id]);
+      await txClient.query('DELETE FROM password_resets WHERE id = $1', [reset.id]);
+    } else {
+      await db.prepare('UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?').run(passwordHash, nowIso(), reset.user_id);
+      await db.prepare('DELETE FROM password_resets WHERE id = ?').run(reset.id);
+    }
+  });
 
-  logAudit({ actorUserId: reset.user_id, action: 'password_reset_completed', ip: req.ip });
+  await logAudit({ actorUserId: reset.user_id, action: 'password_reset_completed', ip: req.ip });
   setFlash(res, 'success', 'Password reset successfully. You can now log in.');
   return res.redirect('/login');
 }));
@@ -276,124 +289,51 @@ authRouter.post('/auth/google', authLimiter, asyncHandler(async (req, res) => {
   }
 
   try {
-    const client = new OAuth2Client(config.google.clientId);
-    const ticket = await client.verifyIdToken({
-      idToken: credential,
-      audience: config.google.clientId,
-    });
-    const payload = ticket.getPayload();
+    const user = await AuthService.verifyGoogleLogin(credential);
 
-    const email = payload.email?.toLowerCase();
-    const name = payload.name || 'Google User';
-    const googleId = payload.sub;
-
-    if (!email || !googleId) {
-      return res.status(400).json({ ok: false, error: 'Incomplete Google account profile details.' });
-    }
-
-    let user = db.prepare('SELECT * FROM users WHERE google_id = ?').get(googleId);
-
-    if (!user) {
-      user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-      if (user) {
-        db.prepare('UPDATE users SET google_id = ?, updated_at = ? WHERE id = ?').run(googleId, nowIso(), user.id);
-        user.google_id = googleId;
-        logAudit({ actorUserId: user.id, action: 'google_linked', ip: req.ip });
-      } else {
-        const dummyPasswordHash = await hashPassword(randomToken(16));
-        const insert = db.prepare('INSERT INTO users (name, email, password_hash, role, google_id) VALUES (?, ?, ?, ?, ?)')
-          .run(name, email, dummyPasswordHash, 'owner', googleId);
-        
-        user = db.prepare('SELECT * FROM users WHERE id = ?').get(insert.lastInsertRowid);
-        logAudit({ actorUserId: user.id, action: 'register_google', ip: req.ip });
-      }
-    }
-
-    if (user.status !== 'active') {
-      return res.status(403).json({ ok: false, error: 'This account is suspended.' });
-    }
-
-    db.prepare('UPDATE users SET last_login_at = ?, updated_at = ? WHERE id = ?').run(nowIso(), nowIso(), user.id);
+    await AuthService.updateLastLogin(user.id);
     setAuthCookie(res, user);
-    logAudit({ actorUserId: user.id, action: 'login_google', ip: req.ip });
+    await logAudit({ actorUserId: user.id, action: 'login_google', ip: req.ip });
     setFlash(res, 'success', 'Logged in successfully with Google.');
     return res.json({ ok: true, redirectUrl: '/dashboard' });
-
   } catch (err) {
     console.error('Google Auth Route Error:', err);
-    return res.status(500).json({ ok: false, error: 'Failed to verify Google credential. Please try again.' });
+    return res.status(err.statusCode || 500).json({ ok: false, error: err.message || 'Failed to verify Google credential.' });
   }
 }));
 
 authRouter.post('/auth/google/mock', authLimiter, asyncHandler(async (req, res) => {
-  if (config.google.clientId) {
-    return res.status(400).json({ ok: false, error: 'Mock login is disabled when real Google Client ID is configured.' });
+  try {
+    const user = await AuthService.verifyGoogleMockLogin();
+
+    await AuthService.updateLastLogin(user.id);
+    setAuthCookie(res, user);
+    await logAudit({ actorUserId: user.id, action: 'login_google_mock', ip: req.ip });
+    setFlash(res, 'success', 'Logged in successfully with Google Demo Sandbox.');
+    return res.json({ ok: true, redirectUrl: '/dashboard' });
+  } catch (err) {
+    return res.status(err.statusCode || 400).json({ ok: false, error: err.message });
   }
-
-  const mockEmail = 'demo.google@shaadishots.local';
-  const mockGoogleId = 'mock_google_1234567890';
-  const mockName = 'Demo Google User';
-
-  let user = db.prepare('SELECT * FROM users WHERE google_id = ?').get(mockGoogleId);
-  if (!user) {
-    user = db.prepare('SELECT * FROM users WHERE email = ?').get(mockEmail);
-    if (user) {
-      db.prepare('UPDATE users SET google_id = ?, updated_at = ? WHERE id = ?').run(mockGoogleId, nowIso(), user.id);
-      user.google_id = mockGoogleId;
-    } else {
-      const dummyPasswordHash = await hashPassword(randomToken(16));
-      const insert = db.prepare('INSERT INTO users (name, email, password_hash, role, google_id) VALUES (?, ?, ?, ?, ?)')
-        .run(mockName, mockEmail, dummyPasswordHash, 'owner', mockGoogleId);
-      
-      user = db.prepare('SELECT * FROM users WHERE id = ?').get(insert.lastInsertRowid);
-      logAudit({ actorUserId: user.id, action: 'register_google_mock', ip: req.ip });
-    }
-  }
-
-  if (user.status !== 'active') {
-    return res.status(403).json({ ok: false, error: 'Demo account is suspended.' });
-  }
-
-  db.prepare('UPDATE users SET last_login_at = ?, updated_at = ? WHERE id = ?').run(nowIso(), nowIso(), user.id);
-  setAuthCookie(res, user);
-  logAudit({ actorUserId: user.id, action: 'login_google_mock', ip: req.ip });
-  setFlash(res, 'success', 'Logged in successfully with Google Demo Sandbox.');
-  return res.json({ ok: true, redirectUrl: '/dashboard' });
 }));
 
 authRouter.post('/auth/whatsapp/send-otp', authLimiter, asyncHandler(async (req, res) => {
-  if (!getSettingBool('whatsapp_login_enabled', true)) {
-    return res.status(403).json({ ok: false, error: 'WhatsApp OTP login is disabled by the administrator.' });
-  }
   const { phone } = req.body;
   if (!phone || typeof phone !== 'string') {
     return res.status(400).json({ ok: false, error: 'Phone number is required.' });
   }
 
-  let cleanPhone = phone.replace(/[^0-9]/g, '');
-  if (cleanPhone.length === 10 && !cleanPhone.startsWith('91')) {
-    cleanPhone = '91' + cleanPhone;
+  try {
+    const result = await AuthService.sendOtp(phone);
+
+    if (!result.sent) {
+      console.log(`\n========================================\n[WHATSAPP OTP FALLBACK] Phone: +${result.cleanPhone}\nCode: ${result.code}\n========================================\n`);
+      return res.json({ ok: true, message: 'OTP sent in fallback mode.', mockOtp: result.code });
+    }
+
+    return res.json({ ok: true, message: 'OTP sent successfully.' });
+  } catch (err) {
+    return res.status(err.statusCode || 400).json({ ok: false, error: err.message });
   }
-
-  if (cleanPhone.length < 10 || cleanPhone.length > 15) {
-    return res.status(400).json({ ok: false, error: 'Please enter a valid phone number with country code.' });
-  }
-
-  const code = String(Math.floor(100000 + Math.random() * 900000));
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-
-  db.prepare('DELETE FROM otp_verifications WHERE phone_number = ?').run(cleanPhone);
-  db.prepare('INSERT INTO otp_verifications (phone_number, code, expires_at) VALUES (?, ?, ?)')
-    .run(cleanPhone, code, expiresAt);
-
-  const sent = await whatsappService.sendOtp(cleanPhone, code);
-
-  if (!sent) {
-    console.log(`\n========================================\n[WHATSAPP OTP FALLBACK] Phone: +${cleanPhone}\nCode: ${code}\n========================================\n`);
-    return res.json({ ok: true, message: 'OTP sent in fallback mode.', mockOtp: code });
-  }
-
-  return res.json({ ok: true, message: 'OTP sent successfully.' });
 }));
 
 authRouter.post('/auth/whatsapp/verify-otp', authLimiter, asyncHandler(async (req, res) => {
@@ -402,49 +342,112 @@ authRouter.post('/auth/whatsapp/verify-otp', authLimiter, asyncHandler(async (re
     return res.status(400).json({ ok: false, error: 'Phone number and verification code are required.' });
   }
 
-  let cleanPhone = phone.replace(/[^0-9]/g, '');
-  if (cleanPhone.length === 10 && !cleanPhone.startsWith('91')) {
-    cleanPhone = '91' + cleanPhone;
+  try {
+    const user = await AuthService.verifyOtp(phone, code);
+
+    await AuthService.updateLastLogin(user.id);
+    setAuthCookie(res, user);
+    await logAudit({ actorUserId: user.id, action: 'login_whatsapp', ip: req.ip });
+    setFlash(res, 'success', 'Logged in successfully via WhatsApp OTP.');
+
+    const target = next ? safeNext(next) : (isSuperAdmin(user) ? '/admin' : '/dashboard');
+    return res.json({ ok: true, redirectUrl: target });
+  } catch (err) {
+    const cleanPhone = String(phone).replace(/[^0-9]/g, '');
+    await logAudit({ action: 'failed_whatsapp_otp', metadata: { phone: cleanPhone }, ip: req.ip });
+    return res.status(err.statusCode || 400).json({ ok: false, error: err.message });
+  }
+}));
+
+authRouter.post('/auth/email/send-otp', authLimiter, asyncHandler(async (req, res) => {
+  const { email, action } = req.body;
+  if (!email || typeof email !== 'string') {
+    return res.status(400).json({ ok: false, error: 'Email address is required.' });
+  }
+  const normalizedEmail = email.toLowerCase().trim();
+  const existing = await db.prepare('SELECT id FROM users WHERE email = ?').get(normalizedEmail);
+
+  if (action === 'register') {
+    if (!(await getSettingBool('registration_enabled', true))) {
+      return res.status(403).json({ ok: false, error: 'Registration is currently disabled.' });
+    }
+    if (existing) {
+      return res.status(400).json({ ok: false, error: 'This email is already registered.' });
+    }
+  } else if (action === 'login') {
+    if (!existing) {
+      return res.status(400).json({ ok: false, error: 'This email is not registered. Please create an account first.' });
+    }
+    const user = await db.prepare('SELECT status FROM users WHERE email = ?').get(normalizedEmail);
+    if (user && user.status !== 'active') {
+      return res.status(403).json({ ok: false, error: 'This account is suspended. Please contact support.' });
+    }
+  } else {
+    return res.status(400).json({ ok: false, error: 'Invalid action.' });
   }
 
-  const cleanCode = String(code).trim();
+  const result = await AuthService.sendEmailOtp(normalizedEmail);
+  return res.json({ ok: true, message: 'Verification code sent to your email.', mockOtp: result.code });
+}));
 
-  const record = db.prepare('SELECT * FROM otp_verifications WHERE phone_number = ? AND code = ?').get(cleanPhone, cleanCode);
-  if (!record || new Date(record.expires_at) < new Date()) {
-    logAudit({ action: 'failed_whatsapp_otp', metadata: { phone: cleanPhone }, ip: req.ip });
-    return res.status(400).json({ ok: false, error: 'Invalid or expired verification code.' });
+authRouter.post('/auth/email/verify-otp', authLimiter, requireCsrf, asyncHandler(async (req, res) => {
+  const { email, code, next } = req.body;
+  if (!email || !code) {
+    return res.status(400).json({ ok: false, error: 'Email and verification code are required.' });
   }
 
-  db.prepare('DELETE FROM otp_verifications WHERE id = ?').run(record.id);
-
-  let user = db.prepare('SELECT * FROM users WHERE phone_number = ?').get(cleanPhone);
-  
-  if (!user) {
-    const email = `phone-${cleanPhone}@shaadishots.local`;
-    const name = `User +${cleanPhone.slice(-10)}`;
-    const dummyPasswordHash = await hashPassword(randomToken(16));
+  try {
+    await AuthService.verifyEmailOtp(email, code);
     
-    let emailClash = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-    if (emailClash) {
-      return res.status(500).json({ ok: false, error: 'Registration failed due to email conflict.' });
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await db.prepare('SELECT * FROM users WHERE email = ?').get(normalizedEmail);
+    if (!user) {
+      return res.status(400).json({ ok: false, error: 'User account not found.' });
     }
 
-    const insert = db.prepare('INSERT INTO users (name, email, password_hash, role, phone_number) VALUES (?, ?, ?, ?, ?)')
-      .run(name, email, dummyPasswordHash, 'owner', cleanPhone);
-    
-    user = db.prepare('SELECT * FROM users WHERE id = ?').get(insert.lastInsertRowid);
-    logAudit({ actorUserId: user.id, action: 'register_whatsapp', ip: req.ip });
+    if (user.status !== 'active') {
+      return res.status(403).json({ ok: false, error: 'This account is suspended. Please contact support.' });
+    }
+
+    await AuthService.updateLastLogin(user.id);
+    setAuthCookie(res, user);
+    await logAudit({ actorUserId: user.id, action: 'login_email_otp', ip: req.ip });
+    setFlash(res, 'success', 'Logged in successfully via Email OTP.');
+
+    const target = next ? safeNext(next) : (isSuperAdmin(user) ? '/admin' : '/dashboard');
+    return res.json({ ok: true, redirectUrl: target });
+  } catch (err) {
+    await logAudit({ action: 'failed_email_otp', metadata: { email: email.toLowerCase().trim() }, ip: req.ip });
+    return res.status(err.statusCode || 400).json({ ok: false, error: err.message });
+  }
+}));
+
+authRouter.post('/auth/email/register-verify', authLimiter, requireCsrf, asyncHandler(async (req, res) => {
+  const { name, email, password, code } = req.body;
+  if (!name || !email || !password || !code) {
+    return res.status(400).json({ ok: false, error: 'All fields are required.' });
   }
 
-  if (user.status !== 'active') {
-    return res.status(403).json({ ok: false, error: 'This account is suspended.' });
+  const normalizedEmail = email.toLowerCase().trim();
+  if (password.length < 8) {
+    return res.status(400).json({ ok: false, error: 'Password must be at least 8 characters.' });
   }
 
-  db.prepare('UPDATE users SET last_login_at = ?, updated_at = ? WHERE id = ?').run(nowIso(), nowIso(), user.id);
-  setAuthCookie(res, user);
-  logAudit({ actorUserId: user.id, action: 'login_whatsapp', ip: req.ip });
-  setFlash(res, 'success', 'Logged in successfully via WhatsApp OTP.');
+  try {
+    // 1. Verify OTP first
+    await AuthService.verifyEmailOtp(normalizedEmail, code);
 
-  const target = next ? safeNext(next) : (isSuperAdmin(user) ? '/admin' : '/dashboard');
-  return res.json({ ok: true, redirectUrl: target });
+    // 2. Create the user
+    const user = await AuthService.registerUser(name, normalizedEmail, password);
+
+    // 3. Log them in
+    await AuthService.updateLastLogin(user.id);
+    setAuthCookie(res, user);
+    await logAudit({ actorUserId: user.id, action: 'register_email_otp', ip: req.ip });
+    setFlash(res, 'success', 'Welcome! Your account has been registered and verified.');
+
+    return res.json({ ok: true, redirectUrl: '/dashboard' });
+  } catch (err) {
+    return res.status(err.statusCode || 400).json({ ok: false, error: err.message });
+  }
 }));

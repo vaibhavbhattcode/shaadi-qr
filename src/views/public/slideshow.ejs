@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  
+  <!-- Premium Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Material Symbols -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+  <style>
+    :root {
+      --bg-dark: #120613;
+      --accent: #b83280;
+      --accent-grad: linear-gradient(135deg, #b83280 0%, #ff7a59 100%);
+      --surface: rgba(255, 255, 255, 0.08);
+      --border: rgba(255, 255, 255, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: #ffffff;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    /* Ambient background blur */
+    .ambient-bg {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      filter: blur(80px) brightness(0.3);
+      transform: scale(1.2);
+      z-index: 1;
+      transition: background-image 1.5s ease-in-out;
+    }
+
+    /* Fullscreen Slideshow Wrapper */
+    .slideshow-container {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: opacity 1.5s ease-in-out;
+      padding: 40px;
+    }
+
+    .slide.active {
+      opacity: 1;
+    }
+
+    .slide img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 16px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8), 0 0 40px rgba(184, 50, 128, 0.2);
+    }
+
+    /* Bottom Info Card overlay */
+    .uploader-card {
+      position: absolute;
+      bottom: 40px;
+      left: 40px;
+      background: rgba(18, 6, 19, 0.75);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      padding: 16px 24px;
+      border-radius: 20px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      max-width: 350px;
+      animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .uploader-card h4 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.02em;
+    }
+
+    .uploader-card p {
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.7);
+      font-weight: 600;
+    }
+
+    /* Floating QR Code Watermark (Viral loop) */
+    .qr-watermark {
+      position: absolute;
+      top: 40px;
+      right: 40px;
+      background: rgba(255, 255, 255, 0.95);
+      border: 4px solid var(--accent);
+      padding: 14px;
+      border-radius: 24px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+      width: 170px;
+      transition: transform 0.3s ease;
+    }
+
+    .qr-watermark:hover {
+      transform: scale(1.05);
+    }
+
+    .qr-watermark img {
+      width: 130px;
+      height: 130px;
+      display: block;
+      border-radius: 12px;
+    }
+
+    .qr-watermark span {
+      font-size: 0.7rem;
+      color: #120613;
+      font-weight: 900;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Glass Control Bar */
+    .control-bar {
+      position: absolute;
+      bottom: 40px;
+      right: 40px;
+      display: flex;
+      gap: 12px;
+      z-index: 10;
+    }
+
+    .control-btn {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(15px);
+      border: 1px solid var(--border);
+      color: #ffffff;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .control-btn:hover {
+      background: var(--accent-grad);
+      border-color: transparent;
+      box-shadow: 0 8px 24px rgba(184, 50, 128, 0.4);
+    }
+
+    .control-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* Large play/starting modal */
+    .start-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(18, 6, 19, 0.95);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      text-align: center;
+      padding: 24px;
+    }
+
+    .start-overlay h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.2rem, 5vw, 4rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .start-overlay p {
+      font-size: 1.1rem;
+      color: rgba(255, 255, 255, 0.6);
+      max-width: 500px;
+      line-height: 1.6;
+    }
+
+    .start-btn {
+      background: var(--accent-grad);
+      border: 0;
+      color: white;
+      font-weight: 800;
+      font-size: 1.1rem;
+      padding: 16px 36px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 15px 35px rgba(184, 50, 128, 0.35);
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .start-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 20px 40px rgba(184, 50, 128, 0.45);
+    }
+
+    /* Empty state warning */
+    .empty-state {
+      text-align: center;
+      display: none;
+      z-index: 10;
+      background: rgba(18, 6, 19, 0.8);
+      border: 1px solid var(--border);
+      padding: 40px;
+      border-radius: 24px;
+      max-width: 450px;
+    }
+
+    .empty-state span {
+      font-size: 3rem;
+      margin-bottom: 16px;
+      color: var(--accent);
+      display: block;
+    }
+
+    .empty-state h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      margin-bottom: 8px;
+    }
+
+    .empty-state p {
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.6);
+      line-height: 1.5;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Ambient Glow -->
+  <div id="ambient-bg" class="ambient-bg"></div>
+
+  <!-- Start Overlay for browser permissions -->
+  <div id="start-overlay" class="start-overlay">
+    <span class="material-symbols-outlined" style="font-size: 5rem; color: var(--accent); fill: 1;">celebration</span>
+    <h1><%= event.title %></h1>
+    <p>Launch the live photo slideshow gallery. Cast this screen to a projector or venue TV screen to show guest moments in real-time.</p>
+    <button id="start-btn" class="start-btn">
+      <span class="material-symbols-outlined">play_arrow</span> Start Slideshow
+    </button>
+  </div>
+
+  <!-- Slideshow Screen -->
+  <div id="slideshow-container" class="slideshow-container"></div>
+
+  <!-- Empty State -->
+  <div id="empty-state" class="empty-state">
+    <span class="material-symbols-outlined">photo_library</span>
+    <h3>No Approved Photos Yet</h3>
+    <p>Upload photos by scanning the QR code in the corner. As soon as the host approves them, they will automatically appear here!</p>
+  </div>
+
+  <!-- Guest Invite QR Watermark -->
+  <div class="qr-watermark">
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=<%= encodeURIComponent(uploadLink) %>" alt="Scan to Upload">
+    <span>📸 Scan to Upload</span>
+  </div>
+
+  <!-- Floating Controls -->
+  <div class="control-bar">
+    <button id="play-pause-btn" class="control-btn" title="Play/Pause">
+      <span class="material-symbols-outlined">pause</span>
+    </button>
+    <button id="fullscreen-btn" class="control-btn" title="Toggle Fullscreen">
+      <span class="material-symbols-outlined">fullscreen</span>
+    </button>
+  </div>
+
+  <script>
+    const eventSlug = '<%= event.slug %>';
+    const mediaApiUrl = `/e/${eventSlug}/slideshow/media`;
+    
+    let mediaList = [];
+    let currentIndex = -1;
+    let slideshowInterval = null;
+    let isPlaying = true;
+    const intervalTime = 7000; // 7 seconds per slide
+
+    const ambientBg = document.getElementById('ambient-bg');
+    const container = document.getElementById('slideshow-container');
+    const emptyState = document.getElementById('empty-state');
+    const startOverlay = document.getElementById('start-overlay');
+    const startBtn = document.getElementById('start-btn');
+    const playPauseBtn = document.getElementById('play-pause-btn');
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+
+    // Fetch approved media from endpoint
+    async function fetchMedia() {
+      try {
+        const response = await fetch(mediaApiUrl);
+        const data = await response.json();
+        if (data.ok && Array.isArray(data.media)) {
+          updateMediaList(data.media);
+        }
+      } catch (err) {
+        console.error('Failed to fetch media list:', err);
+      }
+    }
+
+    // Merge new media items keeping track of already shown ones
+    function updateMediaList(newList) {
+      const isFirstLoad = mediaList.length === 0;
+      
+      // Determine if there are new items that we don't have
+      const existingIds = new Set(mediaList.map(m => m.id));
+      const newItems = newList.filter(m => !existingIds.has(m.id));
+
+      if (newItems.length > 0) {
+        console.log(`Discovered ${newItems.length} new approved photos.`);
+        
+        if (isFirstLoad) {
+          mediaList = newList;
+          emptyState.style.display = 'none';
+          showNextSlide();
+        } else {
+          // Professionally inject new uploads at the front of the queue
+          // so that they are shown next in line
+          const currentItem = mediaList[currentIndex];
+          
+          // Re-populate list and locate our current position
+          mediaList = newList;
+          const newPos = mediaList.findIndex(m => m.id === currentItem?.id);
+          if (newPos !== -1) {
+            currentIndex = newPos;
+          }
+        }
+      }
+
+      if (mediaList.length === 0) {
+        emptyState.style.display = 'block';
+        container.innerHTML = '';
+        ambientBg.style.backgroundImage = 'none';
+      }
+    }
+
+    function showNextSlide() {
+      if (mediaList.length === 0) return;
+
+      currentIndex = (currentIndex + 1) % mediaList.length;
+      const item = mediaList[currentIndex];
+      
+      // Construct Slide elements
+      const mediaUrl = `/e/${eventSlug}/media/${item.id}`;
+      const thumbUrl = `/e/${eventSlug}/media/${item.id}/thumbnail`;
+
+      // Set ambient background image
+      ambientBg.style.backgroundImage = `url('${thumbUrl}')`;
+
+      // Create new slide
+      const slide = document.createElement('div');
+      slide.className = 'slide';
+      
+      const img = document.createElement('img');
+      img.src = mediaUrl;
+      img.alt = item.original_name;
+      slide.appendChild(img);
+
+      // Add Uploader metadata card
+      const card = document.createElement('div');
+      card.className = 'uploader-card';
+      const sideText = item.uploader_side ? ` · ${item.uploader_side.charAt(0).toUpperCase() + item.uploader_side.slice(1)}'s side` : '';
+      card.innerHTML = `
+        <h4>Captured By</h4>
+        <p>${item.uploader_name || 'Anonymous Guest'}${sideText}</p>
+      `;
+      slide.appendChild(card);
+
+      // Append and animate transition
+      container.appendChild(slide);
+
+      // Trigger reflow to apply CSS transition
+      setTimeout(() => {
+        slide.classList.add('active');
+        
+        // Remove older slides after transition completes
+        const oldSlides = container.querySelectorAll('.slide');
+        if (oldSlides.length > 1) {
+          oldSlides[0].classList.remove('active');
+          setTimeout(() => {
+            if (oldSlides[0].parentNode === container) {
+              container.removeChild(oldSlides[0]);
+            }
+          }, 1500);
+        }
+      }, 50);
+    }
+
+    function startSlideshow() {
+      stopSlideshow();
+      if (isPlaying) {
+        slideshowInterval = setInterval(showNextSlide, intervalTime);
+      }
+    }
+
+    function stopSlideshow() {
+      clearInterval(slideshowInterval);
+    }
+
+    function togglePlayPause() {
+      isPlaying = !isPlaying;
+      if (isPlaying) {
+        playPauseBtn.innerHTML = '<span class="material-symbols-outlined">pause</span>';
+        startSlideshow();
+        showNextSlide();
+      } else {
+        playPauseBtn.innerHTML = '<span class="material-symbols-outlined">play_arrow</span>';
+        stopSlideshow();
+      }
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+          console.error(`Error attempting to enable full-screen: ${err.message}`);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    // Set up full screen change listeners to update icon
+    document.addEventListener('fullscreenchange', () => {
+      if (document.fullscreenElement) {
+        fullscreenBtn.innerHTML = '<span class="material-symbols-outlined">fullscreen_exit</span>';
+      } else {
+        fullscreenBtn.innerHTML = '<span class="material-symbols-outlined">fullscreen</span>';
+      }
+    });
+
+    // Start Button Interaction
+    startBtn.addEventListener('click', () => {
+      startOverlay.style.display = 'none';
+      
+      // Auto toggle full screen on start
+      toggleFullscreen();
+
+      // Initial Fetch & Start Polling
+      fetchMedia();
+      setInterval(fetchMedia, 8000); // Poll for new approved photos every 8 seconds
+      
+      startSlideshow();
+    });
+
+    playPauseBtn.addEventListener('click', togglePlayPause);
+    fullscreenBtn.addEventListener('click', toggleFullscreen);
+  </script>
+</body>
+</html>

@@ -41,7 +41,7 @@ export function isSuperAdmin(user) {
   return user?.role === 'super_admin';
 }
 
-export function authContext(req, res, next) {
+export async function authContext(req, res, next) {
   res.locals.currentUser = null;
   res.locals.isSuperAdmin = false;
   const token = req.signedCookies?.[AUTH_COOKIE];
@@ -52,7 +52,7 @@ export function authContext(req, res, next) {
       issuer: 'wedding-qr-photo-app',
       audience: 'wedding-admin',
     });
-    const user = db
+    const user = await db
       .prepare('SELECT id, name, email, role, status, phone_number, google_id, created_at, last_login_at, two_factor_secret, two_factor_enabled FROM users WHERE id = ?')
       .get(Number(payload.sub));
 
@@ -81,7 +81,7 @@ export function requireAuth(req, res, next) {
   return next();
 }
 
-export function requireSuperAdmin(req, res, next) {
+export async function requireSuperAdmin(req, res, next) {
   if (!req.user) {
     const nextUrl = encodeURIComponent(req.originalUrl || '/admin');
     return res.redirect(`/login?next=${nextUrl}`);
@@ -92,6 +92,22 @@ export function requireSuperAdmin(req, res, next) {
       message: 'You do not have permission to access the super admin panel.',
     });
   }
+
+  // Security: Check if admin is still using the default seeded password
+  // Skip check for profile/security pages (so they can actually change it)
+  if (config.isProduction && req.originalUrl && !req.originalUrl.startsWith('/dashboard/profile') && !req.originalUrl.startsWith('/dashboard/security')) {
+    const user = await db.prepare('SELECT password_hash FROM users WHERE id = ?').get(req.user.id);
+    if (user && user.password_hash) {
+      const isDefault = bcrypt.compareSync('SuperAdmin123!', user.password_hash);
+      if (isDefault) {
+        return res.render('error', {
+          title: 'Password Change Required',
+          message: 'You are using the default super admin password. For security, please change it immediately via your Profile → Security Settings before continuing.',
+        });
+      }
+    }
+  }
+
   return next();
 }
 
@@ -109,10 +125,10 @@ export async function verifyPassword(password, hash) {
 }
 
 export function requireEventOwner(paramName = 'eventId') {
-  return (req, res, next) => {
+  return async (req, res, next) => {
     const eventId = Number(req.params[paramName]);
     if (!Number.isInteger(eventId)) return res.status(404).render('error', { title: 'Not found', message: 'Event not found.' });
-    const event = db.prepare('SELECT * FROM events WHERE id = ? AND owner_id = ?').get(eventId, req.user.id);
+    const event = await db.prepare('SELECT * FROM events WHERE id = ? AND owner_id = ?').get(eventId, req.user.id);
     if (!event) return res.status(404).render('error', { title: 'Not found', message: 'Event not found or you do not have access.' });
     req.event = event;
     res.locals.event = event;

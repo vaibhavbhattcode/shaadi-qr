@@ -154,7 +154,7 @@ async function detectAndValidateFile(file, plan) {
 }
 
 export async function validateAndStoreUploads({ event, folderId, uploaderName, uploaderSide, files, req }) {
-  const plan = getPlan(event.plan);
+  const plan = await getPlan(event.plan);
   const accepted = [];
   const skipped = [];
   const rejected = [];
@@ -199,17 +199,17 @@ export async function validateAndStoreUploads({ event, folderId, uploaderName, u
   }
 
   const incomingBytes = candidates.reduce((sum, item) => sum + item.file.size, 0);
-  const usedBytes = getStorageUsage(event.id);
+  const usedBytes = await getStorageUsage(event.id);
   if (usedBytes + incomingBytes > event.storage_limit_bytes) {
     await Promise.all(candidates.map((item) => safeUnlink(item.file.path)));
     throw new StorageQuotaError('This wedding album storage limit is full. Please ask the couple/admin to upgrade or delete rejected media.');
   }
 
-  const folderRow = db.prepare('SELECT name FROM folders WHERE id = ?').get(folderId);
+  const folderRow = await db.prepare('SELECT name FROM folders WHERE id = ?').get(folderId);
   const folderName = folderRow ? folderRow.name : 'uploads';
   const folderSlug = folderName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'folder';
 
-  const insert = db.prepare(`
+  const insert = await db.prepare(`
     INSERT INTO media (
       id, event_id, folder_id, uploader_name, uploader_side, original_name, stored_name, storage_path,
       mime_type, media_type, size_bytes, sha256, status, created_at, thumbnail_path, is_nsfw
@@ -347,7 +347,7 @@ export async function validateAndStoreUploads({ event, folderId, uploaderName, u
       );
 
       if (isNsfw) {
-        logAudit({
+        await logAudit({
           actorUserId: null,
           eventId: event.id,
           action: 'media_flagged_nsfw',
@@ -375,7 +375,7 @@ export async function validateAndStoreUploads({ event, folderId, uploaderName, u
     }
   }
 
-  logAudit({
+  await logAudit({
     eventId: event.id,
     action: 'guest_upload',
     metadata: { accepted: accepted.length, skipped: skipped.length, rejected: rejected.length },
@@ -388,7 +388,7 @@ export async function validateAndStoreUploads({ event, folderId, uploaderName, u
 export async function deleteMediaFileAndRow(mediaRow, actorUserId = null, req = null) {
   if (!mediaRow) return;
   
-  const event = db.prepare('SELECT storage_provider, storage_config FROM events WHERE id = ?').get(mediaRow.event_id);
+  const event = await db.prepare('SELECT storage_provider, storage_config FROM events WHERE id = ?').get(mediaRow.event_id);
   
   if (event && event.storage_provider === 'google_drive') {
     const configData = JSON.parse(event.storage_config || '{}');
@@ -454,8 +454,8 @@ export async function deleteMediaFileAndRow(mediaRow, actorUserId = null, req = 
       }
     }
   }
-  db.prepare('DELETE FROM media WHERE id = ?').run(mediaRow.id);
-  logAudit({
+  await db.prepare('DELETE FROM media WHERE id = ?').run(mediaRow.id);
+  await logAudit({
     actorUserId,
     eventId: mediaRow.event_id,
     action: 'media_delete',
@@ -470,7 +470,7 @@ export function contentDispositionInline(filename) {
 }
 
 export async function sendMediaFile(res, mediaRow, options = {}) {
-  const event = db.prepare('SELECT storage_provider, storage_config FROM events WHERE id = ?').get(mediaRow.event_id);
+  const event = await db.prepare('SELECT storage_provider, storage_config FROM events WHERE id = ?').get(mediaRow.event_id);
   
   if (event && event.storage_provider === 'google_drive') {
     const configData = JSON.parse(event.storage_config || '{}');

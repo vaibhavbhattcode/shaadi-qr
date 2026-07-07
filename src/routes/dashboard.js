@@ -20,9 +20,9 @@ export const dashboardRouter = express.Router();
 
 dashboardRouter.use(requireAuth);
 
-function eventStats(event) {
-  const used = getStorageUsage(event.id);
-  const counts = mediaCounts(event.id);
+async function eventStats(event) {
+  const used = await getStorageUsage(event.id);
+  const counts = await mediaCounts(event.id);
   return {
     used,
     usedHuman: formatBytes(used),
@@ -33,8 +33,8 @@ function eventStats(event) {
   };
 }
 
-function listFolders(eventId) {
-  return db.prepare('SELECT * FROM folders WHERE event_id = ? ORDER BY sort_order ASC, id ASC').all(eventId);
+async function listFolders(eventId) {
+  return await db.prepare('SELECT * FROM folders WHERE event_id = ? ORDER BY sort_order ASC, id ASC').all(eventId);
 }
 
 const eventCreateSchema = z.object({
@@ -62,13 +62,13 @@ const folderSchema = z.object({
   name: z.string().trim().min(2, 'Folder name is required').max(50),
 });
 
-dashboardRouter.get('/dashboard', (req, res) => {
-  const events = db.prepare('SELECT * FROM events WHERE owner_id = ? ORDER BY created_at DESC').all(req.user.id);
-  const enriched = events.map((event) => ({ ...event, stats: eventStats(event), uploadUrl: uploadUrl(req, event), galleryUrl: galleryUrl(req, event) }));
+dashboardRouter.get('/dashboard', async (req, res) => {
+  const events = await db.prepare('SELECT * FROM events WHERE owner_id = ? ORDER BY created_at DESC').all(req.user.id);
+  const enriched = await Promise.all(events.map(async (event) => ({ ...event, stats: await eventStats(event), uploadUrl: uploadUrl(req, event), galleryUrl: galleryUrl(req, event) })));
   res.render('dashboard/index', { title: 'Dashboard', events: enriched });
 });
 
-dashboardRouter.get('/dashboard/events/new', (req, res) => {
+dashboardRouter.get('/dashboard/events/new', async (req, res) => {
   res.render('dashboard/new-event', {
     title: 'Create wedding event',
     values: { folders: 'Haldi, Mehndi, Baraat, Reception', plan: 'basic' },
@@ -77,9 +77,11 @@ dashboardRouter.get('/dashboard/events/new', (req, res) => {
   });
 });
 
-dashboardRouter.post('/dashboard/events', requireCsrf, (req, res) => {
+dashboardRouter.post('/dashboard/events', requireCsrf, async (req, res) => {
+  console.log('[DEBUG] Entering POST /dashboard/events');
   const parsed = eventCreateSchema.safeParse(req.body);
   if (!parsed.success) {
+    console.log('[DEBUG] Validation failed:', parsed.error.flatten().fieldErrors);
     return res.status(400).render('dashboard/new-event', {
       title: 'Create wedding event',
       values: req.body,
@@ -89,9 +91,11 @@ dashboardRouter.post('/dashboard/events', requireCsrf, (req, res) => {
   }
 
   const data = parsed.data;
-  let slug = data.slug ? cleanSlug(data.slug) : uniqueSlug(data.title);
-  if (!slug) slug = uniqueSlug(data.title);
-  if (data.slug && db.prepare('SELECT id FROM events WHERE slug = ?').get(slug)) {
+  console.log('[DEBUG] Validation successful, title:', data.title);
+  let slug = data.slug ? cleanSlug(data.slug) : await uniqueSlug(data.title);
+  if (!slug) slug = await uniqueSlug(data.title);
+  if (data.slug && await db.prepare('SELECT id FROM events WHERE slug = ?').get(slug)) {
+    console.log('[DEBUG] Slug clash:', slug);
     return res.status(409).render('dashboard/new-event', {
       title: 'Create wedding event',
       values: req.body,
@@ -99,7 +103,7 @@ dashboardRouter.post('/dashboard/events', requireCsrf, (req, res) => {
       plans: PLAN_LIMITS,
     });
   }
-  if (!data.slug) slug = uniqueSlug(data.title);
+  if (!data.slug) slug = await uniqueSlug(data.title);
 
   const plan = PLAN_LIMITS.basic;
   const folderNames = data.folders
@@ -109,40 +113,70 @@ dashboardRouter.post('/dashboard/events', requireCsrf, (req, res) => {
     .slice(0, 20);
   if (folderNames.length === 0) folderNames.push('Wedding');
 
-  const createEvent = db.transaction(() => {
-    const result = db.prepare(`
-      INSERT INTO events (
-        owner_id, title, bride_name, groom_name, slug, upload_token, wedding_date, venue, city, plan, storage_limit_bytes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      req.user.id,
-      data.title,
-      data.bride_name || null,
-      data.groom_name || null,
-      slug,
-      randomToken(24),
-      data.wedding_date || null,
-      data.venue || null,
-      data.city || null,
-      'basic',
-      plan.storageLimitBytes
-    );
-
-    const eventId = Number(result.lastInsertRowid);
-    const insertFolder = db.prepare('INSERT OR IGNORE INTO folders (event_id, name, sort_order) VALUES (?, ?, ?)');
-    folderNames.forEach((name, index) => insertFolder.run(eventId, name, index));
-    return eventId;
+  let eventId;
+  console.log('[DEBUG] Starting transaction');
+  await db.transaction(async (txClient) => {
+    let result;
+    if (txClient && typeof txClient.query === 'function') {
+      result = await txClient.query(
+        'INSERT INTO events (owner_id, title, bride_name, groom_name, slug, upload_token, wedding_date, venue, city, plan, storage_limit_bytes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id',
+        [
+          req.user.id,
+          data.title,
+          data.bride_name || null,
+          data.groom_name || null,
+          slug,
+          randomToken(24),
+          data.wedding_date || null,
+          data.venue || null,
+          data.city || null,
+          'basic',
+          plan.storageLimitBytes
+        ]
+      );
+      eventId = result.rows[0].id;
+      for (let index = 0; index < folderNames.length; index++) {
+        await txClient.query(
+          'INSERT INTO folders (event_id, name, sort_order) VALUES ($1, $2, $3) ON CONFLICT (event_id, name) DO NOTHING',
+          [eventId, folderNames[index], index]
+        );
+      }
+    } else {
+      result = await db.prepare(`
+        INSERT INTO events (
+          owner_id, title, bride_name, groom_name, slug, upload_token, wedding_date, venue, city, plan, storage_limit_bytes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        req.user.id,
+        data.title,
+        data.bride_name || null,
+        data.groom_name || null,
+        slug,
+        randomToken(24),
+        data.wedding_date || null,
+        data.venue || null,
+        data.city || null,
+        'basic',
+        plan.storageLimitBytes
+      );
+      eventId = Number(result.lastInsertRowid);
+      const insertFolder = await db.prepare('INSERT OR IGNORE INTO folders (event_id, name, sort_order) VALUES (?, ?, ?)');
+      for (let index = 0; index < folderNames.length; index++) {
+        await insertFolder.run(eventId, folderNames[index], index);
+      }
+    }
   });
-
-  const eventId = createEvent();
-  logAudit({ actorUserId: req.user.id, eventId, action: 'event_create', ip: req.ip });
+  console.log('[DEBUG] Transaction completed, eventId:', eventId);
+  await logAudit({ actorUserId: req.user.id, eventId, action: 'event_create', ip: req.ip });
+  console.log('[DEBUG] logAudit completed');
   setFlash(res, 'success', 'Wedding event created. Download QR and share it with guests.');
+  console.log('[DEBUG] Redirecting to:', `/dashboard/events/${eventId}`);
   return res.redirect(`/dashboard/events/${eventId}`);
 });
 
 dashboardRouter.get('/dashboard/events/:eventId', requireEventOwner(), asyncHandler(async (req, res) => {
-  const folders = listFolders(req.event.id);
-  const stats = eventStats(req.event);
+  const folders = await listFolders(req.event.id);
+  const stats = await eventStats(req.event);
   const qrDataUrl = await QRCode.toDataURL(uploadUrl(req, req.event), { width: 520, margin: 2, errorCorrectionLevel: 'M' });
   res.render('dashboard/event', {
     title: req.event.title,
@@ -159,8 +193,8 @@ dashboardRouter.get('/dashboard/events/:eventId', requireEventOwner(), asyncHand
 
 dashboardRouter.post('/dashboard/events/:eventId/settings', requireEventOwner(), requireCsrf, asyncHandler(async (req, res) => {
   const parsed = settingsSchema.safeParse(req.body);
-  const folders = listFolders(req.event.id);
-  const stats = eventStats(req.event);
+  const folders = await listFolders(req.event.id);
+  const stats = await eventStats(req.event);
   if (!parsed.success) {
     return res.status(400).render('dashboard/event', {
       title: req.event.title,
@@ -189,7 +223,7 @@ dashboardRouter.post('/dashboard/events/:eventId/settings', requireEventOwner(),
     galleryPinHash = await bcrypt.hash(data.gallery_pin, 12);
   }
 
-  db.prepare(`
+  await db.prepare(`
     UPDATE events SET
       title = ?, bride_name = ?, groom_name = ?, wedding_date = ?, venue = ?, city = ?,
       upload_enabled = ?, gallery_enabled = ?, public_download_enabled = ?, gallery_pin_hash = ?, updated_at = ?
@@ -210,20 +244,20 @@ dashboardRouter.post('/dashboard/events/:eventId/settings', requireEventOwner(),
     req.user.id
   );
 
-  logAudit({ actorUserId: req.user.id, eventId: req.event.id, action: 'event_settings_update', ip: req.ip });
+  await logAudit({ actorUserId: req.user.id, eventId: req.event.id, action: 'event_settings_update', ip: req.ip });
   setFlash(res, 'success', 'Event settings updated.');
   return res.redirect(`/dashboard/events/${req.event.id}`);
 }));
 
-dashboardRouter.post('/dashboard/events/:eventId/folders', requireEventOwner(), requireCsrf, (req, res) => {
+dashboardRouter.post('/dashboard/events/:eventId/folders', requireEventOwner(), requireCsrf, async (req, res) => {
   const parsed = folderSchema.safeParse(req.body);
   if (!parsed.success) {
     setFlash(res, 'error', parsed.error.flatten().fieldErrors.name?.[0] || 'Invalid folder name.');
     return res.redirect(`/dashboard/events/${req.event.id}`);
   }
-  const maxSort = db.prepare('SELECT COALESCE(MAX(sort_order), 0) AS maxSort FROM folders WHERE event_id = ?').get(req.event.id);
+  const maxSort = await db.prepare('SELECT COALESCE(MAX(sort_order), 0) AS maxSort FROM folders WHERE event_id = ?').get(req.event.id);
   try {
-    db.prepare('INSERT INTO folders (event_id, name, sort_order) VALUES (?, ?, ?)').run(req.event.id, parsed.data.name, Number(maxSort.maxSort || 0) + 1);
+    await db.prepare('INSERT INTO folders (event_id, name, sort_order) VALUES (?, ?, ?)').run(req.event.id, parsed.data.name, Number(maxSort.maxSort || 0) + 1);
     setFlash(res, 'success', 'Folder added.');
   } catch {
     setFlash(res, 'error', 'This folder already exists.');
@@ -231,27 +265,27 @@ dashboardRouter.post('/dashboard/events/:eventId/folders', requireEventOwner(), 
   return res.redirect(`/dashboard/events/${req.event.id}`);
 });
 
-dashboardRouter.post('/dashboard/events/:eventId/folders/:folderId/delete', requireEventOwner(), requireCsrf, (req, res) => {
+dashboardRouter.post('/dashboard/events/:eventId/folders/:folderId/delete', requireEventOwner(), requireCsrf, async (req, res) => {
   const folderId = Number(req.params.folderId);
-  const folder = db.prepare('SELECT * FROM folders WHERE id = ? AND event_id = ?').get(folderId, req.event.id);
+  const folder = await db.prepare('SELECT * FROM folders WHERE id = ? AND event_id = ?').get(folderId, req.event.id);
   if (!folder) {
     setFlash(res, 'error', 'Folder not found.');
     return res.redirect(`/dashboard/events/${req.event.id}`);
   }
-  const count = db.prepare('SELECT COUNT(*) AS count FROM media WHERE folder_id = ?').get(folderId).count;
+  const count = (await db.prepare('SELECT COUNT(*) AS count FROM media WHERE folder_id = ?').get(folderId)).count;
   if (count > 0) {
     setFlash(res, 'error', 'Folder has media. Delete/move media first.');
     return res.redirect(`/dashboard/events/${req.event.id}`);
   }
-  db.prepare('DELETE FROM folders WHERE id = ? AND event_id = ?').run(folderId, req.event.id);
+  await db.prepare('DELETE FROM folders WHERE id = ? AND event_id = ?').run(folderId, req.event.id);
   setFlash(res, 'success', 'Folder deleted.');
   return res.redirect(`/dashboard/events/${req.event.id}`);
 });
 
-dashboardRouter.get('/dashboard/events/:eventId/media', requireEventOwner(), (req, res) => {
+dashboardRouter.get('/dashboard/events/:eventId/media', requireEventOwner(), async (req, res) => {
   const status = ['pending', 'approved', 'rejected', 'all'].includes(req.query.status) ? req.query.status : 'pending';
   const folderId = req.query.folder ? Number(req.query.folder) : null;
-  const folders = listFolders(req.event.id);
+  const folders = await listFolders(req.event.id);
   const conditions = ['m.event_id = ?'];
   const params = [req.event.id];
   if (status !== 'all') {
@@ -262,7 +296,7 @@ dashboardRouter.get('/dashboard/events/:eventId/media', requireEventOwner(), (re
     conditions.push('m.folder_id = ?');
     params.push(folderId);
   }
-  const media = db.prepare(`
+  const media = await db.prepare(`
     SELECT m.*, f.name AS folder_name
     FROM media m
     JOIN folders f ON f.id = m.folder_id
@@ -278,12 +312,12 @@ dashboardRouter.get('/dashboard/events/:eventId/media', requireEventOwner(), (re
     folders,
     status,
     folderId,
-    stats: eventStats(req.event),
+    stats: await eventStats(req.event),
   });
 });
 
 async function mutateMediaStatus(req, res, action, mediaId) {
-  const media = db.prepare('SELECT * FROM media WHERE id = ? AND event_id = ?').get(mediaId, req.event.id);
+  const media = await db.prepare('SELECT * FROM media WHERE id = ? AND event_id = ?').get(mediaId, req.event.id);
   if (!media) {
     setFlash(res, 'error', 'Media not found.');
     return res.redirect(`/dashboard/events/${req.event.id}/media`);
@@ -293,12 +327,12 @@ async function mutateMediaStatus(req, res, action, mediaId) {
     await deleteMediaFileAndRow(media, req.user.id, req);
     setFlash(res, 'success', 'Media deleted.');
   } else if (action === 'approve') {
-    db.prepare("UPDATE media SET status = 'approved', approved_at = ?, rejected_at = NULL WHERE id = ? AND event_id = ?").run(nowIso(), mediaId, req.event.id);
-    logAudit({ actorUserId: req.user.id, eventId: req.event.id, action: 'media_approve', metadata: { mediaId }, ip: req.ip });
+    await db.prepare("UPDATE media SET status = 'approved', approved_at = ?, rejected_at = NULL WHERE id = ? AND event_id = ?").run(nowIso(), mediaId, req.event.id);
+    await logAudit({ actorUserId: req.user.id, eventId: req.event.id, action: 'media_approve', metadata: { mediaId }, ip: req.ip });
     setFlash(res, 'success', 'Media approved.');
   } else if (action === 'reject') {
-    db.prepare("UPDATE media SET status = 'rejected', rejected_at = ?, approved_at = NULL WHERE id = ? AND event_id = ?").run(nowIso(), mediaId, req.event.id);
-    logAudit({ actorUserId: req.user.id, eventId: req.event.id, action: 'media_reject', metadata: { mediaId }, ip: req.ip });
+    await db.prepare("UPDATE media SET status = 'rejected', rejected_at = ?, approved_at = NULL WHERE id = ? AND event_id = ?").run(nowIso(), mediaId, req.event.id);
+    await logAudit({ actorUserId: req.user.id, eventId: req.event.id, action: 'media_reject', metadata: { mediaId }, ip: req.ip });
     setFlash(res, 'success', 'Media rejected.');
   }
   const back = req.get('referer')?.includes(`/dashboard/events/${req.event.id}`) ? req.get('referer') : `/dashboard/events/${req.event.id}/media`;
@@ -319,20 +353,20 @@ dashboardRouter.post('/dashboard/events/:eventId/media/bulk', requireEventOwner(
 
   let done = 0;
   for (const id of ids.slice(0, 200)) {
-    const media = db.prepare('SELECT * FROM media WHERE id = ? AND event_id = ?').get(id, req.event.id);
+    const media = await db.prepare('SELECT * FROM media WHERE id = ? AND event_id = ?').get(id, req.event.id);
     if (!media) continue;
     if (action === 'delete') await deleteMediaFileAndRow(media, req.user.id, req);
-    if (action === 'approve') db.prepare("UPDATE media SET status = 'approved', approved_at = ?, rejected_at = NULL WHERE id = ? AND event_id = ?").run(nowIso(), id, req.event.id);
-    if (action === 'reject') db.prepare("UPDATE media SET status = 'rejected', rejected_at = ?, approved_at = NULL WHERE id = ? AND event_id = ?").run(nowIso(), id, req.event.id);
+    if (action === 'approve') await db.prepare("UPDATE media SET status = 'approved', approved_at = ?, rejected_at = NULL WHERE id = ? AND event_id = ?").run(nowIso(), id, req.event.id);
+    if (action === 'reject') await db.prepare("UPDATE media SET status = 'rejected', rejected_at = ?, approved_at = NULL WHERE id = ? AND event_id = ?").run(nowIso(), id, req.event.id);
     done += 1;
   }
-  logAudit({ actorUserId: req.user.id, eventId: req.event.id, action: `media_bulk_${action}`, metadata: { count: done }, ip: req.ip });
+  await logAudit({ actorUserId: req.user.id, eventId: req.event.id, action: `media_bulk_${action}`, metadata: { count: done }, ip: req.ip });
   setFlash(res, 'success', `${done} item(s) processed.`);
   return res.redirect(`/dashboard/events/${req.event.id}/media?status=${action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'all'}`);
 }));
 
-dashboardRouter.get('/dashboard/media/:mediaId/file', (req, res) => {
-  const media = db.prepare(`
+dashboardRouter.get('/dashboard/media/:mediaId/file', async (req, res) => {
+  const media = await db.prepare(`
     SELECT m.* FROM media m
     JOIN events e ON e.id = m.event_id
     WHERE m.id = ? AND e.owner_id = ?
@@ -341,8 +375,8 @@ dashboardRouter.get('/dashboard/media/:mediaId/file', (req, res) => {
   return sendMediaFile(res, media, { private: true });
 });
 
-dashboardRouter.get('/dashboard/media/:mediaId/thumbnail', (req, res) => {
-  const media = db.prepare(`
+dashboardRouter.get('/dashboard/media/:mediaId/thumbnail', async (req, res) => {
+  const media = await db.prepare(`
     SELECT m.* FROM media m
     JOIN events e ON e.id = m.event_id
     WHERE m.id = ? AND e.owner_id = ?
@@ -356,7 +390,18 @@ dashboardRouter.get('/dashboard/events/:eventId/qr.png', requireEventOwner(), as
   if (req.query.download === '1') {
     res.setHeader('Content-Disposition', `attachment; filename="${req.event.slug}-upload-qr.png"`);
   }
-  return QRCode.toFileStream(res, uploadUrl(req, req.event), { width: 1024, margin: 2, errorCorrectionLevel: 'M' });
+  const dark = String(req.query.dark || '#000000');
+  const light = String(req.query.light || '#ffffff');
+
+  return QRCode.toFileStream(res, uploadUrl(req, req.event), {
+    width: 1024,
+    margin: 2,
+    errorCorrectionLevel: 'M',
+    color: {
+      dark,
+      light
+    }
+  });
 }));
 
 dashboardRouter.get('/dashboard/events/:eventId/poster', requireEventOwner(), asyncHandler(async (req, res) => {
@@ -378,7 +423,7 @@ dashboardRouter.get('/dashboard/events/:eventId/download.zip', requireEventOwner
     conditions.push('m.status = ?');
     params.push(status);
   }
-  const rows = db.prepare(`
+  const rows = await db.prepare(`
     SELECT m.*, f.name AS folder_name
     FROM media m
     JOIN folders f ON f.id = m.folder_id
@@ -414,11 +459,11 @@ dashboardRouter.get('/dashboard/events/:eventId/download.zip', requireEventOwner
     }
   }
   archive.finalize();
-  logAudit({ actorUserId: req.user.id, eventId: req.event.id, action: 'album_download', metadata: { status, count: rows.length }, ip: req.ip });
+  await logAudit({ actorUserId: req.user.id, eventId: req.event.id, action: 'album_download', metadata: { status, count: rows.length }, ip: req.ip });
 }));
 
 // Small utility endpoint shown in event page for copying absolute links safely.
-dashboardRouter.get('/dashboard/events/:eventId/links.json', requireEventOwner(), (req, res) => {
+dashboardRouter.get('/dashboard/events/:eventId/links.json', requireEventOwner(), async (req, res) => {
   res.json({
     uploadUrl: uploadUrl(req, req.event),
     galleryUrl: galleryUrl(req, req.event),
@@ -427,7 +472,7 @@ dashboardRouter.get('/dashboard/events/:eventId/links.json', requireEventOwner()
 });
 
 dashboardRouter.get('/dashboard/security', asyncHandler(async (req, res) => {
-  const user = db.prepare('SELECT two_factor_secret, two_factor_enabled FROM users WHERE id = ?').get(req.user.id);
+  const user = await db.prepare('SELECT two_factor_secret, two_factor_enabled FROM users WHERE id = ?').get(req.user.id);
   const twoFactorEnabled = user?.two_factor_enabled === 1;
   let secret = '';
   let qrDataUrl = '';
@@ -459,25 +504,25 @@ dashboardRouter.post('/dashboard/security/2fa/enable', requireCsrf, asyncHandler
     return res.redirect('/dashboard/security');
   }
 
-  db.prepare('UPDATE users SET two_factor_secret = ?, two_factor_enabled = 1, updated_at = ? WHERE id = ?')
+  await db.prepare('UPDATE users SET two_factor_secret = ?, two_factor_enabled = 1, updated_at = ? WHERE id = ?')
     .run(secret, nowIso(), req.user.id);
 
-  logAudit({ actorUserId: req.user.id, action: '2fa_enabled', ip: req.ip });
+  await logAudit({ actorUserId: req.user.id, action: '2fa_enabled', ip: req.ip });
   setFlash(res, 'success', 'Two-Factor Authentication (2FA) is now enabled.');
   res.redirect('/dashboard/security');
 }));
 
 dashboardRouter.post('/dashboard/security/2fa/disable', requireCsrf, asyncHandler(async (req, res) => {
-  db.prepare('UPDATE users SET two_factor_secret = NULL, two_factor_enabled = 0, updated_at = ? WHERE id = ?')
+  await db.prepare('UPDATE users SET two_factor_secret = NULL, two_factor_enabled = 0, updated_at = ? WHERE id = ?')
     .run(nowIso(), req.user.id);
 
-  logAudit({ actorUserId: req.user.id, action: '2fa_disabled', ip: req.ip });
+  await logAudit({ actorUserId: req.user.id, action: '2fa_disabled', ip: req.ip });
   setFlash(res, 'success', 'Two-Factor Authentication (2FA) has been disabled.');
   res.redirect('/dashboard/security');
 }));
 
 dashboardRouter.get('/dashboard/events/:eventId/upgrade', requireEventOwner(), asyncHandler(async (req, res) => {
-  const plans = db.prepare('SELECT * FROM plans WHERE is_active = 1 ORDER BY price ASC').all();
+  const plans = await db.prepare('SELECT * FROM plans WHERE is_active = 1 ORDER BY price ASC').all();
   const planList = plans.map(p => ({
     name: p.name,
     slug: p.slug,
@@ -511,7 +556,7 @@ dashboardRouter.post('/dashboard/events/:eventId/upgrade/order', requireEventOwn
   }
 
   const { planSlug } = parsed.data;
-  const targetPlan = db.prepare('SELECT * FROM plans WHERE slug = ? AND is_active = 1').get(planSlug);
+  const targetPlan = await db.prepare('SELECT * FROM plans WHERE slug = ? AND is_active = 1').get(planSlug);
   if (!targetPlan) {
     return res.status(404).json({ ok: false, error: 'Selected plan not found or inactive.' });
   }
@@ -556,7 +601,7 @@ dashboardRouter.post('/dashboard/events/:eventId/upgrade/order', requireEventOwn
       return res.status(500).json({ ok: false, error: 'Failed to create order with Razorpay.' });
     }
 
-    db.prepare(`
+    await db.prepare(`
       INSERT INTO payments (user_id, event_id, plan_name, amount, payment_status, provider, provider_payment_id, notes, created_at, updated_at)
       VALUES (?, ?, ?, ?, 'pending', 'razorpay', ?, ?, ?, ?)
     `).run(
@@ -612,18 +657,18 @@ dashboardRouter.post('/dashboard/events/:eventId/upgrade/verify', requireEventOw
       return res.status(400).json({ ok: false, error: 'Mock payments are disabled when payment gateway is active.' });
     }
 
-    const targetPlan = db.prepare('SELECT * FROM plans WHERE slug = ? AND is_active = 1').get(planSlug);
+    const targetPlan = await db.prepare('SELECT * FROM plans WHERE slug = ? AND is_active = 1').get(planSlug);
     if (!targetPlan) {
       return res.status(404).json({ ok: false, error: 'Target plan not found.' });
     }
 
-    db.prepare(`
+    await db.prepare(`
       UPDATE events 
       SET plan = ?, storage_limit_bytes = ?, updated_at = ? 
       WHERE id = ?
     `).run(targetPlan.slug, targetPlan.storage_limit_bytes, nowIso(), req.event.id);
 
-    db.prepare(`
+    await db.prepare(`
       INSERT INTO payments (user_id, event_id, plan_name, amount, payment_status, provider, provider_payment_id, notes, created_at, updated_at)
       VALUES (?, ?, ?, ?, 'paid', 'mock', ?, '[MOCK MODE] Sandbox simulated plan upgrade.', ?, ?)
     `).run(
@@ -636,7 +681,7 @@ dashboardRouter.post('/dashboard/events/:eventId/upgrade/verify', requireEventOw
       nowIso()
     );
 
-    logAudit({
+    await logAudit({
       actorUserId: req.user.id,
       eventId: req.event.id,
       action: 'event_plan_upgrade_mock',
@@ -657,13 +702,13 @@ dashboardRouter.post('/dashboard/events/:eventId/upgrade/verify', requireEventOw
   const generatedSignature = hmac.digest('hex');
 
   if (generatedSignature !== razorpay_signature) {
-    db.prepare(`
+    await db.prepare(`
       UPDATE payments 
       SET payment_status = 'failed', updated_at = ? 
       WHERE event_id = ? AND provider_payment_id = ?
     `).run(nowIso(), req.event.id, razorpay_order_id);
 
-    logAudit({
+    await logAudit({
       actorUserId: req.user.id,
       eventId: req.event.id,
       action: 'event_plan_upgrade_failed_signature',
@@ -674,23 +719,23 @@ dashboardRouter.post('/dashboard/events/:eventId/upgrade/verify', requireEventOw
     return res.status(400).json({ ok: false, error: 'Payment signature verification failed. Fraud attempt logged.' });
   }
 
-  const paymentRecord = db.prepare('SELECT * FROM payments WHERE event_id = ? AND provider_payment_id = ? LIMIT 1').get(req.event.id, razorpay_order_id);
+  const paymentRecord = await db.prepare('SELECT * FROM payments WHERE event_id = ? AND provider_payment_id = ? LIMIT 1').get(req.event.id, razorpay_order_id);
   if (!paymentRecord) {
     return res.status(404).json({ ok: false, error: 'Payment record not found for this order.' });
   }
 
-  const targetPlan = db.prepare('SELECT * FROM plans WHERE name = ? AND is_active = 1').get(paymentRecord.plan_name);
+  const targetPlan = await db.prepare('SELECT * FROM plans WHERE name = ? AND is_active = 1').get(paymentRecord.plan_name);
   if (!targetPlan) {
     return res.status(404).json({ ok: false, error: 'Target plan not found.' });
   }
 
-  db.prepare(`
+  await db.prepare(`
     UPDATE events 
     SET plan = ?, storage_limit_bytes = ?, updated_at = ? 
     WHERE id = ?
   `).run(targetPlan.slug, targetPlan.storage_limit_bytes, nowIso(), req.event.id);
 
-  db.prepare(`
+  await db.prepare(`
     UPDATE payments 
     SET payment_status = 'paid', provider_payment_id = ?, updated_at = ?, notes = ?
     WHERE id = ?
@@ -701,7 +746,7 @@ dashboardRouter.post('/dashboard/events/:eventId/upgrade/verify', requireEventOw
     paymentRecord.id
   );
 
-  logAudit({
+  await logAudit({
     actorUserId: req.user.id,
     eventId: req.event.id,
     action: 'event_plan_upgrade_success',
@@ -724,7 +769,7 @@ const profileUpdateSchema = z.object({
 });
 
 dashboardRouter.get('/dashboard/profile', asyncHandler(async (req, res) => {
-  const payments = db.prepare(`
+  const payments = await db.prepare(`
     SELECT p.*, e.title AS event_title 
     FROM payments p 
     LEFT JOIN events e ON e.id = p.event_id 
@@ -742,7 +787,7 @@ dashboardRouter.get('/dashboard/profile', asyncHandler(async (req, res) => {
 
 dashboardRouter.post('/dashboard/profile', requireCsrf, asyncHandler(async (req, res) => {
   const parsed = profileUpdateSchema.safeParse(req.body);
-  const payments = db.prepare(`
+  const payments = await db.prepare(`
     SELECT p.*, e.title AS event_title 
     FROM payments p 
     LEFT JOIN events e ON e.id = p.event_id 
@@ -772,7 +817,7 @@ dashboardRouter.post('/dashboard/profile', requireCsrf, asyncHandler(async (req,
   }
 
   // Check email conflict
-  const emailConflict = db.prepare('SELECT id FROM users WHERE email = ? AND id != ?').get(email, req.user.id);
+  const emailConflict = await db.prepare('SELECT id FROM users WHERE email = ? AND id != ?').get(email, req.user.id);
   if (emailConflict) {
     return res.status(409).render('dashboard/profile', {
       title: 'My Profile',
@@ -789,7 +834,7 @@ dashboardRouter.post('/dashboard/profile', requireCsrf, asyncHandler(async (req,
     if (cleanPhone.length === 10 && !cleanPhone.startsWith('91')) {
       cleanPhone = '91' + cleanPhone;
     }
-    const phoneConflict = db.prepare('SELECT id FROM users WHERE phone_number = ? AND id != ?').get(cleanPhone, req.user.id);
+    const phoneConflict = await db.prepare('SELECT id FROM users WHERE phone_number = ? AND id != ?').get(cleanPhone, req.user.id);
     if (phoneConflict) {
       return res.status(409).render('dashboard/profile', {
         title: 'My Profile',
@@ -801,7 +846,7 @@ dashboardRouter.post('/dashboard/profile', requireCsrf, asyncHandler(async (req,
   }
 
   // Update details
-  db.prepare('UPDATE users SET name = ?, email = ?, phone_number = ?, updated_at = ? WHERE id = ?')
+  await db.prepare('UPDATE users SET name = ?, email = ?, phone_number = ?, updated_at = ? WHERE id = ?')
     .run(name, email, cleanPhone, nowIso(), req.user.id);
 
   // Update session info
@@ -809,7 +854,7 @@ dashboardRouter.post('/dashboard/profile', requireCsrf, asyncHandler(async (req,
   req.user.email = email;
   req.user.phone_number = cleanPhone;
 
-  logAudit({
+  await logAudit({
     actorUserId: req.user.id,
     action: 'profile_update',
     metadata: { name, email, phone_number: cleanPhone },
@@ -826,7 +871,7 @@ dashboardRouter.get('/dashboard/payments/:paymentId/invoice', asyncHandler(async
     return res.status(404).render('error', { title: 'Not found', message: 'Invoice not found.' });
   }
 
-  const payment = db.prepare(`
+  const payment = await db.prepare(`
     SELECT p.*, e.title AS event_title 
     FROM payments p 
     LEFT JOIN events e ON e.id = p.event_id 
@@ -837,7 +882,7 @@ dashboardRouter.get('/dashboard/payments/:paymentId/invoice', asyncHandler(async
     return res.status(404).render('error', { title: 'Not found', message: 'Invoice not found or unpaid.' });
   }
 
-  const buyer = db.prepare('SELECT id, name, email, phone_number FROM users WHERE id = ?').get(req.user.id);
+  const buyer = await db.prepare('SELECT id, name, email, phone_number FROM users WHERE id = ?').get(req.user.id);
 
   res.render('dashboard/invoice', {
     title: `Invoice INV-2026-${String(payment.id).padStart(5, '0')}`,
@@ -855,10 +900,10 @@ dashboardRouter.get('/dashboard/events/:eventId/google-drive/auth', requireEvent
   if (!hasGoogleKeys) {
     // Sandbox simulated connection fallback
     const configData = { mock: true, connected_at: nowIso() };
-    db.prepare("UPDATE events SET storage_provider = 'google_drive', storage_config = ?, updated_at = ? WHERE id = ?")
+    await db.prepare("UPDATE events SET storage_provider = 'google_drive', storage_config = ?, updated_at = ? WHERE id = ?")
       .run(JSON.stringify(configData), nowIso(), req.event.id);
 
-    logAudit({
+    await logAudit({
       actorUserId: req.user.id,
       eventId: req.event.id,
       action: 'event_google_drive_connect_mock',
@@ -895,7 +940,7 @@ dashboardRouter.get('/dashboard/google-drive/callback', asyncHandler(async (req,
   }
 
   // Ensure logged-in user owns the event in state
-  const event = db.prepare('SELECT * FROM events WHERE id = ? AND owner_id = ?').get(eventId, req.user.id);
+  const event = await db.prepare('SELECT * FROM events WHERE id = ? AND owner_id = ?').get(eventId, req.user.id);
   if (!event) {
     setFlash(res, 'error', 'Authorization failed. Album event not found or unauthorized.');
     return res.redirect('/dashboard');
@@ -913,10 +958,10 @@ dashboardRouter.get('/dashboard/google-drive/callback', asyncHandler(async (req,
       connected_at: nowIso()
     };
 
-    db.prepare("UPDATE events SET storage_provider = 'google_drive', storage_config = ?, updated_at = ? WHERE id = ?")
+    await db.prepare("UPDATE events SET storage_provider = 'google_drive', storage_config = ?, updated_at = ? WHERE id = ?")
       .run(JSON.stringify(configData), nowIso(), event.id);
 
-    logAudit({
+    await logAudit({
       actorUserId: req.user.id,
       eventId: event.id,
       action: 'event_google_drive_connect',
@@ -934,10 +979,10 @@ dashboardRouter.get('/dashboard/google-drive/callback', asyncHandler(async (req,
 
 // Disconnect Google Drive integration
 dashboardRouter.post('/dashboard/events/:eventId/google-drive/disconnect', requireEventOwner(), requireCsrf, asyncHandler(async (req, res) => {
-  db.prepare("UPDATE events SET storage_provider = 'platform', storage_config = NULL, updated_at = ? WHERE id = ?")
+  await db.prepare("UPDATE events SET storage_provider = 'platform', storage_config = NULL, updated_at = ? WHERE id = ?")
     .run(nowIso(), req.event.id);
 
-  logAudit({
+  await logAudit({
     actorUserId: req.user.id,
     eventId: req.event.id,
     action: 'event_google_drive_disconnect',

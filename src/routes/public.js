@@ -7,7 +7,7 @@ import { requireCsrf } from '../middleware/csrf.js';
 import { uploadLimiter } from '../middleware/security.js';
 import { config } from '../config.js';
 import { resolveStoragePath, safeUnlink, sendMediaFile, sendMediaThumbnail, uploadMiddleware, validateAndStoreUploads, UploadValidationError, StorageQuotaError, s3Client, GetObjectCommand } from '../lib/storage.js';
-import { formatBytes, percent } from '../lib/helpers.js';
+import { formatBytes, percent, absoluteUrl } from '../lib/helpers.js';
 import { asyncHandler } from '../lib/async-handler.js';
 import { generateCaptcha, verifyCaptcha } from '../lib/captcha.js';
 import { setFlash } from '../middleware/flash.js';
@@ -20,8 +20,8 @@ function galleryCookieName(eventId) {
   return `${galleryCookiePrefix}${eventId}`;
 }
 
-function findEventBySlug(slug) {
-  return db.prepare(`
+async function findEventBySlug(slug) {
+  return await db.prepare(`
     SELECT e.*, u.status AS owner_status
     FROM events e
     JOIN users u ON u.id = e.owner_id
@@ -34,8 +34,8 @@ function tokenMatches(req, event) {
   return submitted && submitted === event.upload_token;
 }
 
-function requireUploadAccess(req, res, next) {
-  const event = findEventBySlug(req.params.slug);
+async function requireUploadAccess(req, res, next) {
+  const event = await findEventBySlug(req.params.slug);
   if (!event || event.owner_status !== 'active' || !tokenMatches(req, event)) {
     return res.status(404).render('error', { title: 'Upload link not found', message: 'This QR upload link is invalid or expired.' });
   }
@@ -52,8 +52,8 @@ function hasGalleryAccess(req, event) {
   return req.signedCookies?.[galleryCookieName(event.id)] === 'ok';
 }
 
-function requireGalleryAccess(req, res, next) {
-  const event = findEventBySlug(req.params.slug);
+async function requireGalleryAccess(req, res, next) {
+  const event = await findEventBySlug(req.params.slug);
   if (!event || event.owner_status !== 'active' || !event.gallery_enabled) {
     return res.status(404).render('error', { title: 'Gallery not found', message: 'This gallery is private or disabled.' });
   }
@@ -65,19 +65,35 @@ function requireGalleryAccess(req, res, next) {
   return next();
 }
 
-function folderList(eventId) {
-  return db.prepare('SELECT * FROM folders WHERE event_id = ? ORDER BY sort_order ASC, id ASC').all(eventId);
+async function folderList(eventId) {
+  return await db.prepare('SELECT * FROM folders WHERE event_id = ? ORDER BY sort_order ASC, id ASC').all(eventId);
 }
 
-publicRouter.get('/', (req, res) => {
-  res.render('home', { title: 'Wedding QR Photo Collect App' });
+publicRouter.get('/', async (req, res) => {
+  res.render('home', {
+    title: 'Wedding QR Photo Collect App',
+    structuredData: {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "ShaadiShots",
+      "operatingSystem": "All",
+      "applicationCategory": "BusinessApplication",
+      "description": "Secure QR-based wedding photo and video collection platform with admin moderation, galleries, and storage management.",
+      "offers": {
+        "@type": "Offer",
+        "price": "499",
+        "priceCurrency": "INR",
+        "category": "Standard"
+      }
+    }
+  });
 });
 
-publicRouter.get('/privacy', (req, res) => {
+publicRouter.get('/privacy', async (req, res) => {
   res.render('public/privacy', { title: 'Privacy Policy' });
 });
 
-publicRouter.get('/contact', (req, res) => {
+publicRouter.get('/contact', async (req, res) => {
   res.render('public/contact', { title: 'Contact Us', errors: {}, values: {} });
 });
 
@@ -88,7 +104,7 @@ const contactSchema = z.object({
   message: z.string().trim().min(10, 'Message must be at least 10 characters').max(1000),
 });
 
-publicRouter.post('/contact', requireCsrf, (req, res) => {
+publicRouter.post('/contact', requireCsrf, async (req, res) => {
   const parsed = contactSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).render('public/contact', {
@@ -99,7 +115,7 @@ publicRouter.post('/contact', requireCsrf, (req, res) => {
   }
 
   const { name, email, subject, message } = parsed.data;
-  logAudit({
+  await logAudit({
     action: 'contact_message_submitted',
     metadata: { name, email, subject, messageLength: message.length },
     ip: req.ip,
@@ -111,9 +127,9 @@ publicRouter.post('/contact', requireCsrf, (req, res) => {
   return res.redirect('/contact');
 });
 
-publicRouter.get('/e/:slug/upload', requireUploadAccess, (req, res) => {
-  const folders = folderList(req.event.id);
-  const used = getStorageUsage(req.event.id);
+publicRouter.get('/e/:slug/upload', requireUploadAccess, async (req, res) => {
+  const folders = await folderList(req.event.id);
+  const used = await getStorageUsage(req.event.id);
   
   const captcha = generateCaptcha();
   const cookieVal = `${captcha.answer}|${Date.now()}`;
@@ -172,7 +188,7 @@ publicRouter.post(
         return fail(400, 'Please select a valid event folder.', parsed.error.flatten().fieldErrors);
       }
 
-      const folder = db.prepare('SELECT * FROM folders WHERE id = ? AND event_id = ?').get(parsed.data.folder_id, req.event.id);
+      const folder = await db.prepare('SELECT * FROM folders WHERE id = ? AND event_id = ?').get(parsed.data.folder_id, req.event.id);
       if (!folder) return fail(400, 'Selected folder is invalid.');
 
       const result = await validateAndStoreUploads({
@@ -194,9 +210,9 @@ publicRouter.post(
   })
 );
 
-publicRouter.get('/e/:slug/gallery', requireGalleryAccess, (req, res) => {
-  const folders = folderList(req.event.id);
-  const rows = db.prepare(`
+publicRouter.get('/e/:slug/gallery', requireGalleryAccess, async (req, res) => {
+  const folders = await folderList(req.event.id);
+  const rows = await db.prepare(`
     SELECT m.*, f.name AS folder_name, f.sort_order
     FROM media m
     JOIN folders f ON f.id = m.folder_id
@@ -215,7 +231,7 @@ publicRouter.get('/e/:slug/gallery', requireGalleryAccess, (req, res) => {
 const pinSchema = z.object({ pin: z.string().trim().regex(/^\d{4,12}$/, 'Enter a valid 4-12 digit PIN.') });
 
 publicRouter.post('/e/:slug/gallery/unlock', requireCsrf, asyncHandler(async (req, res) => {
-  const event = findEventBySlug(req.params.slug);
+  const event = await findEventBySlug(req.params.slug);
   if (!event || event.owner_status !== 'active' || !event.gallery_enabled || !event.gallery_pin_hash) {
     return res.status(404).render('error', { title: 'Gallery not found', message: 'This gallery is not available.' });
   }
@@ -225,7 +241,7 @@ publicRouter.post('/e/:slug/gallery/unlock', requireCsrf, asyncHandler(async (re
   }
   const ok = await bcrypt.compare(parsed.data.pin, event.gallery_pin_hash);
   if (!ok) {
-    logAudit({ eventId: event.id, action: 'gallery_pin_failed', ip: req.ip });
+    await logAudit({ eventId: event.id, action: 'gallery_pin_failed', ip: req.ip });
     return res.status(401).render('public/gallery-lock', { title: `${event.title} Gallery`, event, errors: { pin: ['Incorrect PIN.'] } });
   }
   res.cookie(galleryCookieName(event.id), 'ok', {
@@ -235,18 +251,18 @@ publicRouter.post('/e/:slug/gallery/unlock', requireCsrf, asyncHandler(async (re
     signed: true,
     maxAge: 24 * 60 * 60 * 1000,
   });
-  logAudit({ eventId: event.id, action: 'gallery_pin_unlocked', ip: req.ip });
+  await logAudit({ eventId: event.id, action: 'gallery_pin_unlocked', ip: req.ip });
   return res.redirect(`/e/${encodeURIComponent(event.slug)}/gallery`);
 }));
 
 publicRouter.get('/e/:slug/media/:mediaId', requireGalleryAccess, asyncHandler(async (req, res) => {
-  const media = db.prepare('SELECT * FROM media WHERE id = ? AND event_id = ? AND status = ?').get(req.params.mediaId, req.event.id, 'approved');
+  const media = await db.prepare('SELECT * FROM media WHERE id = ? AND event_id = ? AND status = ?').get(req.params.mediaId, req.event.id, 'approved');
   if (!media) return res.status(404).render('error', { title: 'Not found', message: 'Media not found.' });
   return await sendMediaFile(res, media, { private: Boolean(req.event.gallery_pin_hash) });
 }));
 
 publicRouter.get('/e/:slug/media/:mediaId/thumbnail', requireGalleryAccess, asyncHandler(async (req, res) => {
-  const media = db.prepare('SELECT * FROM media WHERE id = ? AND event_id = ? AND status = ?').get(req.params.mediaId, req.event.id, 'approved');
+  const media = await db.prepare('SELECT * FROM media WHERE id = ? AND event_id = ? AND status = ?').get(req.params.mediaId, req.event.id, 'approved');
   if (!media) return res.status(404).render('error', { title: 'Not found', message: 'Media not found.' });
   return await sendMediaThumbnail(res, media, { private: Boolean(req.event.gallery_pin_hash) });
 }));
@@ -255,7 +271,7 @@ publicRouter.get('/e/:slug/download.zip', requireGalleryAccess, asyncHandler(asy
   if (!req.event.public_download_enabled) {
     return res.status(403).render('error', { title: 'Download disabled', message: 'Public album download is disabled by the couple/admin.' });
   }
-  const rows = db.prepare(`
+  const rows = await db.prepare(`
     SELECT m.*, f.name AS folder_name
     FROM media m
     JOIN folders f ON f.id = m.folder_id
@@ -290,5 +306,26 @@ publicRouter.get('/e/:slug/download.zip', requireGalleryAccess, asyncHandler(asy
     }
   }
   archive.finalize();
-  logAudit({ eventId: req.event.id, action: 'public_album_download', metadata: { count: rows.length }, ip: req.ip });
+  await logAudit({ eventId: req.event.id, action: 'public_album_download', metadata: { count: rows.length }, ip: req.ip });
 }));
+
+publicRouter.get('/e/:slug/slideshow', requireGalleryAccess, async (req, res) => {
+  const uploadLink = absoluteUrl(req, `/e/${encodeURIComponent(req.event.slug)}/upload?token=${encodeURIComponent(req.event.upload_token)}`);
+  res.render('public/slideshow', {
+    title: `${req.event.title} Live Cast`,
+    event: req.event,
+    uploadLink,
+    layout: false, // Don't use standard navigation layout for full screen slideshow
+  });
+});
+
+publicRouter.get('/e/:slug/slideshow/media', requireGalleryAccess, asyncHandler(async (req, res) => {
+  const rows = await db.prepare(`
+    SELECT id, original_name, uploader_name, uploader_side
+    FROM media
+    WHERE event_id = ? AND status = 'approved' AND media_type = 'image'
+    ORDER BY created_at DESC
+  `).all(req.event.id);
+  res.json({ ok: true, media: rows });
+}));
+

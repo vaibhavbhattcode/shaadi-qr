@@ -799,9 +799,66 @@
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
       <div>
         <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800;">Custom Wedding QR Poster Generator</h3>
-        <p style="margin: 2px 0 0; font-size: 0.85rem; color: #64748b;">Select from 24 customizable design themes below, then print or save as PDF.</p>
+        <p style="margin: 2px 0 0; font-size: 0.85rem; color: #64748b;">Select from 24 design themes, customize texts, then print or save as PDF.</p>
       </div>
       <button class="btn" onclick="window.print()">🖨️ Print / Save PDF</button>
+    </div>
+
+    <!-- Live Text Customizer Inputs -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 12px;">
+      <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; font-weight: 800; color: #475569;">
+        Main Title / Headline
+        <input id="headlineInput" type="text" value="Share Your Memories" style="border: 1px solid #cbd5e1 !important; border-radius: 8px !important; padding: 6px 10px !important; font-size: 0.85rem !important; min-height: 32px;">
+      </label>
+      <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; font-weight: 800; color: #475569;">
+        Subtitle / Wedding Names
+        <input id="subheadlineInput" type="text" value="<%= event.bride_name && event.groom_name ? `${event.bride_name} & ${event.groom_name}` : event.title %>" style="border: 1px solid #cbd5e1 !important; border-radius: 8px !important; padding: 6px 10px !important; font-size: 0.85rem !important; min-height: 32px;">
+      </label>
+      <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; font-weight: 800; color: #475569;">
+        Footer Instructions
+        <input id="instructionInput" type="text" value="No login required. Photos/videos couple ke private approval dashboard me jayenge." style="border: 1px solid #cbd5e1 !important; border-radius: 8px !important; padding: 6px 10px !important; font-size: 0.85rem !important; min-height: 32px;">
+      </label>
+    </div>
+
+    <!-- Font Style Selectors -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 10px; border-top: 1px dashed #e2e8f0; padding-top: 8px;">
+      <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; font-weight: 800; color: #475569;">
+        Headline Font Face
+        <select id="headlineFontSelector" style="border: 1px solid #cbd5e1 !important; border-radius: 8px !important; padding: 6px 10px !important; font-size: 0.85rem !important; min-height: 32px; font-weight: 600;">
+          <option value="inherit">Theme Default Font</option>
+          <option value="'Great Vibes', cursive">✨ Great Vibes (Cursive script)</option>
+          <option value="'WindSong', cursive">🌸 WindSong (Casual script)</option>
+          <option value="'Cinzel', serif">👑 Cinzel (Royal Roman)</option>
+          <option value="'DM Serif Display', serif">📰 DM Serif (Retro Bold)</option>
+          <option value="'Marcellus', serif">🏛️ Marcellus (Luxury Classic)</option>
+          <option value="'Playfair Display', serif">📜 Playfair (Elegant Serif)</option>
+          <option value="'Montserrat', sans-serif">⚡ Montserrat (Modern Sans)</option>
+          <option value="'Lora', serif">🌿 Lora (Clean Editorial)</option>
+        </select>
+      </label>
+      <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; font-weight: 800; color: #475569;">
+        Subtitle Font Face
+        <select id="subtitleFontSelector" style="border: 1px solid #cbd5e1 !important; border-radius: 8px !important; padding: 6px 10px !important; font-size: 0.85rem !important; min-height: 32px; font-weight: 600;">
+          <option value="inherit">Theme Default Font</option>
+          <option value="'Great Vibes', cursive">✨ Great Vibes (Cursive script)</option>
+          <option value="'WindSong', cursive">🌸 WindSong (Casual script)</option>
+          <option value="'Cinzel', serif">👑 Cinzel (Royal Roman)</option>
+          <option value="'DM Serif Display', serif">📰 DM Serif (Retro Bold)</option>
+          <option value="'Marcellus', serif">🏛️ Marcellus (Luxury Classic)</option>
+          <option value="'Playfair Display', serif">📜 Playfair (Elegant Serif)</option>
+          <option value="'Montserrat', sans-serif">⚡ Montserrat (Modern Sans)</option>
+          <option value="'Lora', serif">🌿 Lora (Clean Editorial)</option>
+        </select>
+      </label>
+    </div>
+
+    <!-- Quick Text Presets -->
+    <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; border-top: 1px dashed #e2e8f0; padding-top: 8px;">
+      <span style="font-size: 0.75rem; font-weight: 800; color: #64748b;">Sign Presets:</span>
+      <button class="theme-btn" onclick="applyPreset('Capture the Love', 'Help us capture the memories of our special day', 'Scan the QR code with your phone camera to share your photos & videos instantly!')" style="font-size:0.72rem; padding: 4px 10px; border-radius: 99px;">📸 Capture the Love</button>
+      <button class="theme-btn" onclick="applyPreset('Please Scan', 'To View Our Wedding Program', 'Scan to view our ceremony details, schedule of events, and wedding timeline.')" style="font-size:0.72rem; padding: 4px 10px; border-radius: 99px;">📋 Wedding Program</button>
+      <button class="theme-btn" onclick="applyPreset('Indian Wedding Ceremony', 'Bride & Groom', 'Scan to view wedding dates, venue details, and to share your candid blessings!')" style="font-size:0.72rem; padding: 4px 10px; border-radius: 99px;">🏵️ Traditional Indian</button>
+      <button class="theme-btn" onclick="applyPreset('Save the Date', 'Wedding Invitation', 'Scan to RSVP online, view accommodation details, and add to your calendar.')" style="font-size:0.72rem; padding: 4px 10px; border-radius: 99px;">✉️ Save the Date</button>
     </div>
     
     <div class="selector-row">
@@ -882,13 +939,13 @@
         </div>
       </div>
 
-      <h1>Share Your Memories</h1>
-      <h2><%= event.title %></h2>
+      <h1 id="posterHeadline">Share Your Memories</h1>
+      <h2 id="posterSubheadline"><%= event.bride_name && event.groom_name ? `${event.bride_name} & ${event.groom_name}` : event.title %></h2>
       <div class="qr-container">
         <img class="qr" src="<%= qrDataUrl %>" alt="Wedding upload QR">
       </div>
       <div class="scan">Scan QR & Upload Photos</div>
-      <p>No login required. Photos/videos couple ke private approval dashboard me jayenge.</p>
+      <p id="posterInstruction">No login required. Photos/videos couple ke private approval dashboard me jayenge.</p>
       <p class="url"><%= uploadLink %></p>
     </section>
   </main>
@@ -925,6 +982,33 @@
         'theme-retro-70s': '#fef3c7'
       };
 
+      const themeQrColors = {
+        'theme-royal-rose': { dark: '#b83280', light: '#ffffff' },
+        'theme-minimal-dark': { dark: '#00f2fe', light: '#0f172a' },
+        'theme-botanical': { dark: '#2d6a4f', light: '#ffffff' },
+        'theme-sunset': { dark: '#ff7a59', light: '#ffffff' },
+        'theme-vintage': { dark: '#8c6a46', light: '#faf4eb' },
+        'theme-starry': { dark: '#d4af37', light: '#0c1033' },
+        'theme-lavender': { dark: '#7c3aed', light: '#ffffff' },
+        'theme-marble': { dark: '#c5a880', light: '#ffffff' },
+        'theme-bollywood': { dark: '#900c3f', light: '#ffc300' },
+        'theme-indigo': { dark: '#2563eb', light: '#ffffff' },
+        'theme-boho': { dark: '#c27d58', light: '#ffffff' },
+        'theme-ocean': { dark: '#00796b', light: '#ffffff' },
+        'theme-midnight-forest': { dark: '#d4af37', light: '#051d11' },
+        'theme-cyberpunk': { dark: '#00ffff', light: '#07000d' },
+        'theme-golden-hour': { dark: '#ea580c', light: '#ffffff' },
+        'theme-rose-gold': { dark: '#db2777', light: '#ffffff' },
+        'theme-retro-gazette': { dark: '#1e1b4b', light: '#ffffff' },
+        'theme-aurora': { dark: '#10b981', light: '#03081e' },
+        'theme-boho-meadow': { dark: '#8c7b60', light: '#ffffff' },
+        'theme-cherry-blossom': { dark: '#f43f5e', light: '#ffffff' },
+        'theme-royal-emerald': { dark: '#fbbf24', light: '#022c22' },
+        'theme-minimal-arch': { dark: '#18181b', light: '#ffffff' },
+        'theme-baroque-gold': { dark: '#d4af37', light: '#2e010c' },
+        'theme-retro-70s': { dark: '#db2777', light: '#ffffff' }
+      };
+
       buttons.forEach(btn => {
         btn.addEventListener('click', () => {
           // Remove active class from all buttons
@@ -940,8 +1024,67 @@
           
           // Dynamically change body background to match selected theme vibe
           document.body.style.background = themeBackgrounds[theme] || '#f8fafc';
+
+          // Dynamically coordinate QR code colors to match theme
+          const colors = themeQrColors[theme] || { dark: '#000000', light: '#ffffff' };
+          const qrImg = document.querySelector('img.qr');
+          if (qrImg) {
+            qrImg.style.opacity = '0.5';
+            qrImg.src = `/dashboard/events/<%= event.id %>/qr.png?dark=${encodeURIComponent(colors.dark)}&light=${encodeURIComponent(colors.light)}`;
+            qrImg.onload = () => {
+              qrImg.style.opacity = '1';
+            };
+          }
         });
       });
+
+      // Quick presets handler
+      window.applyPreset = function(head, sub, inst) {
+        document.getElementById('headlineInput').value = head;
+        document.getElementById('subheadlineInput').value = sub;
+        document.getElementById('instructionInput').value = inst;
+        
+        document.getElementById('posterHeadline').innerText = head;
+        document.getElementById('posterSubheadline').innerText = sub;
+        document.getElementById('posterInstruction').innerText = inst;
+      };
+
+      // Inputs real-time preview event listeners
+      const headInput = document.getElementById('headlineInput');
+      const subInput = document.getElementById('subheadlineInput');
+      const instInput = document.getElementById('instructionInput');
+      
+      if (headInput) {
+        headInput.addEventListener('input', () => {
+          document.getElementById('posterHeadline').innerText = headInput.value;
+        });
+      }
+      if (subInput) {
+        subInput.addEventListener('input', () => {
+          document.getElementById('posterSubheadline').innerText = subInput.value;
+        });
+      }
+      if (instInput) {
+        instInput.addEventListener('input', () => {
+          document.getElementById('posterInstruction').innerText = instInput.value;
+        });
+      }
+
+      // Font selectors preview change listeners
+      const headlineFontSelector = document.getElementById('headlineFontSelector');
+      const subtitleFontSelector = document.getElementById('subtitleFontSelector');
+      
+      if (headlineFontSelector) {
+        headlineFontSelector.addEventListener('change', () => {
+          document.getElementById('posterHeadline').style.fontFamily = headlineFontSelector.value;
+        });
+      }
+      
+      if (subtitleFontSelector) {
+        subtitleFontSelector.addEventListener('change', () => {
+          document.getElementById('posterSubheadline').style.fontFamily = subtitleFontSelector.value;
+        });
+      }
     });
   </script>
 </body>

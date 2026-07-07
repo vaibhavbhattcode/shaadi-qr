@@ -2,9 +2,9 @@ import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import { db } from '../db.js';
 
-export function ipBlocker(req, res, next) {
+export async function ipBlocker(req, res, next) {
   try {
-    const blocked = db.prepare('SELECT 1 FROM blocked_ips WHERE ip = ?').get(req.ip);
+    const blocked = await db.prepare('SELECT 1 FROM blocked_ips WHERE ip = ?').get(req.ip);
     if (blocked) {
       return res.status(403).render('error', {
         title: 'Access Denied',
@@ -19,8 +19,9 @@ export function ipBlocker(req, res, next) {
 
 
 export function helmetMiddleware() {
+  const isProduction = process.env.NODE_ENV === 'production';
   return helmet({
-    contentSecurityPolicy: {
+    contentSecurityPolicy: isProduction ? {
       useDefaults: true,
       directives: {
         defaultSrc: ["'self'"],
@@ -36,7 +37,7 @@ export function helmetMiddleware() {
         formAction: ["'self'"],
         frameAncestors: ["'self'"],
       },
-    },
+    } : false,
     crossOriginOpenerPolicy: { policy: 'unsafe-none' },
     crossOriginResourcePolicy: { policy: 'cross-origin' },
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' },

@@ -3,7 +3,7 @@ import { stdin as input, stdout as output } from 'node:process';
 import { migrate, db } from '../db.js';
 import { hashPassword } from '../middleware/auth.js';
 
-migrate();
+await migrate();
 
 const rl = readline.createInterface({ input, output });
 const name = (await rl.question('Super admin name: ')).trim();
@@ -16,13 +16,13 @@ if (!name || !email.includes('@') || password.length < 8) {
   process.exit(1);
 }
 
-const existing = db.prepare('SELECT id, role FROM users WHERE email = ?').get(email);
+const existing = await db.prepare('SELECT id, role FROM users WHERE email = ?').get(email);
 const passwordHash = await hashPassword(password);
 
 if (existing) {
-  db.prepare("UPDATE users SET name = ?, password_hash = ?, role = 'super_admin', status = 'active', updated_at = datetime('now') WHERE id = ?").run(name, passwordHash, existing.id);
+  await db.prepare("UPDATE users SET name = ?, password_hash = ?, role = 'super_admin', status = 'active', updated_at = datetime('now') WHERE id = ?").run(name, passwordHash, existing.id);
   console.log('Existing user promoted to super admin and password updated.');
 } else {
-  db.prepare("INSERT INTO users (name, email, password_hash, role, status) VALUES (?, ?, ?, 'super_admin', 'active')").run(name, email, passwordHash);
+  await db.prepare("INSERT INTO users (name, email, password_hash, role, status) VALUES (?, ?, ?, 'super_admin', 'active')").run(name, email, passwordHash);
   console.log('Super admin account created.');
 }

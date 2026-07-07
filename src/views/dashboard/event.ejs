@@ -59,7 +59,20 @@
       </div>
       
       <div class="flex flex-col items-center justify-center p-4 bg-white/40 border border-primary/5 rounded-xl">
-        <img src="<%= qrDataUrl %>" alt="Upload QR Code" class="w-48 h-48 rounded-lg border border-primary/10 bg-white p-2 shadow-sm">
+        <img id="eventQrImage" src="<%= qrDataUrl %>" alt="Upload QR Code" class="w-48 h-48 rounded-lg border border-primary/10 bg-white p-2 shadow-sm transition-all duration-300">
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Premium QR Color Theme</label>
+        <select id="qrThemeSelector" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2 focus:ring-primary focus:border-primary text-xs font-semibold">
+          <option value="classic" data-dark="#000000" data-light="#ffffff">🖤 Classic (Black & White)</option>
+          <option value="royal-rose" data-dark="#b83280" data-light="#ffffff">💖 Royal Rose (Pink & White)</option>
+          <option value="botanical" data-dark="#2d6a4f" data-light="#ffffff">💚 Botanical (Sage Green & White)</option>
+          <option value="sunset" data-dark="#ff7a59" data-light="#ffffff">🧡 Sunset Coral (Coral & White)</option>
+          <option value="starry" data-dark="#d4af37" data-light="#0c1033">💛 Starry Gold (Gold & Deep Navy)</option>
+          <option value="bollywood" data-dark="#900c3f" data-light="#ffc300">❤️ Bollywood Glam (Crimson & Yellow Gold)</option>
+          <option value="cyber" data-dark="#00f2fe" data-light="#0f172a">💙 Cyber Neon (Cyan & Dark Indigo)</option>
+        </select>
       </div>
       
       <div class="space-y-1.5">
@@ -71,10 +84,40 @@
       </div>
       
       <div class="flex flex-wrap gap-2 pt-2">
-        <a class="bg-primary/10 hover:bg-primary/15 text-primary text-xs font-bold px-4 py-2.5 rounded-full shadow-sm transition-all" href="/dashboard/events/<%= event.id %>/qr.png?download=1">Download QR PNG</a>
+        <a id="downloadQrBtn" class="bg-primary/10 hover:bg-primary/15 text-primary text-xs font-bold px-4 py-2.5 rounded-full shadow-sm transition-all" href="/dashboard/events/<%= event.id %>/qr.png?download=1">Download QR PNG</a>
         <a class="border border-primary/15 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-full shadow-sm transition-all" target="_blank" href="/dashboard/events/<%= event.id %>/poster">Printable Poster</a>
         <a class="border border-primary/15 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-full shadow-sm transition-all" target="_blank" href="/e/<%= event.slug %>/upload?token=<%= encodeURIComponent(event.upload_token) %>">Test Upload Link</a>
+        <a class="bg-gradient-wedding text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-md hover:shadow-xl transition-all" target="_blank" href="/e/<%= event.slug %>/slideshow">📺 Live Slideshow Cast</a>
       </div>
+
+      <script>
+        document.addEventListener('DOMContentLoaded', () => {
+          const selector = document.getElementById('qrThemeSelector');
+          const qrImg = document.getElementById('eventQrImage');
+          const downloadBtn = document.getElementById('downloadQrBtn');
+          if (!selector || !qrImg || !downloadBtn) return;
+          
+          selector.addEventListener('change', () => {
+            const opt = selector.options[selector.selectedIndex];
+            const dark = opt.getAttribute('data-dark');
+            const light = opt.getAttribute('data-light');
+            
+            // Build themed URL
+            const previewUrl = `/dashboard/events/<%= event.id %>/qr.png?dark=${encodeURIComponent(dark)}&light=${encodeURIComponent(light)}`;
+            const dlUrl = `/dashboard/events/<%= event.id %>/qr.png?download=1&dark=${encodeURIComponent(dark)}&light=${encodeURIComponent(light)}`;
+            
+            // Update preview and download link
+            qrImg.style.opacity = '0.5';
+            qrImg.src = previewUrl;
+            
+            qrImg.onload = () => {
+              qrImg.style.opacity = '1';
+            };
+            
+            downloadBtn.href = dlUrl;
+          });
+        });
+      </script>
     </div>
 
     <!-- Event Settings Form -->
@@ -186,6 +229,7 @@
 
       <div class="flex flex-wrap gap-2 pt-2">
         <a class="border border-primary/15 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-full shadow-sm transition-all" target="_blank" href="/e/<%= event.slug %>/gallery">Open Gallery</a>
+        <a class="bg-gradient-wedding text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-md hover:shadow-xl transition-all" target="_blank" href="/e/<%= event.slug %>/slideshow">📺 Live Slideshow</a>
         <a class="border border-primary/15 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-full shadow-sm transition-all" href="/dashboard/events/<%= event.id %>/download.zip?status=approved">Download Approved ZIP</a>
       </div>
     </div>

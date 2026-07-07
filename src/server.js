@@ -6,7 +6,8 @@ import methodOverride from 'method-override';
 import multer from 'multer';
 import { fileURLToPath } from 'node:url';
 import { config } from './config.js';
-import { migrate } from './db.js';
+import { db, migrate } from './db.js';
+import { AppError } from './lib/errors.js';
 import { authContext } from './middleware/auth.js';
 import { csrfContext } from './middleware/csrf.js';
 import { flashContext } from './middleware/flash.js';
@@ -17,11 +18,12 @@ import { publicRouter } from './routes/public.js';
 import { adminRouter } from './routes/admin.js';
 import { formatBytes, formatDate, percent, planLabel, shortNumber, yesNo } from './lib/helpers.js';
 import { whatsappService } from './lib/whatsapp.js';
+import { redisClient } from './lib/redis.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-migrate();
+await migrate();
 whatsappService.init().catch(err => console.error('Failed to initialize WhatsApp connection loop:', err));
 
 const app = express();
@@ -49,9 +51,36 @@ app.use(flashContext);
 app.use((req, res, next) => {
   res.locals.appName = 'ShaadiShots';
   res.locals.path = req.path;
+  
+  // Dynamically resolve the active protocol and host to use the live link in production
+  const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+  const host = req.get('host') || 'localhost:3000';
+  res.locals.appUrl = `${protocol}://${host}`;
+
   res.locals.helpers = { formatBytes, formatDate, percent, planLabel, shortNumber, yesNo };
   res.locals.googleClientId = config.google?.clientId || null;
   next();
+});
+
+// Health check endpoint for load balancers and monitoring
+app.get('/health', async (req, res) => {
+  try {
+    // Quick DB check
+    const row = await db.prepare('SELECT 1 AS ok').get();
+    const dbOk = row?.ok === 1;
+    res.json({
+      status: dbOk ? 'healthy' : 'degraded',
+      uptime: Math.round(process.uptime()),
+      memory: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + ' MB',
+      version: '1.0.0',
+      environment: config.env,
+      storage: config.storageProvider,
+      database: dbOk ? 'connected' : 'error',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err) {
+    res.status(503).json({ status: 'unhealthy', error: 'Database connection failed' });
+  }
 });
 
 app.use(publicRouter);
@@ -66,7 +95,14 @@ app.use((req, res) => {
 // Central error handler: never leak internals to users.
 app.use((err, req, res, next) => { // eslint-disable-line no-unused-vars
   console.error('request_error', err);
-  const wantsJson = req.xhr || req.get('accept')?.includes('application/json') || req.path.includes('/upload');
+  const wantsJson = req.xhr || req.get('accept')?.includes('application/json') || req.path.includes('/upload') || req.path.startsWith('/api/');
+
+  if (err instanceof AppError) {
+    if (wantsJson) {
+      return res.status(err.statusCode).json({ ok: false, error: err.message, details: err.details });
+    }
+    return res.status(err.statusCode).render('error', { title: err.name || 'Error', message: err.message });
+  }
 
   if (err instanceof multer.MulterError) {
     const message = err.code === 'LIMIT_FILE_SIZE'
@@ -88,3 +124,5 @@ app.listen(config.port, () => {
   console.log(`ShaadiShots running on http://localhost:${config.port}`);
   console.log(`Environment: ${config.env}`);
 });
+
+// Trigger watch reload 2

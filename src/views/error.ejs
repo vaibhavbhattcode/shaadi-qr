@@ -5,7 +5,7 @@
     <p class="muted"><%= message || 'Something went wrong.' %></p>
     <div class="row" style="justify-content:center; margin-top:18px;">
       <a class="btn" href="/">Home</a>
-      <% if (currentUser) { %><a class="btn secondary" href="/dashboard">Dashboard</a><% } %>
+      <% if (locals.currentUser) { %><a class="btn secondary" href="/dashboard">Dashboard</a><% } %>
     </div>
   </div>
 </section>

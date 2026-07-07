@@ -5,6 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf-token" content="<%= csrfToken %>">
   <title><%= locals.title ? `${title} · ${appName}` : appName %></title>
+  
+  <meta name="description" content="<%= locals.metaDescription || 'Secure QR-based wedding photo & video collection platform. Guests scan the QR code to upload candid moments instantly without app install.' %>">
+  <meta name="keywords" content="<%= locals.metaKeywords || 'wedding qr, photo collect, wedding gallery, shaadishots, guest upload, moderated gallery, qr album' %>">
+  
+  <!-- OpenGraph / Social Share Preview -->
+  <meta property="og:title" content="<%= locals.ogTitle || (locals.title ? `${title} · ${appName}` : appName) %>">
+  <meta property="og:description" content="<%= locals.ogDescription || 'Guests scan a QR code to upload photos and videos of your wedding directly to your private moderated gallery. No app install needed!' %>">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="<%= locals.ogUrl || appUrl %>">
+  <meta property="og:image" content="<%= locals.ogImage || `${appUrl}/logo.png` %>">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="<%= locals.ogTitle || (locals.title ? `${title} · ${appName}` : appName) %>">
+  <meta name="twitter:description" content="<%= locals.ogDescription || 'Guests scan a QR code to upload photos and videos of your wedding directly to your private moderated gallery.' %>">
+
+  <!-- Dynamic JSON-LD Structured Data for SEO -->
+  <% if (locals.structuredData) { %>
+    <script type="application/ld+json">
+      <%- JSON.stringify(structuredData) %>
+    </script>
+  <% } %>
+
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   
   <!-- Google Fonts -->
@@ -386,8 +409,23 @@
               <a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all <%= currentPath.startsWith('/admin/events') ? 'bg-gradient-wedding text-white shadow-md' : 'text-slate-600 hover:bg-primary/5 hover:text-primary' %>" href="/admin/events" onclick="closeMobileSidebar()">
                 <span class="material-symbols-outlined">celebration</span><span>Weddings</span>
               </a>
+              <a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all <%= currentPath.startsWith('/admin/plans') ? 'bg-gradient-wedding text-white shadow-md' : 'text-slate-600 hover:bg-primary/5 hover:text-primary' %>" href="/admin/plans" onclick="closeMobileSidebar()">
+                <span class="material-symbols-outlined">sell</span><span>Subscription Plans</span>
+              </a>
+              <a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all <%= currentPath.startsWith('/admin/payments') ? 'bg-gradient-wedding text-white shadow-md' : 'text-slate-600 hover:bg-primary/5 hover:text-primary' %>" href="/admin/payments" onclick="closeMobileSidebar()">
+                <span class="material-symbols-outlined">payments</span><span>Payments</span>
+              </a>
               <a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all <%= currentPath.startsWith('/admin/whatsapp') ? 'bg-gradient-wedding text-white shadow-md' : 'text-slate-600 hover:bg-primary/5 hover:text-primary' %>" href="/admin/whatsapp" onclick="closeMobileSidebar()">
                 <span class="material-symbols-outlined">chat</span><span>WhatsApp</span>
+              </a>
+              <a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all <%= currentPath.startsWith('/admin/settings') ? 'bg-gradient-wedding text-white shadow-md' : 'text-slate-600 hover:bg-primary/5 hover:text-primary' %>" href="/admin/settings" onclick="closeMobileSidebar()">
+                <span class="material-symbols-outlined">settings</span><span>Platform Settings</span>
+              </a>
+              <a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all <%= currentPath.startsWith('/admin/security') ? 'bg-gradient-wedding text-white shadow-md' : 'text-slate-600 hover:bg-primary/5 hover:text-primary' %>" href="/admin/security" onclick="closeMobileSidebar()">
+                <span class="material-symbols-outlined">security</span><span>Security Center</span>
+              </a>
+              <a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all <%= currentPath.startsWith('/admin/audit') ? 'bg-gradient-wedding text-white shadow-md' : 'text-slate-600 hover:bg-primary/5 hover:text-primary' %>" href="/admin/audit" onclick="closeMobileSidebar()">
+                <span class="material-symbols-outlined">history</span><span>Audit Logs</span>
               </a>
               <div class="h-px bg-primary/10 my-3"></div>
             <% } %>
@@ -453,9 +491,29 @@
                 <span class="material-symbols-outlined">celebration</span>
                 <span>Weddings</span>
               </a>
+              <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all <%= currentPath.startsWith('/admin/plans') ? 'bg-gradient-wedding text-white shadow-md' : 'text-slate-600 hover:bg-primary/5 hover:text-primary' %>" href="/admin/plans">
+                <span class="material-symbols-outlined">sell</span>
+                <span>Subscription Plans</span>
+              </a>
+              <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all <%= currentPath.startsWith('/admin/payments') ? 'bg-gradient-wedding text-white shadow-md' : 'text-slate-600 hover:bg-primary/5 hover:text-primary' %>" href="/admin/payments">
+                <span class="material-symbols-outlined">payments</span>
+                <span>Payments</span>
+              </a>
               <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all <%= currentPath.startsWith('/admin/whatsapp') ? 'bg-gradient-wedding text-white shadow-md' : 'text-slate-600 hover:bg-primary/5 hover:text-primary' %>" href="/admin/whatsapp">
                 <span class="material-symbols-outlined">chat</span>
                 <span>WhatsApp</span>
+              </a>
+              <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all <%= currentPath.startsWith('/admin/settings') ? 'bg-gradient-wedding text-white shadow-md' : 'text-slate-600 hover:bg-primary/5 hover:text-primary' %>" href="/admin/settings">
+                <span class="material-symbols-outlined">settings</span>
+                <span>Platform Settings</span>
+              </a>
+              <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all <%= currentPath.startsWith('/admin/security') ? 'bg-gradient-wedding text-white shadow-md' : 'text-slate-600 hover:bg-primary/5 hover:text-primary' %>" href="/admin/security">
+                <span class="material-symbols-outlined">security</span>
+                <span>Security Center</span>
+              </a>
+              <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all <%= currentPath.startsWith('/admin/audit') ? 'bg-gradient-wedding text-white shadow-md' : 'text-slate-600 hover:bg-primary/5 hover:text-primary' %>" href="/admin/audit">
+                <span class="material-symbols-outlined">history</span>
+                <span>Audit Logs</span>
               </a>
               <div class="h-px bg-primary/10 my-4"></div>
             <% } %>
