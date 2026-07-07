@@ -131,9 +131,8 @@ publicRouter.get('/e/:slug/upload', requireUploadAccess, async (req, res) => {
   const folders = await folderList(req.event.id);
   const used = await getStorageUsage(req.event.id);
   
-  const captcha = generateCaptcha();
-  const cookieVal = `${captcha.answer}|${Date.now()}`;
-  res.cookie('ss_captcha', cookieVal, {
+  const challenge = generateCaptcha();
+  res.cookie('ss_captcha', challenge.token, {
     httpOnly: true,
     secure: config.cookie.secure,
     sameSite: config.cookie.sameSite,
@@ -151,7 +150,6 @@ publicRouter.get('/e/:slug/upload', requireUploadAccess, async (req, res) => {
       limitHuman: formatBytes(req.event.storage_limit_bytes),
       percent: percent(used, req.event.storage_limit_bytes),
     },
-    captchaQuestion: captcha.question,
   });
 });
 
@@ -176,9 +174,9 @@ publicRouter.post(
     };
 
     try {
-      const submittedCaptcha = req.body.captcha;
+      const honeypot = req.body.website_url;
       const cookieVal = req.signedCookies.ss_captcha;
-      if (!verifyCaptcha(submittedCaptcha, cookieVal)) {
+      if (!verifyCaptcha(honeypot, cookieVal)) {
         return fail(400, 'Incorrect security CAPTCHA answer. Please refresh the page to get a new code and try again.');
       }
       res.clearCookie('ss_captcha');

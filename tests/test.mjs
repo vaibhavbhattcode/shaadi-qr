@@ -52,6 +52,51 @@ function post(path, body) {
   });
 }
 
+function postMultipart(path, fields, files) {
+  return new Promise((resolve, reject) => {
+    const boundary = '----WebKitFormBoundary7MA4YWxkTrZu0gW';
+    const parts = [];
+    
+    for (const [k, v] of Object.entries(fields)) {
+      parts.push(`--${boundary}\r\nContent-Disposition: form-data; name="${k}"\r\n\r\n${v}\r\n`);
+    }
+    
+    for (const [k, file] of Object.entries(files)) {
+      const fileHeader = `--${boundary}\r\nContent-Disposition: form-data; name="${k}"; filename="${file.filename}"\r\nContent-Type: ${file.contentType}\r\n\r\n`;
+      parts.push(Buffer.from(fileHeader));
+      parts.push(file.content);
+      parts.push(Buffer.from('\r\n'));
+    }
+    
+    parts.push(Buffer.from(`--${boundary}--\r\n`));
+    const body = Buffer.concat(parts.map(p => typeof p === 'string' ? Buffer.from(p) : p));
+    
+    const opts = {
+      hostname: 'localhost',
+      port: 3000,
+      path,
+      method: 'POST',
+      headers: {
+        'Content-Type': `multipart/form-data; boundary=${boundary}`,
+        'Content-Length': body.length
+      }
+    };
+    if (fields._csrf) opts.headers['X-CSRF-Token'] = fields._csrf;
+    if (cookies) opts.headers['Cookie'] = cookies;
+    
+    const req = http.request(opts, res => {
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => {
+        updateCookies(res.headers['set-cookie']);
+        resolve({ status: res.statusCode, data });
+      });
+    });
+    req.write(body);
+    req.end();
+  });
+}
+
 // Step 1: GET login page
 const loginRes = await get('/login?admin=1');
 const csrfMatch = loginRes.data.match(/name="_csrf" value="([^"]+)"/);
@@ -151,4 +196,58 @@ console.log('12. After re-enable - Checkbox HTML:', cm4 ? cm4[0] : 'NOT FOUND');
 const loginRes3 = await get('/login', false);
 console.log('13. Login page has WhatsApp Phone Number:', loginRes3.data.includes('WhatsApp Phone Number'));
 
+// Step 14: Test Guest Upload Flow
+console.log('\n--- Step 14: Guest Upload Flow ---');
+import Database from 'better-sqlite3';
+const db = new Database('data/app.db');
+const event = db.prepare('SELECT * FROM events ORDER BY id DESC LIMIT 1').get();
+const folder = db.prepare('SELECT * FROM folders WHERE event_id = ? LIMIT 1').get(event.id);
+
+console.log(`Event Slug: ${event.slug}, Upload Token: ${event.upload_token}`);
+
+// Clear cookies so we act as a guest
+cookies = '';
+
+// Get upload page to populate ss_captcha cookie and csrf token
+const uploadPageUrl = `/e/${event.slug}/upload?token=${event.upload_token}`;
+const uploadPageRes = await get(uploadPageUrl);
+const uploadCsrfMatch = uploadPageRes.data.match(/name="_csrf" value="([^"]+)"/);
+const uploadCsrf = uploadCsrfMatch ? uploadCsrfMatch[1] : null;
+console.log('Got Guest CSRF Token:', !!uploadCsrf);
+console.log('Guest Cookies after page load:', cookies);
+
+const hasCaptchaCookie = cookies.includes('ss_captcha=');
+console.log('Has ss_captcha cookie:', hasCaptchaCookie);
+
+console.log('Waiting 2.1s to satisfy invisible timestamp-based CAPTCHA...');
+await new Promise(resolve => setTimeout(resolve, 2100));
+
+const fields = {
+  _csrf: uploadCsrf,
+  token: event.upload_token,
+  folder_id: String(folder.id),
+  uploader_name: 'Test Integration Guest',
+  uploader_side: 'friend',
+  website_url: '' // empty honeypot
+};
+
+const files = {
+  media: {
+    filename: 'test_photo.jpg',
+    contentType: 'image/jpeg',
+    content: Buffer.from('fake-jpeg-file-content')
+  }
+};
+
+const uploadPostRes = await postMultipart(uploadPageUrl, fields, files);
+console.log('Upload POST response status:', uploadPostRes.status);
+console.log('Upload POST response body:', uploadPostRes.data);
+
+if (uploadPostRes.status !== 200) {
+  console.error('Guest upload integration failed!');
+  process.exit(1);
+}
+console.log('✅ Guest upload integration verified successfully!');
+
+db.close();
 process.exit(0);
