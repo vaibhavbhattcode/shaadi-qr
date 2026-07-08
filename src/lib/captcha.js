@@ -1,25 +1,23 @@
+import crypto from 'node:crypto';
+import { config } from '../config.js';
+
 /**
- * Honeypot + Timestamp-based invisible bot protection.
- * 
- * Replaces the old math CAPTCHA ("What is 5 + 3?") which was a major
- * guest drop-off point — elderly guests and non-technical users struggle 
- * with it, and it feels unprofessional for a premium wedding product.
- * 
- * Defense layers:
- * 1. Honeypot field — hidden field that bots auto-fill but humans don't see
- * 2. Timestamp validation — submissions faster than 2 seconds are bot-like
- * 3. Rate limiter (external) — handled by uploadLimiter middleware
+ * Honeypot + Signed Timestamp-based invisible bot protection.
+ * Completely cookie-less to prevent blocks on strict mobile browsers (Safari, Brave, Incognito).
  */
 
 /**
- * Generate a challenge token containing the page load timestamp.
- * This is stored in a signed cookie so it can't be forged.
+ * Generate a cryptographically signed challenge token containing the current timestamp.
  * 
- * @returns {{ token: string }}
+ * @returns {string} The signed token
  */
 export function generateChallenge() {
-  const token = String(Date.now());
-  return { token };
+  const ts = Date.now();
+  const signature = crypto
+    .createHmac('sha256', config.cookieSecret)
+    .update(String(ts))
+    .digest('hex');
+  return `${ts}.${signature}`;
 }
 
 /**
@@ -27,23 +25,38 @@ export function generateChallenge() {
  * 
  * Checks:
  * 1. Honeypot field must be EMPTY (bots fill hidden fields)
- * 2. Cookie timestamp must exist and not be expired (10 min window)
+ * 2. Token signature must be valid (prevents timestamp forging)
  * 3. Minimum 2 seconds must have elapsed since page load (bots submit instantly)
+ * 4. Maximum 24 hours window (prevents token reuse after a day)
  * 
  * @param {string} honeypotValue - Value of the hidden honeypot field
- * @param {string} cookieValue - Signed cookie value containing page load timestamp
+ * @param {string} tokenValue - Signed challenge token
  * @returns {boolean}
  */
-export function verifyChallenge(honeypotValue, cookieValue) {
+export function verifyChallenge(honeypotValue, tokenValue) {
   // Bot trap: if the hidden honeypot field has any value, it's a bot
   if (honeypotValue && String(honeypotValue).trim().length > 0) {
     return false;
   }
 
-  // Validate timestamp cookie
-  if (!cookieValue) return false;
+  if (!tokenValue) return false;
 
-  const timestamp = Number(cookieValue);
+  const parts = tokenValue.split('.');
+  if (parts.length !== 2) return false;
+
+  const [tsStr, signature] = parts;
+  
+  // Verify signature
+  const expectedSignature = crypto
+    .createHmac('sha256', config.cookieSecret)
+    .update(tsStr)
+    .digest('hex');
+
+  if (signature !== expectedSignature) {
+    return false;
+  }
+
+  const timestamp = Number(tsStr);
   if (isNaN(timestamp)) return false;
 
   const elapsed = Date.now() - timestamp;
@@ -57,6 +70,6 @@ export function verifyChallenge(honeypotValue, cookieValue) {
   return true;
 }
 
-// Keep old exports for backward compatibility during transition
-export const generateCaptcha = generateChallenge;
-export const verifyCaptcha = (submitted, cookieValue) => verifyChallenge(submitted, cookieValue);
+// Keep old exports for backward compatibility
+export const generateCaptcha = () => ({ token: generateChallenge() });
+export const verifyCaptcha = (submitted, tokenValue) => verifyChallenge(submitted, tokenValue);

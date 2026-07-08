@@ -11,7 +11,7 @@ import { config } from '../config.js';
 import { resolveStoragePath, safeUnlink, sendMediaFile, sendMediaThumbnail, uploadMiddleware, validateAndStoreUploads, UploadValidationError, StorageQuotaError, s3Client, GetObjectCommand } from '../lib/storage.js';
 import { formatBytes, percent, absoluteUrl } from '../lib/helpers.js';
 import { asyncHandler } from '../lib/async-handler.js';
-import { generateCaptcha, verifyCaptcha } from '../lib/captcha.js';
+import { generateChallenge, verifyCaptcha } from '../lib/captcha.js';
 import { setFlash } from '../middleware/flash.js';
 
 export const publicRouter = express.Router();
@@ -133,20 +133,14 @@ publicRouter.get('/e/:slug/upload', requireUploadAccess, async (req, res) => {
   const folders = await folderList(req.event.id);
   const used = await getStorageUsage(req.event.id);
   
-  const challenge = generateCaptcha();
-  res.cookie('ss_captcha', challenge.token, {
-    httpOnly: true,
-    secure: config.cookie.secure,
-    sameSite: config.cookie.sameSite,
-    signed: true,
-    maxAge: 24 * 60 * 60 * 1000,
-  });
+  const captchaToken = generateChallenge();
 
   res.render('public/upload', {
     title: `${req.event.title} Upload`,
     event: req.event,
     folders,
     uploadToken: req.event.upload_token,
+    captchaToken,
     storage: {
       usedHuman: formatBytes(used),
       limitHuman: formatBytes(req.event.storage_limit_bytes),
@@ -177,8 +171,8 @@ publicRouter.post(
 
     try {
       const honeypot = req.body.website_url;
-      const cookieVal = req.signedCookies.ss_captcha;
-      if (!verifyCaptcha(honeypot, cookieVal)) {
+      const tokenVal = req.body.captcha_token;
+      if (!verifyCaptcha(honeypot, tokenVal)) {
         return fail(400, 'Incorrect security CAPTCHA answer. Please refresh the page to get a new code and try again.');
       }
 

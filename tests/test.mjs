@@ -213,11 +213,10 @@ const uploadPageUrl = `/e/${event.slug}/upload?token=${event.upload_token}`;
 const uploadPageRes = await get(uploadPageUrl);
 const uploadCsrfMatch = uploadPageRes.data.match(/name="_csrf" value="([^"]+)"/);
 const uploadCsrf = uploadCsrfMatch ? uploadCsrfMatch[1] : null;
+const captchaTokenMatch = uploadPageRes.data.match(/name="captcha_token" value="([^"]+)"/);
+const captchaToken = captchaTokenMatch ? captchaTokenMatch[1] : null;
 console.log('Got Guest CSRF Token:', !!uploadCsrf);
-console.log('Guest Cookies after page load:', cookies);
-
-const hasCaptchaCookie = cookies.includes('ss_captcha=');
-console.log('Has ss_captcha cookie:', hasCaptchaCookie);
+console.log('Got Guest CAPTCHA Token:', !!captchaToken);
 
 console.log('Waiting 2.1s to satisfy invisible timestamp-based CAPTCHA...');
 await new Promise(resolve => setTimeout(resolve, 2100));
@@ -225,6 +224,7 @@ await new Promise(resolve => setTimeout(resolve, 2100));
 const fields = {
   _csrf: uploadCsrf,
   token: event.upload_token,
+  captcha_token: captchaToken,
   folder_id: String(folder.id),
   uploader_name: 'Test Integration Guest',
   uploader_side: 'friend',
