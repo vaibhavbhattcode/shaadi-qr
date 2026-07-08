@@ -43,7 +43,7 @@ export const config = {
   databasePath: toAbs(process.env.DATABASE_PATH || './data/app.db'),
   storageDir: toAbs(process.env.STORAGE_DIR || './storage'),
   registrationEnabled: boolFromEnv(process.env.REGISTRATION_ENABLED, true),
-  trustProxy: boolFromEnv(process.env.TRUST_PROXY, false),
+  trustProxy: boolFromEnv(process.env.TRUST_PROXY, isProduction),
   maxFilesPerUpload: Math.min(Number(process.env.MAX_FILES_PER_UPLOAD || 20), 50),
   globalMaxFileSizeBytes: Number(process.env.GLOBAL_MAX_FILE_SIZE_MB || 200) * 1024 * 1024,
   cookie: {

@@ -139,7 +139,7 @@ publicRouter.get('/e/:slug/upload', requireUploadAccess, async (req, res) => {
     secure: config.cookie.secure,
     sameSite: config.cookie.sameSite,
     signed: true,
-    maxAge: 10 * 60 * 1000,
+    maxAge: 24 * 60 * 60 * 1000,
   });
 
   res.render('public/upload', {
@@ -181,7 +181,6 @@ publicRouter.post(
       if (!verifyCaptcha(honeypot, cookieVal)) {
         return fail(400, 'Incorrect security CAPTCHA answer. Please refresh the page to get a new code and try again.');
       }
-      res.clearCookie('ss_captcha');
 
       const parsed = guestUploadFieldsSchema.safeParse(req.body);
       if (!parsed.success) {

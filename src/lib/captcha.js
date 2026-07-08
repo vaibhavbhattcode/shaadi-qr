@@ -48,8 +48,8 @@ export function verifyChallenge(honeypotValue, cookieValue) {
 
   const elapsed = Date.now() - timestamp;
 
-  // Expired: page was loaded more than 10 minutes ago
-  if (elapsed > 10 * 60 * 1000) return false;
+  // Expired: page was loaded more than 24 hours ago
+  if (elapsed > 24 * 60 * 60 * 1000) return false;
 
   // Too fast: submission in under 2 seconds is bot-like
   if (elapsed < 2000) return false;
