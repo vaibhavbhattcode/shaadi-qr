@@ -1,96 +1,155 @@
-<section class="between">
-  <div>
-    <span class="badge">Media moderation</span>
-    <h1 style="margin:10px 0 4px; letter-spacing:-.04em; font-size: clamp(1.4rem, 4vw, 2.2rem);"><%= event.title %></h1>
-    <p class="muted">Approve, reject or delete guest uploads. Only approved media appears in public gallery.</p>
+<!-- Modernized Media Moderation Dashboard -->
+<section class="glass-card p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 bg-white/70 backdrop-blur-xl border border-primary/10">
+  <div class="space-y-1">
+    <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 rounded-full text-primary text-xs font-bold shadow-sm border border-primary/15">
+      📸 Moderation Board
+    </span>
+    <h1 class="font-headline text-3xl font-bold text-primary tracking-tight mt-2"><%= event.title %></h1>
+    <p class="text-slate-500 text-xs font-medium">Review, approve, or reject guest photo/video uploads before they appear on the public gallery.</p>
   </div>
-  <div class="row">
-    <a class="btn secondary" href="/dashboard/events/<%= event.id %>">Event settings</a>
-    <a class="btn" href="/dashboard/events/<%= event.id %>/download.zip?status=approved">Download approved ZIP</a>
+  <div class="flex flex-wrap gap-2.5 pt-2 sm:pt-0">
+    <a class="border border-primary/20 bg-white hover:bg-slate-50 text-primary px-5 py-2.5 rounded-full font-bold text-xs shadow-sm transition-all" href="/dashboard/events/<%= event.id %>">
+      Album Settings
+    </a>
+    <a class="bg-gradient-wedding text-white px-5 py-2.5 rounded-full font-bold text-xs shadow-md hover:shadow-xl transition-all" href="/dashboard/events/<%= event.id %>/download.zip?status=approved">
+      Download Approved ZIP
+    </a>
   </div>
 </section>
 
-<section class="grid grid-4" style="margin-top:22px;">
-  <a class="metric" href="/dashboard/events/<%= event.id %>/media?status=pending"><div class="num"><%= stats.counts.pending %></div><div class="muted">Pending</div></a>
-  <a class="metric" href="/dashboard/events/<%= event.id %>/media?status=approved"><div class="num"><%= stats.counts.approved %></div><div class="muted">Approved</div></a>
-  <a class="metric" href="/dashboard/events/<%= event.id %>/media?status=rejected"><div class="num"><%= stats.counts.rejected %></div><div class="muted">Rejected</div></a>
-  <a class="metric" href="/dashboard/events/<%= event.id %>/media?status=all"><div class="num"><%= stats.counts.total %></div><div class="muted">All</div></a>
+<!-- Stats Tabs Filters -->
+<section class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+  <a class="glass-card p-4 rounded-xl text-center border border-primary/5 hover:border-primary/20 transition-all flex flex-col justify-between <%= status === 'pending' ? 'bg-primary/5 border-primary/30 ring-2 ring-primary/10' : 'bg-white/50' %>" href="/dashboard/events/<%= event.id %>/media?status=pending">
+    <div class="text-2xl font-black text-amber-600"><%= stats.counts.pending %></div>
+    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Pending</div>
+  </a>
+  <a class="glass-card p-4 rounded-xl text-center border border-primary/5 hover:border-primary/20 transition-all flex flex-col justify-between <%= status === 'approved' ? 'bg-primary/5 border-primary/30 ring-2 ring-primary/10' : 'bg-white/50' %>" href="/dashboard/events/<%= event.id %>/media?status=approved">
+    <div class="text-2xl font-black text-green-600"><%= stats.counts.approved %></div>
+    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Approved</div>
+  </a>
+  <a class="glass-card p-4 rounded-xl text-center border border-primary/5 hover:border-primary/20 transition-all flex flex-col justify-between <%= status === 'rejected' ? 'bg-primary/5 border-primary/30 ring-2 ring-primary/10' : 'bg-white/50' %>" href="/dashboard/events/<%= event.id %>/media?status=rejected">
+    <div class="text-2xl font-black text-red-600"><%= stats.counts.rejected %></div>
+    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Rejected</div>
+  </a>
+  <a class="glass-card p-4 rounded-xl text-center border border-primary/5 hover:border-primary/20 transition-all flex flex-col justify-between <%= status === 'all' ? 'bg-primary/5 border-primary/30 ring-2 ring-primary/10' : 'bg-white/50' %>" href="/dashboard/events/<%= event.id %>/media?status=all">
+    <div class="text-2xl font-black text-slate-700"><%= stats.counts.total %></div>
+    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Total Uploads</div>
+  </a>
 </section>
 
-<div class="card" style="margin-top:22px;">
-  <form class="between" method="get" action="/dashboard/events/<%= event.id %>/media">
-    <div class="row" style="flex:1;">
-      <label style="min-width:160px;">Status
-        <select name="status">
+<!-- Filter Box -->
+<div class="glass-card p-5 rounded-2xl border border-primary/10 bg-white/70 backdrop-blur-xl mb-8">
+  <form class="flex flex-col md:flex-row gap-4 items-end" method="get" action="/dashboard/events/<%= event.id %>/media">
+    <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+      <div class="space-y-1.5">
+        <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Filter by Status</label>
+        <select name="status" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2 focus:ring-primary focus:border-primary text-xs font-semibold">
           <% ['pending','approved','rejected','all'].forEach((s) => { %>
-            <option value="<%= s %>" <%= status === s ? 'selected' : '' %>><%= s %></option>
+            <option value="<%= s %>" <%= status === s ? 'selected' : '' %>><%= s.charAt(0).toUpperCase() + s.slice(1) %></option>
           <% }) %>
         </select>
-      </label>
-      <label style="min-width:180px;">Folder
-        <select name="folder">
-          <option value="">All folders</option>
+      </div>
+      
+      <div class="space-y-1.5">
+        <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Filter by Folders</label>
+        <select name="folder" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2 focus:ring-primary focus:border-primary text-xs font-semibold">
+          <option value="">All Ceremony Folders</option>
           <% folders.forEach((folder) => { %>
             <option value="<%= folder.id %>" <%= Number(folderId) === folder.id ? 'selected' : '' %>><%= folder.name %></option>
           <% }) %>
         </select>
-      </label>
-      <button class="btn secondary" type="submit">Filter</button>
+      </div>
     </div>
+    
+    <button class="w-full md:w-auto bg-gradient-wedding text-white px-6 py-2.5 rounded-lg font-bold text-xs shadow-md transition-all whitespace-nowrap active:scale-95" type="submit">
+      Filter Media
+    </button>
   </form>
 </div>
 
 <% if (!media.length) { %>
-  <div class="empty" style="margin-top:22px;">
-    <h2>No media found</h2>
-    <p class="muted">Selected filter me abhi koi upload nahi hai.</p>
+  <div class="empty py-16 text-center glass-card rounded-2xl bg-white/60 border border-primary/10">
+    <div class="text-5xl mb-4">🖼️</div>
+    <h2 class="font-headline text-2xl font-bold text-slate-800 mb-2">No media uploads found</h2>
+    <p class="text-slate-500 text-sm max-w-sm mx-auto">There are no files matching the selected filters at this time.</p>
   </div>
 <% } else { %>
-  <form method="post" action="/dashboard/events/<%= event.id %>/media/bulk" style="margin-top:22px;">
+  <form method="post" action="/dashboard/events/<%= event.id %>/media/bulk">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-    <div class="between card" style="margin-bottom:18px;">
-      <div class="row">
-        <button class="btn small secondary" type="button" onclick="document.querySelectorAll('.media-check').forEach(c => c.checked = true)">Select all</button>
-        <button class="btn small secondary" type="button" onclick="document.querySelectorAll('.media-check').forEach(c => c.checked = false)">Clear</button>
+    
+    <!-- Bulk Actions Header Bar -->
+    <div class="glass-card p-5 rounded-2xl border border-primary/10 bg-white/70 backdrop-blur-xl mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div class="flex gap-2">
+        <button class="border border-primary/15 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold px-4 py-2 rounded-full shadow-sm transition-all" type="button" onclick="document.querySelectorAll('.media-check').forEach(c => c.checked = true)">Select All</button>
+        <button class="border border-primary/15 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold px-4 py-2 rounded-full shadow-sm transition-all" type="button" onclick="document.querySelectorAll('.media-check').forEach(c => c.checked = false)">Clear All</button>
       </div>
-      <div class="row">
-        <select name="action" style="min-width:150px;">
-          <option value="approve">Approve</option>
-          <option value="reject">Reject</option>
-          <option value="delete">Delete</option>
+      
+      <div class="flex gap-3 items-center w-full sm:w-auto">
+        <select name="action" class="flex-1 sm:flex-none bg-white border border-primary/15 rounded-lg px-4 py-2 focus:ring-primary focus:border-primary text-xs font-bold min-w-[140px]">
+          <option value="approve">Approve Selected</option>
+          <option value="reject">Reject Selected</option>
+          <option value="delete">Delete Permanently</option>
         </select>
-        <button class="btn" type="submit" onclick="return confirm('Apply bulk action to selected media?')">Apply</button>
+        <button class="bg-gradient-wedding text-white px-6 py-2 rounded-lg font-bold text-xs shadow-md transition-all active:scale-95 whitespace-nowrap" type="submit" onclick="return confirm('Apply bulk action to selected media?')">Apply Action</button>
       </div>
     </div>
 
-    <div class="media-grid">
+    <!-- Moderation Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       <% media.forEach((item) => { %>
-        <article class="media-card">
-          <div class="thumb">
+        <article class="glass-card overflow-hidden bg-white/80 border border-primary/10 rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full">
+          
+          <!-- Image/Video Preview container -->
+          <div class="aspect-square w-full bg-slate-100 relative overflow-hidden flex items-center justify-center border-b border-primary/5">
             <% if (item.media_type === 'image') { %>
-              <a href="/dashboard/media/<%= item.id %>/file" target="_blank"><img loading="lazy" src="/dashboard/media/<%= item.id %>/thumbnail" alt="<%= item.original_name %>"></a>
+              <a href="/dashboard/media/<%= item.id %>/file" target="_blank" class="w-full h-full">
+                <img loading="lazy" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300" src="/dashboard/media/<%= item.id %>/thumbnail" alt="<%= item.original_name %>">
+              </a>
             <% } else { %>
-              <video src="/dashboard/media/<%= item.id %>/file" controls preload="metadata"></video>
+              <video class="w-full h-full object-cover" src="/dashboard/media/<%= item.id %>/file" controls preload="metadata"></video>
             <% } %>
+            
+            <span class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2.5 py-0.5 text-[9px] font-extrabold uppercase rounded-full border shadow-sm <%= item.status === 'approved' ? 'bg-green-50 text-green-700 border-green-200' : (item.status === 'pending' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-red-50 text-red-700 border-red-200') %>">
+              <%= item.status %>
+            </span>
           </div>
-          <div class="body">
-            <div class="between">
-              <label class="row" style="font-weight:800;"><input class="media-check" style="width:auto" type="checkbox" name="media_ids" value="<%= item.id %>"> Select</label>
-              <span class="badge <%= item.status %>"><%= item.status %></span>
+
+          <!-- Card Info Body -->
+          <div class="p-4 space-y-3 flex-1 flex flex-col justify-between">
+            <div class="space-y-1">
+              <div class="flex items-center gap-1.5">
+                <input class="media-check rounded border-primary/20 text-primary focus:ring-primary w-3.5 h-3.5" type="checkbox" name="media_ids" value="<%= item.id %>" id="check_<%= item.id %>">
+                <label for="check_<%= item.id %>" class="text-xs font-bold text-slate-700 cursor-pointer">Select File</label>
+              </div>
+              
+              <strong class="block text-slate-800 text-xs truncate mt-1.5" title="<%= item.original_name %>">
+                <%= item.original_name %>
+              </strong>
+              
+              <div class="text-[10px] text-slate-400 font-semibold space-y-0.5">
+                <p>Folder: <span class="text-primary font-bold"><%= item.folder_name %></span> · <%= helpers.formatBytes(item.size_bytes) %></p>
+                <p>Uploader: <span class="text-slate-600 font-bold"><%= item.uploader_name || 'Guest' %></span> <%= item.uploader_side ? `(${item.uploader_side})` : '' %></p>
+              </div>
             </div>
-            <strong title="<%= item.original_name %>" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><%= item.original_name %></strong>
-            <span class="hint"><%= item.folder_name %> · <%= helpers.formatBytes(item.size_bytes) %></span>
-            <span class="hint">By: <%= item.uploader_name || 'Guest' %> <%= item.uploader_side ? `· ${item.uploader_side}` : '' %></span>
-            <div class="row">
+
+            <!-- Single Actions Row -->
+            <div class="grid grid-cols-3 gap-1.5 pt-2.5 border-t border-primary/5">
               <% if (item.status !== 'approved') { %>
-                <button formaction="/dashboard/events/<%= event.id %>/media/<%= item.id %>/approve" formmethod="post" class="btn small green" type="submit">Approve</button>
+                <button formaction="/dashboard/events/<%= event.id %>/media/<%= item.id %>/approve" formmethod="post" class="bg-green-50 hover:bg-green-100 text-green-700 text-[10px] font-extrabold py-1.5 rounded-lg border border-green-200 transition-colors" type="submit">Approve</button>
+              <% } else { %>
+                <div class="text-center text-[10px] text-slate-400 py-1.5 font-bold border border-transparent">Approved</div>
               <% } %>
+              
               <% if (item.status !== 'rejected') { %>
-                <button formaction="/dashboard/events/<%= event.id %>/media/<%= item.id %>/reject" formmethod="post" class="btn small secondary" type="submit">Reject</button>
+                <button formaction="/dashboard/events/<%= event.id %>/media/<%= item.id %>/reject" formmethod="post" class="bg-amber-50 hover:bg-amber-100 text-amber-700 text-[10px] font-extrabold py-1.5 rounded-lg border border-amber-200 transition-colors" type="submit">Reject</button>
+              <% } else { %>
+                <div class="text-center text-[10px] text-slate-400 py-1.5 font-bold border border-transparent">Rejected</div>
               <% } %>
-              <button formaction="/dashboard/events/<%= event.id %>/media/<%= item.id %>/delete" formmethod="post" class="btn small danger" type="submit" onclick="return confirm('Delete this media permanently?')">Delete</button>
+              
+              <button formaction="/dashboard/events/<%= event.id %>/media/<%= item.id %>/delete" formmethod="post" class="bg-red-50 hover:bg-red-100 text-red-700 text-[10px] font-extrabold py-1.5 rounded-lg border border-red-200 transition-colors" type="submit" onclick="return confirm('Delete this media permanently?')">Delete</button>
             </div>
           </div>
+
         </article>
       <% }) %>
     </div>

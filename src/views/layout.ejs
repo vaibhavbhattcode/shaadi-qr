@@ -350,9 +350,41 @@
     .hamburger:hover { background: rgba(184,50,128,.06); }
     .hamburger span { display: block; width: 22px; height: 2px; background: var(--brand); border-radius: 2px; transition: .3s ease; }
 
-    /* Smooth animations */
-    @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-    .animate-fadein { animation: fadeInUp .4s ease forwards; }
+    /* Smooth premium animations */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes pulseGlow {
+      0%, 100% { transform: scale(1); opacity: .4; }
+      50% { transform: scale(1.05); opacity: .6; }
+    }
+
+    .animate-fadein { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .animate-fade-in-slow { animation: fadeIn 1s ease forwards; }
+    .animate-slideup-delay-1 { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards; opacity: 0; }
+    .animate-slideup-delay-2 { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards; opacity: 0; }
+    .animate-slideup-delay-3 { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; opacity: 0; }
+    .animate-glow { animation: pulseGlow 4s ease-in-out infinite; }
+
+    .hover-up { transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease; }
+    .hover-up:hover { transform: translateY(-6px); box-shadow: 0 20px 40px -10px rgba(184, 50, 128, 0.18); }
+
+    /* Floating abstract shapes */
+    @keyframes float1 {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-16px) rotate(4deg); }
+    }
+    @keyframes float2 {
+      0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); }
+      50% { transform: translateY(16px) rotate(-4deg) scale(1.04); }
+    }
+    .animate-float-1 { animation: float1 6s ease-in-out infinite; }
+    .animate-float-2 { animation: float2 8s ease-in-out infinite; }
 
     /* Responsive card and panel padding */
     @media (max-width: 639px) {
@@ -364,7 +396,7 @@
     }
   </style>
 </head>
-<body class="bg-[#fdf8f9] text-slate-800 font-body antialiased min-h-screen relative">
+<body class="bg-[#fdf8f9] text-slate-800 font-body antialiased min-h-screen relative overflow-x-hidden">
   <% 
     const currentPath = locals.path || '';
     const isAdminRoute = currentPath.startsWith('/admin');
@@ -426,6 +458,9 @@
               </a>
               <a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all <%= currentPath.startsWith('/admin/audit') ? 'bg-gradient-wedding text-white shadow-md' : 'text-slate-600 hover:bg-primary/5 hover:text-primary' %>" href="/admin/audit" onclick="closeMobileSidebar()">
                 <span class="material-symbols-outlined">history</span><span>Audit Logs</span>
+              </a>
+              <a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all <%= currentPath.startsWith('/admin/blogs') ? 'bg-gradient-wedding text-white shadow-md' : 'text-slate-600 hover:bg-primary/5 hover:text-primary' %>" href="/admin/blogs" onclick="closeMobileSidebar()">
+                <span class="material-symbols-outlined">edit_note</span><span>Blogs / CMS</span>
               </a>
               <div class="h-px bg-primary/10 my-3"></div>
             <% } %>
@@ -514,6 +549,10 @@
               <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all <%= currentPath.startsWith('/admin/audit') ? 'bg-gradient-wedding text-white shadow-md' : 'text-slate-600 hover:bg-primary/5 hover:text-primary' %>" href="/admin/audit">
                 <span class="material-symbols-outlined">history</span>
                 <span>Audit Logs</span>
+              </a>
+              <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all <%= currentPath.startsWith('/admin/blogs') ? 'bg-gradient-wedding text-white shadow-md' : 'text-slate-600 hover:bg-primary/5 hover:text-primary' %>" href="/admin/blogs">
+                <span class="material-symbols-outlined">edit_note</span>
+                <span>Blogs / CMS</span>
               </a>
               <div class="h-px bg-primary/10 my-4"></div>
             <% } %>
@@ -605,13 +644,65 @@
         <%- body %>
       </main>
       
-      <footer class="text-slate-400 text-center py-8 sm:py-12 text-sm max-w-7xl mx-auto px-4 mt-8 sm:mt-12 border-t border-primary/10">
-        <div class="mb-4 font-semibold space-x-4">
-          <a href="/privacy" class="hover:text-primary transition-colors">Privacy Policy</a>
-          <span>·</span>
-          <a href="/contact" class="hover:text-primary transition-colors">Contact & Support</a>
+      <footer class="bg-white border-t border-primary/10 text-slate-500 font-body text-sm mt-20 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-12 lg:py-16 grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12">
+          
+          <!-- Column 1: Brand Info -->
+          <div class="md:col-span-4 space-y-4">
+            <a class="flex items-center gap-2.5 font-headline text-2xl font-bold text-primary" href="/">
+              <svg class="w-8 h-8 p-1 rounded-lg bg-white border border-primary/15" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="roseGradientFooter" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#b83280;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#ff7a59;stop-opacity:1" />
+                  </linearGradient>
+                </defs>
+                <path d="M50 15 C30 15 15 30 15 50 C15 70 30 85 50 85 C70 85 85 70 85 50 C85 30 70 15 50 15" fill="none" stroke="url(#roseGradientFooter)" stroke-width="3"/>
+                <circle cx="50" cy="50" r="12" fill="url(#roseGradientFooter)"/>
+              </svg>
+              <span>ShaadiShots</span>
+            </a>
+            <p class="text-xs text-slate-400 leading-relaxed font-semibold">
+              The modern way to preserve your wedding candid memories. Secure QR codes, live moderation, custom-themed printable posters, and instant downloads.
+            </p>
+            <p class="text-xs text-slate-400 font-bold pt-2">
+              &copy; 2026 ShaadiShots. All rights reserved.
+            </p>
+          </div>
+
+          <!-- Column 2: Product features -->
+          <div class="md:col-span-2 space-y-3">
+            <h4 class="text-xs uppercase font-extrabold text-primary tracking-wider font-display">Product</h4>
+            <ul class="space-y-2 text-xs font-semibold">
+              <li><a href="/#features" class="hover:text-primary transition-colors">Features Grid</a></li>
+              <li><a href="/#how-it-works" class="hover:text-primary transition-colors">How It Works</a></li>
+              <li><a href="/#pricing" class="hover:text-primary transition-colors">Pricing Plans</a></li>
+            </ul>
+          </div>
+
+          <!-- Column 3: Resources -->
+          <div class="md:col-span-3 space-y-3">
+            <h4 class="text-xs uppercase font-extrabold text-primary tracking-wider font-display">Resources</h4>
+            <ul class="space-y-2 text-xs font-semibold">
+              <li><a href="/blog" class="hover:text-primary transition-colors">Wedding Blog</a></li>
+              <li><a href="/contact" class="hover:text-primary transition-colors">Help & Support</a></li>
+              <li><a href="/#faq" class="hover:text-primary transition-colors">FAQs Info</a></li>
+            </ul>
+          </div>
+
+          <!-- Column 4: Legals -->
+          <div class="md:col-span-3 space-y-3">
+            <h4 class="text-xs uppercase font-extrabold text-primary tracking-wider font-display">Legal & Trust</h4>
+            <ul class="space-y-2 text-xs font-semibold">
+              <li><a href="/privacy" class="hover:text-primary transition-colors">Privacy Policy</a></li>
+              <li><a href="/contact" class="hover:text-primary transition-colors">Contact Support</a></li>
+              <li class="text-[10px] text-green-600 font-bold flex items-center gap-1.5 pt-1">
+                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> All Systems Operational
+              </li>
+            </ul>
+          </div>
+
         </div>
-        <div>Secure wedding memory collection SaaS · <%= appName %></div>
       </footer>
     </div>
   <% } %>

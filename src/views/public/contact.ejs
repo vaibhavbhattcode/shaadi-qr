@@ -1,53 +1,72 @@
-<section class="grid grid-2" style="align-items: flex-start; max-width: 1040px; margin: 20px auto; gap: 30px; padding: 0 4px;">
-  <div>
-    <span class="badge" style="margin-bottom: 12px;">Get in touch</span>
-    <h1 style="font-size: clamp(1.8rem, 5vw, 3rem); letter-spacing: -.06em; margin: 0 0 16px; line-height: 1.1;">Support & Contact</h1>
-    <p class="muted" style="font-size: clamp(.9rem, 2.5vw, 1.12rem); line-height: 1.6; margin-bottom: 30px;">
-      Wedding settings setup me problem aa rahi hai? Ya business packages ke baare me discuss karna chahte ho? Hamein message bhejein, support team aapse jald hi contact karegi.
+<!-- Modernized Contact & Support Page -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start max-w-5xl mx-auto py-12 px-4 sm:px-6">
+  
+  <div class="space-y-6">
+    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 rounded-full text-primary text-xs font-bold shadow-sm border border-primary/20">
+      ✉️ Support Center
+    </span>
+    <h1 class="font-headline text-4xl sm:text-5xl font-black text-slate-900 leading-tight">
+      Get in touch with our team
+    </h1>
+    <p class="text-slate-600 text-sm sm:text-base leading-relaxed">
+      Need help setting up your wedding QR code, have questions about our premium plans, or want to discuss enterprise white-label solutions? Send us a message and our support team will respond within a few hours.
     </p>
 
-    <div class="card soft" style="display: grid; gap: 20px; padding: 24px;">
-      <div style="display: flex; align-items: center; gap: 14px;">
-        <div style="font-size: 1.6rem; background: #ffeef6; width: 48px; height: 48px; min-width: 48px; display: grid; place-items: center; border-radius: 12px; color: var(--brand);">✉</div>
+    <!-- Support Methods Bento Cards -->
+    <div class="space-y-4 pt-4">
+      <div class="glass-card p-5 rounded-2xl border border-primary/10 bg-white/60 flex items-center gap-4 hover:shadow-md transition-all">
+        <div class="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-xl font-bold">✉</div>
         <div>
-          <span style="font-size: .85rem; font-weight: 800; text-transform: uppercase; color: var(--muted);">Email Support</span>
-          <strong style="display: block; font-size: 1.05rem; margin-top: 2px;"><a href="mailto:support@shaadishots.com">support@shaadishots.com</a></strong>
+          <span class="text-[10px] uppercase font-bold text-primary tracking-widest block">Email Support</span>
+          <strong class="text-slate-800 text-sm sm:text-base"><a href="mailto:support@shaadishots.com" class="hover:underline">support@shaadishots.com</a></strong>
         </div>
       </div>
-      <div style="display: flex; align-items: center; gap: 14px;">
-        <div style="font-size: 1.6rem; background: #ecfdf5; width: 48px; height: 48px; min-width: 48px; display: grid; place-items: center; border-radius: 12px; color: var(--green);">💬</div>
+      
+      <div class="glass-card p-5 rounded-2xl border border-primary/10 bg-white/60 flex items-center gap-4 hover:shadow-md transition-all">
+        <div class="w-12 h-12 rounded-xl bg-green-50 text-green-600 flex items-center justify-center text-xl font-bold">💬</div>
         <div>
-          <span style="font-size: .85rem; font-weight: 800; text-transform: uppercase; color: var(--muted);">Live WhatsApp Help</span>
-          <strong style="display: block; font-size: 1.05rem; margin-top: 2px;">Available in Owner Dashboard</strong>
+          <span class="text-[10px] uppercase font-bold text-green-600 tracking-widest block">Live WhatsApp Support</span>
+          <strong class="text-slate-800 text-sm sm:text-base">Available in Owner Dashboard</strong>
         </div>
       </div>
     </div>
   </div>
 
-  <form class="card" method="post" action="/contact" novalidate style="width: 100%; padding: 24px;">
+  <!-- Contact Form -->
+  <form class="glass-card p-8 rounded-3xl border border-primary/10 bg-white/70 backdrop-blur-xl space-y-5 shadow-lg" method="post" action="/contact" novalidate>
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-    <div class="grid" style="gap: 20px;">
-      <label>Your Name
-        <input type="text" name="name" value="<%= currentUser ? currentUser.name : (values.name || '') %>" required placeholder="E.g. Rohan Sharma" <%= currentUser ? 'readonly' : '' %>>
-        <% if (errors.name) { %><span class="error-text"><%= errors.name[0] %></span><% } %>
-      </label>
+    
+    <div class="space-y-1">
+      <h2 class="font-headline text-2xl font-bold text-slate-800">Send Message</h2>
+      <p class="text-xs text-slate-400 font-semibold">Fill out the form below and we will get back to you.</p>
+    </div>
+    
+    <div class="space-y-4">
+      <div class="space-y-1.5">
+        <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Your Name</label>
+        <input type="text" name="name" value="<%= currentUser ? currentUser.name : (values.name || '') %>" required placeholder="E.g. Rohan Sharma" <%= currentUser ? 'readonly' : '' %> class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm">
+        <% if (errors.name) { %><span class="text-xs text-red-600 font-semibold"><%= errors.name[0] %></span><% } %>
+      </div>
 
-      <label>Email Address
-        <input type="email" name="email" value="<%= currentUser ? currentUser.email : (values.email || '') %>" required placeholder="E.g. rohan@gmail.com" <%= currentUser ? 'readonly' : '' %>>
-        <% if (errors.email) { %><span class="error-text"><%= errors.email[0] %></span><% } %>
-      </label>
+      <div class="space-y-1.5">
+        <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Email Address</label>
+        <input type="email" name="email" value="<%= currentUser ? currentUser.email : (values.email || '') %>" required placeholder="E.g. rohan@gmail.com" <%= currentUser ? 'readonly' : '' %> class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm">
+        <% if (errors.email) { %><span class="text-xs text-red-600 font-semibold"><%= errors.email[0] %></span><% } %>
+      </div>
 
-      <label>Subject
-        <input type="text" name="subject" value="<%= values.subject || '' %>" required placeholder="E.g. Upgrade plan inquiry" maxlength="150">
-        <% if (errors.subject) { %><span class="error-text"><%= errors.subject[0] %></span><% } %>
-      </label>
+      <div class="space-y-1.5">
+        <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Subject</label>
+        <input type="text" name="subject" value="<%= values.subject || '' %>" required placeholder="E.g. Plan upgrade inquiry" maxlength="150" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm">
+        <% if (errors.subject) { %><span class="text-xs text-red-600 font-semibold"><%= errors.subject[0] %></span><% } %>
+      </div>
 
-      <label>Message
-        <textarea name="message" rows="5" required placeholder="Describe your issue or query here..." maxlength="1000"><%= values.message || '' %></textarea>
-        <% if (errors.message) { %><span class="error-text"><%= errors.message[0] %></span><% } %>
-      </label>
+      <div class="space-y-1.5">
+        <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Message</label>
+        <textarea name="message" rows="5" required placeholder="Describe your query in detail..." maxlength="1000" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm"><%= values.message || '' %></textarea>
+        <% if (errors.message) { %><span class="text-xs text-red-600 font-semibold"><%= errors.message[0] %></span><% } %>
+      </div>
 
-      <button class="btn" type="submit" style="margin-top: 8px;">Send Message</button>
+      <button class="w-full bg-gradient-wedding text-white px-6 py-3.5 rounded-full font-bold text-sm shadow-md hover:shadow-xl transition-all" type="submit">Send Message</button>
     </div>
   </form>
 </section>

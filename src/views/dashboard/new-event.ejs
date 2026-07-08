@@ -1,55 +1,71 @@
-<section style="max-width: 900px; margin: 0 auto;">
-  <div class="between">
-    <div>
-      <span class="badge">New wedding event</span>
-      <h1 style="margin:10px 0 4px; letter-spacing:-.04em; font-size: clamp(1.4rem, 4vw, 2.2rem);">Create QR upload link</h1>
-      <p class="muted">Event details add karo, folders choose karo, phir QR code download ho jayega.</p>
+<!-- Modernized Create Event Panel -->
+<section class="max-w-3xl mx-auto py-8">
+  <div class="glass-card p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 bg-white/70 backdrop-blur-xl border border-primary/10">
+    <div class="space-y-1">
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 rounded-full text-primary text-xs font-bold shadow-sm border border-primary/15">
+        ✨ New Wedding Album
+      </span>
+      <h1 class="font-headline text-2xl sm:text-3xl font-bold text-primary tracking-tight mt-2">Create QR Upload Link</h1>
+      <p class="text-slate-500 text-xs font-medium">Add wedding details, designate ceremony folders, and instantly generate custom-themed posters.</p>
     </div>
-    <a class="btn secondary" href="/dashboard">Back</a>
+    <a class="border border-primary/20 bg-white hover:bg-slate-50 text-primary text-xs font-bold px-4 py-2.5 rounded-full shadow-sm transition-all" href="/dashboard">
+      Back
+    </a>
   </div>
 
-  <form class="card grid" method="post" action="/dashboard/events" style="margin-top:22px;" novalidate>
+  <form class="glass-card p-8 rounded-2xl border border-primary/10 bg-white/70 backdrop-blur-xl space-y-6" method="post" action="/dashboard/events" novalidate>
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
-    <label>Wedding title
-      <input name="title" maxlength="120" value="<%= values.title || '' %>" placeholder="Rahul ❤️ Anjali Wedding" required>
-      <% if (errors.title) { %><span class="error-text"><%= errors.title[0] %></span><% } %>
-    </label>
-
-    <div class="grid grid-2">
-      <label>Bride name
-        <input name="bride_name" maxlength="80" value="<%= values.bride_name || '' %>" placeholder="Anjali">
-      </label>
-      <label>Groom name
-        <input name="groom_name" maxlength="80" value="<%= values.groom_name || '' %>" placeholder="Rahul">
-      </label>
+    <div class="space-y-1.5">
+      <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Wedding Title *</label>
+      <input name="title" maxlength="120" value="<%= values.title || '' %>" placeholder="e.g. Rahul ❤️ Anjali Wedding" required class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm">
+      <% if (errors.title) { %><span class="text-xs text-red-600 font-semibold"><%= errors.title[0] %></span><% } %>
     </div>
 
-    <div class="grid grid-2">
-      <label>Wedding date
-        <input type="date" name="wedding_date" value="<%= values.wedding_date || '' %>">
-      </label>
-      <label>City
-        <input name="city" maxlength="80" value="<%= values.city || '' %>" placeholder="Jaipur">
-      </label>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      <div class="space-y-1.5">
+        <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Bride Name</label>
+        <input name="bride_name" maxlength="80" value="<%= values.bride_name || '' %>" placeholder="e.g. Anjali" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm">
+      </div>
+      <div class="space-y-1.5">
+        <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Groom Name</label>
+        <input name="groom_name" maxlength="80" value="<%= values.groom_name || '' %>" placeholder="e.g. Rahul" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm">
+      </div>
     </div>
 
-    <label>Venue
-      <input name="venue" maxlength="160" value="<%= values.venue || '' %>" placeholder="Royal Palace Banquet">
-    </label>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      <div class="space-y-1.5">
+        <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Wedding Date</label>
+        <input type="date" name="wedding_date" value="<%= values.wedding_date || '' %>" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm">
+      </div>
+      <div class="space-y-1.5">
+        <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">City / Venue City</label>
+        <input name="city" maxlength="80" value="<%= values.city || '' %>" placeholder="e.g. Jaipur" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm">
+      </div>
+    </div>
 
-    <label>Custom link slug <span class="hint">optional</span>
-      <input name="slug" maxlength="70" value="<%= values.slug || '' %>" placeholder="rahul-anjali">
-      <% if (errors.slug) { %><span class="error-text"><%= errors.slug[0] %></span><% } %>
-      <span class="hint">Leave blank to auto-generate. Only lowercase URL-safe text will be used.</span>
-    </label>
+    <div class="space-y-1.5">
+      <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Banquet / Venue Name</label>
+      <input name="venue" maxlength="160" value="<%= values.venue || '' %>" placeholder="e.g. Royal Palace Banquet" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm">
+    </div>
 
-    <label>Event folders
-      <input name="folders" maxlength="500" value="<%= values.folders || 'Haldi, Mehndi, Baraat, Reception' %>">
-      <span class="hint">Comma separated: Haldi, Mehndi, Baraat, Reception</span>
-      <% if (errors.folders) { %><span class="error-text"><%= errors.folders[0] %></span><% } %>
-    </label>
+    <div class="space-y-1.5">
+      <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Custom Link Slug <span class="text-slate-400 font-normal lowercase">(optional)</span></label>
+      <input name="slug" maxlength="70" value="<%= values.slug || '' %>" placeholder="e.g. rahul-anjali" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm">
+      <% if (errors.slug) { %><span class="text-xs text-red-600 font-semibold"><%= errors.slug[0] %></span><% } %>
+      <span class="hint block text-[10px] text-slate-400 font-semibold mt-1">Leave blank to auto-generate. Only lowercase alphanumeric text and dashes will be used.</span>
+    </div>
 
-    <button class="btn" type="submit">Create event & QR</button>
+    <div class="space-y-1.5">
+      <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Ceremony Folders</label>
+      <input name="folders" maxlength="500" value="<%= values.folders || 'Haldi, Mehndi, Baraat, Reception' %>" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm">
+      <span class="hint block text-[10px] text-slate-400 font-semibold mt-1">Separate names with commas. Guests can select which event they are uploading to.</span>
+      <% if (errors.folders) { %><span class="text-xs text-red-600 font-semibold"><%= errors.folders[0] %></span><% } %>
+    </div>
+
+    <div class="pt-4 border-t border-primary/10 flex justify-end gap-3">
+      <a href="/dashboard" class="border border-primary/20 bg-white hover:bg-slate-50 text-primary px-8 py-3 rounded-full font-bold text-sm shadow-sm transition-all">Cancel</a>
+      <button type="submit" class="bg-gradient-wedding text-white px-8 py-3 rounded-full font-bold text-sm shadow-md hover:shadow-xl transition-all">Create Event & QR</button>
+    </div>
   </form>
 </section>

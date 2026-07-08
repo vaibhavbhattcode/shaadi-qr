@@ -1,85 +1,476 @@
-<section class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center py-12 lg:py-20 relative">
-  <div class="space-y-6">
-    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 rounded-full text-primary text-xs font-bold shadow-sm border border-primary/20">
-      ✨ QR-Based Wedding Media Collection
-    </span>
-    <h1 class="font-headline text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-slate-900 leading-none tracking-tight">
-      Guests scan QR. <br>
-      <span class="text-gradient-wedding">Memories upload</span> <br>
-      automatically.
-    </h1>
-    <p class="text-slate-600 text-lg leading-relaxed max-w-xl">
-      In every wedding, guests capture beautiful candid photos and videos on their phones, but the couple rarely receives them. 
-      <strong><%= appName %></strong> provides a secure upload QR, admin moderation, elegant galleries, and high-quality ZIP downloads.
-    </p>
-    <div class="flex flex-wrap gap-4 pt-4">
-      <% if (currentUser) { %>
-        <a class="bg-gradient-wedding text-white px-8 py-3.5 rounded-full font-bold text-sm shadow-md hover:shadow-xl transition-all" href="/dashboard/events/new">Create Wedding QR</a>
-        <a class="border border-primary/20 bg-white hover:bg-slate-50 text-primary px-8 py-3.5 rounded-full font-bold text-sm shadow-md transition-all" href="/dashboard">Open Dashboard</a>
-      <% } else { %>
-        <a class="bg-gradient-wedding text-white px-8 py-3.5 rounded-full font-bold text-sm shadow-md hover:shadow-xl transition-all" href="/register">Start Free Demo</a>
-        <a class="border border-primary/20 bg-white hover:bg-slate-50 text-primary px-8 py-3.5 rounded-full font-bold text-sm shadow-md transition-all" href="/login">Login</a>
-      <% } %>
-    </div>
-  </div>
-  
-  <div class="glass-card p-8 rounded-2xl shadow-xl space-y-6 border border-primary/10 bg-white/70 backdrop-blur-xl">
-    <div class="space-y-4">
-      <div class="flex items-start gap-4 p-4 bg-white/50 rounded-xl border border-primary/5 hover:border-primary/10 transition-colors shadow-sm">
-        <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-lg">1</div>
-        <div>
-          <h4 class="font-bold text-slate-800">Couple Creates Event</h4>
-          <p class="text-xs text-slate-500 mt-0.5">Generate a unique QR code and printing poster in seconds.</p>
-        </div>
-      </div>
-      
-      <div class="flex items-start gap-4 p-4 bg-white/50 rounded-xl border border-primary/5 hover:border-primary/10 transition-colors shadow-sm">
-        <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-lg">2</div>
-        <div>
-          <h4 class="font-bold text-slate-800">Guests Upload Instantly</h4>
-          <p class="text-xs text-slate-500 mt-0.5">No login or app install needed. Just scan, pick, and upload.</p>
-        </div>
-      </div>
-      
-      <div class="flex items-start gap-4 p-4 bg-white/50 rounded-xl border border-primary/5 hover:border-primary/10 transition-colors shadow-sm">
-        <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-lg">3</div>
-        <div>
-          <h4 class="font-bold text-slate-800">Moderated Live Gallery</h4>
-          <p class="text-xs text-slate-500 mt-0.5">Approve photos/videos before they go live in the public gallery.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+<!-- Modern Premium Landing Page with Dynamic Interactive Hero & Slideshow -->
+<div class="space-y-32 pb-20 relative">
 
-<section class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12 py-8">
-  <div class="glass-card p-6 rounded-2xl bg-white/60 space-y-3">
-    <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-      <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">security</span>
+  <!-- HERO SECTION -->
+  <section class="relative grid grid-cols-1 lg:grid-cols-12 gap-12 items-center py-20 lg:py-32 scroll-mt-24">
+    <!-- Tech Grid Background & Animated Blur Blobs -->
+    <div class="absolute inset-0 -z-10 bg-[radial-gradient(rgba(184,50,128,0.07)_1px,transparent_0)] [background-size:24px_24px]"></div>
+    <div class="absolute -top-40 -left-40 w-96 h-96 bg-primary/10 rounded-full blur-3xl -z-10 animate-glow"></div>
+    <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-secondary/15 rounded-full blur-3xl -z-10 animate-glow" style="animation-delay: 2s;"></div>
+
+    <!-- Floating Ornamental Abstract Shapes -->
+    <div class="absolute top-20 right-1/3 w-16 h-16 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-full blur-sm -z-10 animate-float-1"></div>
+    <div class="absolute bottom-20 left-10 w-24 h-24 bg-gradient-to-tr from-secondary/10 to-primary/10 rounded-2xl rotate-45 blur-sm -z-10 animate-float-2"></div>
+
+    <!-- Hero Content (Left 7 Columns) -->
+    <div class="lg:col-span-7 space-y-8 text-left relative z-20">
+      <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-primary/10 rounded-full text-primary text-xs font-bold shadow-sm border border-primary/20 animate-fade-in-slow">
+        ✨ The Premium QR-Based Wedding Media Collect SaaS
+      </span>
+      
+      <h1 class="font-headline text-5xl sm:text-6xl md:text-7xl font-black text-slate-900 leading-[1.05] tracking-tight animate-slideup-delay-1">
+        Every wedding photo, <br>
+        <span class="text-gradient-wedding">effortlessly collected.</span>
+      </h1>
+      
+      <p class="text-slate-600 text-lg sm:text-xl leading-relaxed max-w-xl font-medium animate-slideup-delay-2">
+        Guests scan your custom QR code. Photos and videos upload instantly to your private space. No app installs, no signups, no compression.
+      </p>
+      
+      <div class="flex flex-wrap gap-4 pt-4 animate-slideup-delay-3">
+        <% if (currentUser) { %>
+          <a class="bg-gradient-wedding text-white px-9 py-4 rounded-full font-bold text-sm shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300" href="/dashboard/events/new">Create Wedding QR</a>
+          <a class="border border-primary/20 bg-white hover:bg-slate-50 text-primary px-9 py-4 rounded-full font-bold text-sm shadow-md transition-all duration-300" href="/dashboard">Open Dashboard</a>
+        <% } else { %>
+          <a class="bg-gradient-wedding text-white px-9 py-4 rounded-full font-bold text-sm shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300" href="/register">Start Free Demo</a>
+          <a class="border border-primary/20 bg-white hover:bg-slate-50 text-primary px-9 py-4 rounded-full font-bold text-sm shadow-md transition-all duration-300" href="/login">Couples Login</a>
+        <% } %>
+      </div>
+      
+      <!-- Trust badges with animations -->
+      <div class="flex items-center gap-3 pt-8 border-t border-primary/10 max-w-md animate-slideup-delay-3">
+        <div class="flex -space-x-2.5">
+          <div class="w-9 h-9 rounded-full bg-primary/25 border-2 border-white flex items-center justify-center font-bold text-[10px] text-primary">HR</div>
+          <div class="w-9 h-9 rounded-full bg-secondary/25 border-2 border-white flex items-center justify-center font-bold text-[10px] text-secondary">AM</div>
+          <div class="w-9 h-9 rounded-full bg-amber-500/25 border-2 border-white flex items-center justify-center font-bold text-[10px] text-amber-700">VS</div>
+        </div>
+        <p class="text-xs text-slate-500 font-bold">Loved by 10,000+ couples & wedding organizers worldwide.</p>
+      </div>
     </div>
-    <h3 class="font-headline text-xl font-bold text-slate-800">Secure by Default</h3>
-    <p class="text-slate-600 text-sm leading-relaxed">
-      HTTP-only auth cookies, CSRF tokens, rate limits, server-side validation, magic-byte file checks, and owner-only dashboards keep your media safe.
-    </p>
-  </div>
-  
-  <div class="glass-card p-6 rounded-2xl bg-white/60 space-y-3">
-    <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-      <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">cloud</span>
+    
+    <!-- Hero Mockup Side (Right 5 Columns) with padding protection to prevent clipping -->
+    <div class="lg:col-span-5 relative z-10 flex justify-center py-10 lg:py-0 px-2 sm:px-12">
+      
+      <!-- Device frame container (Sleek Phone Frame Mockup) -->
+      <div class="relative w-[280px] sm:w-[310px] h-[550px] sm:h-[610px] bg-slate-900 rounded-[40px] sm:rounded-[50px] p-2.5 sm:p-3 shadow-2xl border-4 border-slate-800 ring-8 ring-slate-700/30 hover-up overflow-hidden">
+        <!-- Speaker / Camera Notch -->
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-28 sm:w-32 h-5 sm:h-6 bg-slate-900 rounded-b-2xl z-50 flex items-center justify-center gap-1.5">
+          <div class="w-10 sm:w-12 h-1 bg-slate-800 rounded-full"></div>
+          <div class="w-2 sm:w-2.5 h-2 sm:h-2.5 bg-slate-800 rounded-full"></div>
+        </div>
+
+        <!-- Phone screen inner container -->
+        <div class="relative w-full h-full bg-white rounded-[32px] sm:rounded-[40px] overflow-hidden flex flex-col justify-between p-3 sm:p-4 pt-6 sm:pt-8">
+          
+          <!-- Mock Header Info -->
+          <div class="flex justify-between items-center border-b border-primary/5 pb-2.5">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-wedding flex items-center justify-center text-white font-bold font-headline text-[10px] sm:text-xs shadow-sm">P</div>
+              <div>
+                <h4 class="font-bold text-slate-800 text-[10px] sm:text-xs">Priya & Raj</h4>
+                <p class="text-[8px] sm:text-[9px] text-slate-400 font-bold">Feb 14, 2026 · Udaipur</p>
+              </div>
+            </div>
+            <span class="px-2 py-0.5 bg-green-50 text-green-700 border border-green-150 rounded-full text-[8px] font-extrabold uppercase tracking-wide flex items-center gap-1">
+              <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping"></span> Live
+            </span>
+          </div>
+
+          <!-- Dynamic Slideshow Container (Smooth Fade transitions) -->
+          <div class="relative flex-1 w-full bg-slate-50 my-2.5 rounded-xl sm:rounded-2xl overflow-hidden shadow-inner border border-primary/5">
+            
+            <!-- Slide 1 (Active by default) -->
+            <img class="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 opacity-100 js-slide" 
+                 src="https://images.unsplash.com/photo-1606800052052-a08af7148866?auto=format&fit=crop&w=600&q=80" 
+                 alt="Indian Wedding Couple Ceremony">
+            
+            <!-- Slide 2 -->
+            <img class="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 opacity-0 js-slide" 
+                 src="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80" 
+                 alt="Candid Reception Dancing">
+            
+            <!-- Slide 3 -->
+            <img class="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 opacity-0 js-slide" 
+                 src="https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=600&q=80" 
+                 alt="Bride Groom Ceremony Ring Exchange">
+
+            <!-- Overlay text prompt scan qr -->
+            <div class="absolute bottom-2.5 left-2.5 right-2.5 bg-black/45 backdrop-blur-md text-white rounded-lg sm:rounded-xl p-2.5 text-center space-y-0.5">
+              <h5 class="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider">Join Priya & Raj's Gallery</h5>
+              <p class="text-[8px] sm:text-[9px] text-slate-200">Scan code on tables to upload your photos</p>
+            </div>
+          </div>
+
+          <!-- Mock Guest Upload Notifications Console (Dynamic Rotator) -->
+          <div class="h-14 sm:h-16 relative overflow-hidden bg-primary/5 rounded-xl sm:rounded-2xl p-2 sm:p-2.5 border border-primary/10">
+            <!-- Dynamic notifications wrapper -->
+            <div id="heroNotificationsWrapper" class="absolute inset-x-2 sm:inset-x-2.5 top-2 sm:top-2.5 transition-transform duration-500 space-y-1.5 sm:space-y-2">
+              <div class="flex items-center justify-between text-[9px] sm:text-[10px] bg-white border border-primary/5 shadow-sm rounded-lg px-2 py-1.5">
+                <span class="font-bold text-slate-800 truncate">📸 Anjali uploaded 5 photos</span>
+                <span class="text-[8px] sm:text-[9px] text-primary font-bold">1s ago</span>
+              </div>
+              <div class="flex items-center justify-between text-[9px] sm:text-[10px] bg-white border border-primary/5 shadow-sm rounded-lg px-2 py-1.5">
+                <span class="font-bold text-slate-800 truncate">🎉 Rajiv added a dancing video!</span>
+                <span class="text-[8px] sm:text-[9px] text-primary font-bold">10s ago</span>
+              </div>
+              <div class="flex items-center justify-between text-[9px] sm:text-[10px] bg-white border border-primary/5 shadow-sm rounded-lg px-2 py-1.5">
+                <span class="font-bold text-slate-800 truncate">❤️ Sneha sent congratulations</span>
+                <span class="text-[8px] sm:text-[9px] text-primary font-bold">Just now</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Floating Badges protected inside the padded wrapper -->
+      <div class="absolute -top-2 -left-1 sm:-left-6 bg-white/90 backdrop-blur-md border border-primary/15 rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 shadow-xl animate-float-1 flex items-center gap-1.5 sm:gap-2">
+        <span class="material-symbols-outlined text-primary text-lg sm:text-xl font-bold">qr_code_scanner</span>
+        <div>
+          <span class="text-[8px] sm:text-[9px] uppercase font-extrabold text-primary tracking-widest block">Guest scan</span>
+          <strong class="text-[10px] sm:text-xs text-slate-800 font-bold">No App Installs</strong>
+        </div>
+      </div>
+
+      <div class="absolute top-1/2 -right-1 sm:-right-6 bg-white/90 backdrop-blur-md border border-primary/15 rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 shadow-xl animate-float-2 flex items-center gap-1.5 sm:gap-2">
+        <span class="material-symbols-outlined text-secondary text-lg sm:text-xl font-bold">sync</span>
+        <div>
+          <span class="text-[8px] sm:text-[9px] uppercase font-extrabold text-secondary tracking-widest block">Cloud sync</span>
+          <strong class="text-[10px] sm:text-xs text-slate-800 font-bold">Google Drive</strong>
+        </div>
+      </div>
+
+      <div class="absolute -bottom-2 left-6 bg-white/90 backdrop-blur-md border border-primary/15 rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 shadow-xl animate-float-1 flex items-center gap-1.5 sm:gap-2">
+        <span class="material-symbols-outlined text-amber-500 text-lg sm:text-xl font-bold">workspace_premium</span>
+        <div>
+          <span class="text-[8px] sm:text-[9px] uppercase font-extrabold text-amber-600 tracking-widest block">Quality</span>
+          <strong class="text-[10px] sm:text-xs text-slate-800 font-bold">Zero Compression</strong>
+        </div>
+      </div>
+
     </div>
-    <h3 class="font-headline text-xl font-bold text-slate-800">Storage Control</h3>
-    <p class="text-slate-600 text-sm leading-relaxed">
-      Track storage usage in real-time. Link your own Google Drive storage for free, unlimited hosting space directly.
-    </p>
-  </div>
-  
-  <div class="glass-card p-6 rounded-2xl bg-white/60 space-y-3">
-    <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-      <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">photo_library</span>
+  </section>
+
+  <!-- HOW IT WORKS SECTION -->
+  <section id="how-it-works" class="space-y-16 py-12 scroll-mt-24">
+    <div class="text-center space-y-3 max-w-2xl mx-auto">
+      <span class="text-xs uppercase font-extrabold text-primary tracking-widest block">Workflow</span>
+      <h2 class="font-headline text-4xl sm:text-5xl font-bold text-slate-800 tracking-tight">How ShaadiShots Works</h2>
+      <p class="text-slate-500 text-sm sm:text-base font-semibold">Collect every candid moment in three simple steps.</p>
     </div>
-    <h3 class="font-headline text-xl font-bold text-slate-800">Private Gallery</h3>
-    <p class="text-slate-600 text-sm leading-relaxed">
-      Control public access with optionally password/PIN-protected galleries. Download all approved media files in one click.
-    </p>
-  </div>
-</section>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      
+      <div class="glass-card p-8 rounded-3xl bg-white/60 space-y-4 border border-primary/5 hover-up">
+        <div class="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-xl">1</div>
+        <h3 class="font-headline text-xl font-bold text-slate-800">Couples Generate QR</h3>
+        <p class="text-slate-600 text-sm leading-relaxed">
+          Create your event, select theme colors, print the beautiful custom wedding poster, and place it at tables, bars, or entry gates.
+        </p>
+      </div>
+
+      <div class="glass-card p-8 rounded-3xl bg-white/60 space-y-4 border border-primary/5 hover-up" style="transition-delay: 0.1s;">
+        <div class="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-xl">2</div>
+        <h3 class="font-headline text-xl font-bold text-slate-800">Guests Scan & Upload</h3>
+        <p class="text-slate-600 text-sm leading-relaxed">
+          Guests point their camera at the QR, choose photos/videos directly from their gallery or take a live shot, and upload instantly.
+        </p>
+      </div>
+
+      <div class="glass-card p-8 rounded-3xl bg-white/60 space-y-4 border border-primary/5 hover-up" style="transition-delay: 0.2s;">
+        <div class="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-xl">3</div>
+        <h3 class="font-headline text-xl font-bold text-slate-800">Approve & Share</h3>
+        <p class="text-slate-600 text-sm leading-relaxed">
+          Approve or reject photos from your dashboard. Approved photos go live in the public gallery, protected with optional PINs.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FEATURES GRID -->
+  <section id="features" class="space-y-16 py-12 relative scroll-mt-24">
+    <div class="text-center space-y-3 max-w-2xl mx-auto">
+      <span class="text-xs uppercase font-extrabold text-primary tracking-widest block">Capabilities</span>
+      <h2 class="font-headline text-4xl sm:text-5xl font-bold text-slate-800 tracking-tight">Built For Perfect Memories</h2>
+      <p class="text-slate-500 text-sm sm:text-base font-semibold">Every utility you need to orchestrate a seamless media gallery.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      
+      <div class="glass-card p-6 rounded-2xl bg-white/60 space-y-3 hover-up">
+        <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+          <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">security</span>
+        </div>
+        <h3 class="font-headline text-xl font-bold text-slate-800">Secure & Protected</h3>
+        <p class="text-slate-600 text-sm leading-relaxed">
+          HTTP-only cookies, csrf verification, rate limits, and private owner control ensure your wedding media is protected.
+        </p>
+      </div>
+
+      <div class="glass-card p-6 rounded-2xl bg-white/60 space-y-3 hover-up">
+        <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+          <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">cloud_sync</span>
+        </div>
+        <h3 class="font-headline text-xl font-bold text-slate-800">Google Drive Connect</h3>
+        <p class="text-slate-600 text-sm leading-relaxed">
+          Connect your Google Drive and bypass all local hosting limits. Photos sync directly to your personal Drive folders.
+        </p>
+      </div>
+
+      <div class="glass-card p-6 rounded-2xl bg-white/60 space-y-3 hover-up">
+        <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+          <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">photo_library</span>
+        </div>
+        <h3 class="font-headline text-xl font-bold text-slate-800">Moderation Control</h3>
+        <p class="text-slate-600 text-sm leading-relaxed">
+          Full dashboard to review uploads, organize photos into custom event folders, and filter by ceremony.
+        </p>
+      </div>
+
+      <div class="glass-card p-6 rounded-2xl bg-white/60 space-y-3 hover-up">
+        <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+          <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">download</span>
+        </div>
+        <h3 class="font-headline text-xl font-bold text-slate-800">High-Quality Downloads</h3>
+        <p class="text-slate-600 text-sm leading-relaxed">
+          Couple and guests (optional) can download the entire approved wedding collection in a single structured ZIP file.
+        </p>
+      </div>
+
+      <div class="glass-card p-6 rounded-2xl bg-white/60 space-y-3 hover-up">
+        <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+          <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">palette</span>
+        </div>
+        <h3 class="font-headline text-xl font-bold text-slate-800">Themed QR Posters</h3>
+        <p class="text-slate-600 text-sm leading-relaxed">
+          Choose from elegant QR templates—Classic, Starry Gold, Sunset Coral—and match the poster to your card colors.
+        </p>
+      </div>
+
+      <div class="glass-card p-6 rounded-2xl bg-white/60 space-y-3 hover-up">
+        <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+          <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">slideshow</span>
+        </div>
+        <h3 class="font-headline text-xl font-bold text-slate-800">Live Slideshow Cast</h3>
+        <p class="text-slate-600 text-sm leading-relaxed">
+          Cast the approved guest photos in real-time onto banquet hall TV screens or projectors during the reception.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- PRICING TIERS -->
+  <section id="pricing" class="space-y-16 py-12 scroll-mt-24">
+    <div class="text-center space-y-3 max-w-2xl mx-auto">
+      <span class="text-xs uppercase font-extrabold text-primary tracking-widest block">Investment</span>
+      <h2 class="font-headline text-4xl sm:text-5xl font-bold text-slate-800 tracking-tight">Elegant Packages</h2>
+      <p class="text-slate-500 text-sm sm:text-base font-semibold">One-time flat fees. No monthly subscription commitments.</p>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      
+      <!-- Basic -->
+      <div class="glass-card p-8 rounded-3xl bg-white/60 space-y-6 flex flex-col justify-between border border-primary/10 shadow-sm hover-up">
+        <div class="space-y-4">
+          <div class="space-y-1">
+            <span class="text-xs uppercase font-extrabold text-primary tracking-widest">Standard Album</span>
+            <h3 class="font-headline text-2xl font-bold text-slate-800">Basic Plan</h3>
+          </div>
+          <div class="text-3xl font-black text-slate-900">₹499 <span class="text-xs font-bold text-slate-400">/ event</span></div>
+          <p class="text-slate-500 text-xs leading-relaxed">Perfect for intimate family weddings and small functions.</p>
+          <div class="divider border-b border-primary/5"></div>
+          <ul class="space-y-2.5 text-xs text-slate-600 font-semibold">
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-green-600 font-bold">check</span> 500 MB Storage Space</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-green-600 font-bold">check</span> 12 MB Max File Size</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-green-600 font-bold">check</span> Max 10 Files per Upload</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-green-600 font-bold">check</span> Unlimited Event Folders</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-green-600 font-bold">check</span> Full Moderation & Lightbox</li>
+          </ul>
+        </div>
+        <a href="/register" class="btn secondary w-full mt-6">Get Started</a>
+      </div>
+
+      <!-- Premium -->
+      <div class="glass-card p-8 rounded-3xl bg-white/95 border-2 border-primary/40 space-y-6 flex flex-col justify-between shadow-lg relative hover-up">
+        <span class="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-wedding text-white text-[10px] uppercase font-bold tracking-widest px-4 py-1.5 rounded-full shadow-sm">Popular Choice</span>
+        <div class="space-y-4">
+          <div class="space-y-1">
+            <span class="text-xs uppercase font-extrabold text-primary tracking-widest">Ultimate Memories</span>
+            <h3 class="font-headline text-2xl font-bold text-slate-800">Premium Plan</h3>
+          </div>
+          <div class="text-3xl font-black text-slate-900">₹1,499 <span class="text-xs font-bold text-slate-400">/ event</span></div>
+          <p class="text-slate-500 text-xs leading-relaxed">Best for grand weddings and multi-day celebrations.</p>
+          <div class="divider border-b border-primary/5"></div>
+          <ul class="space-y-2.5 text-xs text-slate-600 font-semibold">
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-green-600 font-bold">check</span> 2 GB Storage Space</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-green-600 font-bold">check</span> 20 MB Max File Size</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-green-600 font-bold">check</span> Max 20 Files per Upload</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-green-600 font-bold">check</span> Unlimited Event Folders</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-green-600 font-bold">check</span> Google Drive Sync Integration</li>
+          </ul>
+        </div>
+        <a href="/register" class="btn w-full mt-6">Choose Premium</a>
+      </div>
+
+      <!-- Royal -->
+      <div class="glass-card p-8 rounded-3xl bg-white/60 space-y-6 flex flex-col justify-between border border-primary/10 shadow-sm hover-up">
+        <div class="space-y-4">
+          <div class="space-y-1">
+            <span class="text-xs uppercase font-extrabold text-primary tracking-widest">Royal Palace Size</span>
+            <h3 class="font-headline text-2xl font-bold text-slate-800">Royal Plan</h3>
+          </div>
+          <div class="text-3xl font-black text-slate-900">₹2,999 <span class="text-xs font-bold text-slate-400">/ event</span></div>
+          <p class="text-slate-500 text-xs leading-relaxed">Tailored for luxury weddings needing extreme hosting space.</p>
+          <div class="divider border-b border-primary/5"></div>
+          <ul class="space-y-2.5 text-xs text-slate-600 font-semibold">
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-green-600 font-bold">check</span> 10 GB Storage Space</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-green-600 font-bold">check</span> 30 MB Max File Size</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-green-600 font-semibold">check</span> Max 30 Files per Upload</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-green-600 font-semibold">check</span> Google Drive Sync & Backup</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-green-600 font-semibold">check</span> Premium Color Customizations</li>
+          </ul>
+        </div>
+        <a href="/register" class="btn secondary w-full mt-6">Choose Royal</a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- LATEST ARTICLES (SEO FOCUS) -->
+  <section class="space-y-12 py-8">
+    <div class="flex items-end justify-between border-b border-primary/10 pb-4">
+      <div class="space-y-2">
+        <span class="text-xs uppercase font-extrabold text-primary tracking-widest block">Tips & Inspiration</span>
+        <h2 class="font-headline text-3xl sm:text-4xl font-bold text-slate-800 tracking-tight">From Our Blog</h2>
+      </div>
+      <a href="/blog" class="text-primary font-bold text-sm hover:underline">View All Articles</a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <article class="glass-card rounded-2xl overflow-hidden bg-white/70 border border-primary/5 hover-up flex flex-col justify-between">
+        <div class="p-6 space-y-3">
+          <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Planning</span>
+          <h3 class="font-headline text-lg font-bold text-slate-800 hover:text-primary"><a href="/blog">How to Set Up a QR Code for Wedding Photo Sharing</a></h3>
+          <p class="text-slate-500 text-xs leading-relaxed line-clamp-3">A complete walkthrough to help guests upload high-resolution memories on the big day without downloading apps.</p>
+        </div>
+        <div class="p-6 border-t border-primary/5">
+          <a href="/blog" class="text-primary font-bold text-xs">Read Article →</a>
+        </div>
+      </article>
+
+      <article class="glass-card rounded-2xl overflow-hidden bg-white/70 border border-primary/5 hover-up flex flex-col justify-between">
+        <div class="p-6 space-y-3">
+          <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Photography</span>
+          <h3 class="font-headline text-lg font-bold text-slate-800 hover:text-primary"><a href="/blog">10 Candid Moments You Cannot Afford to Miss</a></h3>
+          <p class="text-slate-500 text-xs leading-relaxed line-clamp-3">A guide on guiding your friends and family to capture raw emotional moments instead of standard posed portraits.</p>
+        </div>
+        <div class="p-6 border-t border-primary/5">
+          <a href="/blog" class="text-primary font-bold text-xs">Read Article →</a>
+        </div>
+      </article>
+
+      <article class="glass-card rounded-2xl overflow-hidden bg-white/70 border border-primary/5 hover-up flex flex-col justify-between">
+        <div class="p-6 space-y-3">
+          <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Tech Tips</span>
+          <h3 class="font-headline text-lg font-bold text-slate-800 hover:text-primary"><a href="/blog">Google Drive vs WhatsApp for Photo Sharing</a></h3>
+          <p class="text-slate-500 text-xs leading-relaxed line-clamp-3">Why compression rules and sharing links destroy quality, and how dedicated collection folders save details.</p>
+        </div>
+        <div class="p-6 border-t border-primary/5">
+          <a href="/blog" class="text-primary font-bold text-xs">Read Article →</a>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- FAQ SECTION -->
+  <section id="faq" class="space-y-16 py-12 max-w-4xl mx-auto scroll-mt-24">
+    <div class="text-center space-y-3 max-w-2xl mx-auto">
+      <span class="text-xs uppercase font-extrabold text-primary tracking-widest block">Inquiries</span>
+      <h2 class="font-headline text-4xl sm:text-5xl font-bold text-slate-800 tracking-tight">Frequently Asked Questions</h2>
+      <p class="text-slate-500 text-sm sm:text-base font-semibold">Everything you need to know about ShaadiShots.</p>
+    </div>
+    
+    <div class="space-y-4">
+      <details class="glass-card p-6 rounded-2xl bg-white/60 border border-primary/5 cursor-pointer group transition-all duration-300">
+        <summary class="font-headline text-lg font-bold text-slate-800 flex items-center justify-between list-none">
+          <span>Do guests need to install an app or create an account?</span>
+          <span class="material-symbols-outlined text-primary group-open:rotate-180 transition-transform duration-300">expand_more</span>
+        </summary>
+        <p class="text-slate-600 text-sm leading-relaxed mt-3 font-semibold">
+          No! Guests do not need to install anything or sign up. They simply scan the QR code with their default smartphone camera and tap to upload their media.
+        </p>
+      </details>
+
+      <details class="glass-card p-6 rounded-2xl bg-white/60 border border-primary/5 cursor-pointer group transition-all duration-300">
+        <summary class="font-headline text-lg font-bold text-slate-800 flex items-center justify-between list-none">
+          <span>Is the photo and video quality compressed?</span>
+          <span class="material-symbols-outlined text-primary group-open:rotate-180 transition-transform duration-300">expand_more</span>
+        </summary>
+        <p class="text-slate-600 text-sm leading-relaxed mt-3 font-semibold">
+          No. ShaadiShots stores files in their original, uncompressed resolution so you get the highest quality possible—unlike WhatsApp or social uploads.
+        </p>
+      </details>
+
+      <details class="glass-card p-6 rounded-2xl bg-white/60 border border-primary/5 cursor-pointer group transition-all duration-300">
+        <summary class="font-headline text-lg font-bold text-slate-800 flex items-center justify-between list-none">
+          <span>Can I moderate uploads before they go public?</span>
+          <span class="material-symbols-outlined text-primary group-open:rotate-180 transition-transform duration-300">expand_more</span>
+        </summary>
+        <p class="text-slate-600 text-sm leading-relaxed mt-3 font-semibold">
+          Yes. All uploads go into a "Pending" folder in your dashboard. You can review and approve them before they are displayed in the shared public gallery.
+        </p>
+      </details>
+
+      <details class="glass-card p-6 rounded-2xl bg-white/60 border border-primary/5 cursor-pointer group transition-all duration-300">
+        <summary class="font-headline text-lg font-bold text-slate-800 flex items-center justify-between list-none">
+          <span>How does the Google Drive integration work?</span>
+          <span class="material-symbols-outlined text-primary group-open:rotate-180 transition-transform duration-300">expand_more</span>
+        </summary>
+        <p class="text-slate-600 text-sm leading-relaxed mt-3 font-semibold">
+          Once connected to your Google Drive in your settings, our server forwards guest uploads straight into a folder in your Drive. Your local storage limits are bypassed completely.
+        </p>
+      </details>
+    </div>
+  </section>
+
+</div>
+
+<!-- JavaScript to run the active hero slideshow and mock uploader console -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // 1. Slideshow cycle
+    const slides = document.querySelectorAll('.js-slide');
+    let currentSlide = 0;
+    
+    setInterval(() => {
+      // Fade out current slide
+      if (slides[currentSlide]) {
+        slides[currentSlide].classList.remove('opacity-100');
+        slides[currentSlide].classList.add('opacity-0');
+      }
+      
+      // Select next slide
+      currentSlide = (currentSlide + 1) % slides.length;
+      
+      // Fade in next slide
+      if (slides[currentSlide]) {
+        slides[currentSlide].classList.remove('opacity-0');
+        slides[currentSlide].classList.add('opacity-100');
+      }
+    }, 4000);
+
+    // 2. Notification rotation
+    const wrapper = document.getElementById('heroNotificationsWrapper');
+    if (!wrapper) return;
+    const count = wrapper.children.length;
+    let index = 0;
+
+    setInterval(() => {
+      index = (index + 1) % count;
+      // Scroll vertically by the height of one child notification block
+      wrapper.style.transform = `translateY(-${index * 42}px)`;
+    }, 3000);
+  });
+</script>

@@ -1,6 +1,9 @@
 import express from 'express';
 import QRCode from 'qrcode';
 import { z } from 'zod';
+import fs from 'node:fs';
+import path from 'node:path';
+import multer from 'multer';
 import { db, getGlobalStorageUsage, getStorageUsage, globalMediaCounts, logAudit, mediaCounts, nowIso, getPlan, listPlans, getSetting, getSettingBool } from '../db.js';
 import { requireCsrf } from '../middleware/csrf.js';
 import { requireSuperAdmin } from '../middleware/auth.js';
@@ -915,4 +918,217 @@ adminRouter.post('/admin/media/:mediaId/delete-flagged', requireCsrf, asyncHandl
 
   setFlash(res, 'success', 'Flagged media permanently deleted.');
   res.redirect('/admin/security');
+}));
+
+// ==========================================
+// BLOG CMS CRUD
+// ==========================================
+
+const BLOGS_UPLOAD_DIR = path.resolve('storage/blogs');
+if (!fs.existsSync(BLOGS_UPLOAD_DIR)) {
+  fs.mkdirSync(BLOGS_UPLOAD_DIR, { recursive: true });
+}
+
+const blogStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, BLOGS_UPLOAD_DIR),
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+const blogUpload = multer({
+  storage: blogStorage,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
+
+const blogCreateSchema = z.object({
+  title: z.string().trim().min(3, 'Title must be at least 3 characters').max(200),
+  slug: z.string().trim().max(100).optional(),
+  summary: z.string().trim().max(500).optional(),
+  content: z.string().trim().min(10, 'Content must be at least 10 characters'),
+  status: z.enum(['draft', 'published']),
+  cover_image_url: z.string().trim().optional(),
+  meta_title: z.string().trim().max(200).optional(),
+  meta_description: z.string().trim().max(500).optional(),
+  meta_keywords: z.string().trim().max(300).optional()
+});
+
+adminRouter.get('/admin/blogs', asyncHandler(async (req, res) => {
+  const blogs = await db.prepare(`
+    SELECT b.*, u.name AS author_name 
+    FROM blogs b 
+    JOIN users u ON u.id = b.author_id 
+    ORDER BY b.created_at DESC
+  `).all();
+  res.render('admin/blogs/index', { title: 'Manage Blogs', blogs });
+}));
+
+adminRouter.get('/admin/blogs/new', asyncHandler(async (req, res) => {
+  res.render('admin/blogs/new', { title: 'New Blog Post', values: {}, errors: {} });
+}));
+
+adminRouter.post('/admin/blogs', blogUpload.single('cover_image'), requireCsrf, asyncHandler(async (req, res) => {
+  const parsed = blogCreateSchema.safeParse(req.body);
+  if (!parsed.success) {
+    if (req.file) {
+      try { fs.unlinkSync(req.file.path); } catch {}
+    }
+    return res.status(400).render('admin/blogs/new', {
+      title: 'New Blog Post',
+      values: req.body,
+      errors: parsed.error.flatten().fieldErrors
+    });
+  }
+
+  const data = parsed.data;
+  let slug = data.slug ? cleanSlug(data.slug) : cleanSlug(data.title);
+  if (!slug) slug = 'post-' + Date.now();
+
+  const existing = await db.prepare('SELECT id FROM blogs WHERE slug = ?').get(slug);
+  if (existing) {
+    if (req.file) {
+      try { fs.unlinkSync(req.file.path); } catch {}
+    }
+    return res.status(400).render('admin/blogs/new', {
+      title: 'New Blog Post',
+      values: req.body,
+      errors: { slug: ['This URL slug is already taken. Please enter a different title or custom slug.'] }
+    });
+  }
+
+  let coverImage = data.cover_image_url || '';
+  if (req.file) {
+    coverImage = `/blog/media/${req.file.filename}`;
+  }
+
+  const publishedAt = data.status === 'published' ? nowIso() : null;
+
+  await db.prepare(`
+    INSERT INTO blogs (
+      title, slug, summary, content, cover_image, status, author_id,
+      meta_title, meta_description, meta_keywords, published_at, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    data.title,
+    slug,
+    data.summary || null,
+    data.content,
+    coverImage || null,
+    data.status,
+    req.user.id,
+    data.meta_title || null,
+    data.meta_description || null,
+    data.meta_keywords || null,
+    publishedAt,
+    nowIso(),
+    nowIso()
+  );
+
+  setFlash(res, 'success', 'Blog post created successfully.');
+  res.redirect('/admin/blogs');
+}));
+
+adminRouter.get('/admin/blogs/:id/edit', asyncHandler(async (req, res) => {
+  const blog = await db.prepare('SELECT * FROM blogs WHERE id = ?').get(req.params.id);
+  if (!blog) return res.status(404).render('error', { title: 'Not found', message: 'Blog post not found.' });
+  res.render('admin/blogs/edit', { title: 'Edit Blog Post', blog, values: blog, errors: {} });
+}));
+
+adminRouter.post('/admin/blogs/:id/edit', blogUpload.single('cover_image'), requireCsrf, asyncHandler(async (req, res) => {
+  const blogId = req.params.id;
+  const blog = await db.prepare('SELECT * FROM blogs WHERE id = ?').get(blogId);
+  if (!blog) {
+    if (req.file) {
+      try { fs.unlinkSync(req.file.path); } catch {}
+    }
+    return res.status(404).render('error', { title: 'Not found', message: 'Blog post not found.' });
+  }
+
+  const parsed = blogCreateSchema.safeParse(req.body);
+  if (!parsed.success) {
+    if (req.file) {
+      try { fs.unlinkSync(req.file.path); } catch {}
+    }
+    return res.status(400).render('admin/blogs/edit', {
+      title: 'Edit Blog Post',
+      blog,
+      values: { ...req.body, id: blogId },
+      errors: parsed.error.flatten().fieldErrors
+    });
+  }
+
+  const data = parsed.data;
+  let slug = data.slug ? cleanSlug(data.slug) : cleanSlug(data.title);
+  if (!slug) slug = 'post-' + Date.now();
+
+  const existing = await db.prepare('SELECT id FROM blogs WHERE slug = ? AND id != ?').get(slug, blogId);
+  if (existing) {
+    if (req.file) {
+      try { fs.unlinkSync(req.file.path); } catch {}
+    }
+    return res.status(400).render('admin/blogs/edit', {
+      title: 'Edit Blog Post',
+      blog,
+      values: { ...req.body, id: blogId },
+      errors: { slug: ['This URL slug is already taken. Please enter a different title or custom slug.'] }
+    });
+  }
+
+  let coverImage = data.cover_image_url || blog.cover_image;
+  if (req.file) {
+    coverImage = `/blog/media/${req.file.filename}`;
+    if (blog.cover_image && blog.cover_image.startsWith('/blog/media/')) {
+      const oldFilename = blog.cover_image.replace('/blog/media/', '');
+      const oldPath = path.join(BLOGS_UPLOAD_DIR, oldFilename);
+      try { fs.unlinkSync(oldPath); } catch {}
+    }
+  } else if (req.body.clear_cover_image === 'true') {
+    coverImage = null;
+    if (blog.cover_image && blog.cover_image.startsWith('/blog/media/')) {
+      const oldFilename = blog.cover_image.replace('/blog/media/', '');
+      const oldPath = path.join(BLOGS_UPLOAD_DIR, oldFilename);
+      try { fs.unlinkSync(oldPath); } catch {}
+    }
+  }
+
+  const publishedAt = blog.published_at || (data.status === 'published' ? nowIso() : null);
+
+  await db.prepare(`
+    UPDATE blogs SET
+      title = ?, slug = ?, summary = ?, content = ?, cover_image = ?, status = ?,
+      meta_title = ?, meta_description = ?, meta_keywords = ?, published_at = ?, updated_at = ?
+    WHERE id = ?
+  `).run(
+    data.title,
+    slug,
+    data.summary || null,
+    data.content,
+    coverImage,
+    data.status,
+    data.meta_title || null,
+    data.meta_description || null,
+    data.meta_keywords || null,
+    publishedAt,
+    nowIso(),
+    blogId
+  );
+
+  setFlash(res, 'success', 'Blog post updated successfully.');
+  res.redirect('/admin/blogs');
+}));
+
+adminRouter.post('/admin/blogs/:id/delete', requireCsrf, asyncHandler(async (req, res) => {
+  const blog = await db.prepare('SELECT * FROM blogs WHERE id = ?').get(req.params.id);
+  if (!blog) return res.status(404).render('error', { title: 'Not found', message: 'Blog post not found.' });
+
+  if (blog.cover_image && blog.cover_image.startsWith('/blog/media/')) {
+    const filename = blog.cover_image.replace('/blog/media/', '');
+    const filepath = path.join(BLOGS_UPLOAD_DIR, filename);
+    try { fs.unlinkSync(filepath); } catch {}
+  }
+
+  await db.prepare('DELETE FROM blogs WHERE id = ?').run(blog.id);
+
+  setFlash(res, 'success', 'Blog post deleted successfully.');
+  res.redirect('/admin/blogs');
 }));

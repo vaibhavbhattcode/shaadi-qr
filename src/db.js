@@ -333,6 +333,24 @@ export async function migrate() {
         type VARCHAR(50) NOT NULL DEFAULT 'string',
         updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
+
+      CREATE TABLE IF NOT EXISTS blogs (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        slug VARCHAR(255) NOT NULL UNIQUE,
+        summary TEXT,
+        content TEXT NOT NULL,
+        cover_image VARCHAR(555),
+        status VARCHAR(50) NOT NULL DEFAULT 'draft',
+        author_id INTEGER NOT NULL,
+        meta_title VARCHAR(255),
+        meta_description TEXT,
+        meta_keywords VARCHAR(255),
+        published_at TIMESTAMP WITH TIME ZONE,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
+      );
     `);
 
     // PostgreSQL index creations
@@ -352,6 +370,8 @@ export async function migrate() {
       CREATE INDEX IF NOT EXISTS idx_audit_actor ON audit_logs(actor_user_id);
       CREATE INDEX IF NOT EXISTS idx_otp_phone ON otp_verifications(phone_number);
       CREATE INDEX IF NOT EXISTS idx_otp_email ON email_otp_verifications(email);
+      CREATE INDEX IF NOT EXISTS idx_blogs_slug ON blogs(slug);
+      CREATE INDEX IF NOT EXISTS idx_blogs_status ON blogs(status);
     `);
   } else {
     // SQLite migrations
@@ -525,6 +545,27 @@ export async function migrate() {
         type TEXT NOT NULL DEFAULT 'string',
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
+
+      CREATE TABLE IF NOT EXISTS blogs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        slug TEXT NOT NULL UNIQUE,
+        summary TEXT,
+        content TEXT NOT NULL,
+        cover_image TEXT,
+        status TEXT NOT NULL DEFAULT 'draft',
+        author_id INTEGER NOT NULL,
+        meta_title TEXT,
+        meta_description TEXT,
+        meta_keywords TEXT,
+        published_at TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_blogs_slug ON blogs(slug);
+      CREATE INDEX IF NOT EXISTS idx_blogs_status ON blogs(status);
     `);
   }
 

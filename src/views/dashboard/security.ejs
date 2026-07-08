@@ -1,50 +1,57 @@
-<section style="max-width: 700px; margin: 0 auto;">
-  <div class="between">
-    <div>
-      <span class="badge">Security settings</span>
-      <h1 style="margin:10px 0 4px; letter-spacing:-.04em; font-size: clamp(1.4rem, 4vw, 2.2rem);">Multi-Factor Authentication (2FA)</h1>
-      <p class="muted">Apne account ki security double karne ke liye 2FA enable karein.</p>
+<!-- Modernized Security Settings Panel -->
+<section class="max-w-2xl mx-auto py-8">
+  <div class="glass-card p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 bg-white/70 backdrop-blur-xl border border-primary/10">
+    <div class="space-y-1">
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 rounded-full text-primary text-xs font-bold shadow-sm border border-primary/15">
+        🛡️ Account Protection
+      </span>
+      <h1 class="font-headline text-2xl sm:text-3xl font-bold text-primary tracking-tight mt-2">Security Settings</h1>
+      <p class="text-slate-500 text-xs font-medium">Protect your account from unauthorized access by activating 2FA.</p>
     </div>
-    <a class="btn secondary" href="/dashboard">Back to Dashboard</a>
+    <a class="border border-primary/20 bg-white hover:bg-slate-50 text-primary text-xs font-bold px-4 py-2.5 rounded-full shadow-sm transition-all" href="/dashboard">
+      Back to Dashboard
+    </a>
   </div>
 
-  <div class="card grid" style="margin-top:22px;">
+  <div class="glass-card p-6 rounded-2xl border border-primary/10 bg-white/70 backdrop-blur-xl space-y-6">
     <% if (twoFactorEnabled) { %>
-      <div class="alert success">
-        2FA is currently active on your account.
+      <div class="alert success shadow-sm">
+        <strong>🟢 Multi-Factor Authentication is Active:</strong> Your account is protected. Every time you log in, you will be prompted for a 6-digit authentication code.
       </div>
-      <p>Aapka account safe hai. Jab bhi aap login karenge, aapko authenticator app se 6-digit code enter karna hoga.</p>
+      <p class="text-sm text-slate-500 font-medium">Keep your account safe. If you need to switch authenticator apps, you can disable 2FA below and configure it again.</p>
 
-      <form method="post" action="/dashboard/security/2fa/disable" style="margin-top:10px;">
+      <form method="post" action="/dashboard/security/2fa/disable" class="m-0 pt-2">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <button class="btn danger" type="submit">Disable 2FA</button>
+        <button class="bg-red-50 text-red-600 hover:bg-red-100 text-xs font-bold px-5 py-2.5 rounded-full border border-red-200 shadow-sm transition-all" type="submit">Disable 2FA Protection</button>
       </form>
     <% } else { %>
-      <h3 style="margin-top:0;">Enable 2FA</h3>
-      <p>Apne Authenticator app (jaise Google Authenticator, Microsoft Authenticator, ya Authy) se niche diya gaya QR code scan karein, ya secret key manual enter karein.</p>
+      <div class="space-y-2">
+        <h3 class="font-headline text-xl font-bold text-slate-800">Enable Two-Factor Authentication (2FA)</h3>
+        <p class="text-xs text-slate-500 leading-relaxed font-semibold">Scan the QR code below using an authenticator app (such as Google Authenticator, Microsoft Authenticator, or Authy), or manually enter the key to pair your device.</p>
+      </div>
 
-      <div style="display:grid; grid-template-columns: 160px 1fr; gap: 20px; align-items: center; margin: 20px 0; background: rgba(255,255,255,0.4); padding: 15px; border-radius: 18px; border: 1px solid var(--border);" class="grid-2">
-        <div style="background: white; padding: 10px; border-radius: 14px; border: 1px solid var(--border); display: grid; place-items: center;">
-          <img src="<%= qrDataUrl %>" alt="Scan QR Code" style="width: 100%; max-width: 180px;">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center p-4 bg-white/40 border border-primary/5 rounded-xl">
+        <div class="md:col-span-4 bg-white p-3.5 border border-primary/15 rounded-xl flex items-center justify-center shadow-sm">
+          <img src="<%= qrDataUrl %>" alt="Scan QR Code" class="w-full max-w-[120px]">
         </div>
-        <div>
-          <label>Manual Secret Key
-            <input readonly value="<%= secret %>" style="font-family: monospace; font-size: 1.1rem; letter-spacing: 2px; text-align: center; background: #fff8f8; cursor: pointer;" onclick="this.select(); document.execCommand('copy'); alert('Secret key copied!');">
-          </label>
-          <span class="hint" style="display: block; margin-top: 6px;">Key copy karne ke liye input par click karein.</span>
+        <div class="md:col-span-8 space-y-1.5">
+          <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Manual Secret Key</label>
+          <input readonly value="<%= secret %>" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 font-mono text-sm tracking-wider text-center cursor-pointer focus:ring-primary focus:border-primary" onclick="this.select(); navigator.clipboard.writeText(this.value); alert('Secret key copied!');">
+          <span class="hint block text-[10px] text-slate-400 font-medium">Click on the box above to copy the key to your clipboard.</span>
         </div>
       </div>
 
-      <form class="grid" method="post" action="/dashboard/security/2fa/enable" style="margin-top: 15px;">
+      <form class="space-y-4 pt-2" method="post" action="/dashboard/security/2fa/enable">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <input type="hidden" name="secret" value="<%= secret %>">
 
-        <label>Verification Code
-          <input name="code" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="000000" style="text-align: center; font-size: 1.3rem; letter-spacing: 6px;" required autocomplete="off">
-          <span class="hint">Authenticator app me show ho raha 6-digit code verify karne ke liye yahan enter karein.</span>
-        </label>
+        <div class="space-y-1.5">
+          <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">6-Digit Verification Code</label>
+          <input name="code" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="000000" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-3 font-mono text-lg tracking-widest text-center focus:ring-primary focus:border-primary" required autocomplete="off">
+          <span class="hint block text-[10px] text-slate-400 font-medium">Enter the 6-digit code shown in your authenticator app to complete pairing.</span>
+        </div>
 
-        <button class="btn" type="submit">Verify & Enable 2FA</button>
+        <button class="w-full bg-gradient-wedding text-white px-5 py-3 rounded-full font-bold text-sm shadow-md hover:shadow-xl transition-all" type="submit">Verify & Enable 2FA</button>
       </form>
     <% } %>
   </div>

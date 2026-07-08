@@ -1,6 +1,8 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import archiver from 'archiver';
+import path from 'node:path';
+import fs from 'node:fs';
 import { z } from 'zod';
 import { db, getStorageUsage, logAudit } from '../db.js';
 import { requireCsrf } from '../middleware/csrf.js';
@@ -326,4 +328,86 @@ publicRouter.get('/e/:slug/slideshow/media', requireGalleryAccess, asyncHandler(
   `).all(req.event.id);
   res.json({ ok: true, media: rows });
 }));
+
+// ==========================================
+// PUBLIC BLOGS & CMS
+// ==========================================
+
+publicRouter.get('/blog', asyncHandler(async (req, res) => {
+  const blogs = await db.prepare(`
+    SELECT b.*, u.name AS author_name 
+    FROM blogs b 
+    JOIN users u ON u.id = b.author_id 
+    WHERE b.status = 'published' 
+    ORDER BY b.published_at DESC
+  `).all();
+
+  res.render('public/blogs/index', {
+    title: 'Wedding Photography & Planning Blogs',
+    metaDescription: 'Discover the best tips, ideas, and checklists for wedding photography, planning, guest books, and photo sharing.',
+    metaKeywords: 'wedding blog, photography tips, wedding planning checklist, qr code album, wedding templates',
+    blogs
+  });
+}));
+
+publicRouter.get('/blog/:slug', asyncHandler(async (req, res) => {
+  const blog = await db.prepare(`
+    SELECT b.*, u.name AS author_name 
+    FROM blogs b 
+    JOIN users u ON u.id = b.author_id 
+    WHERE b.slug = ? AND b.status = 'published'
+  `).get(req.params.slug);
+
+  if (!blog) {
+    return res.status(404).render('error', { title: 'Blog post not found', message: 'The blog article you are looking for does not exist.' });
+  }
+
+  const blogUrl = `${res.locals.appUrl}/blog/${blog.slug}`;
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": blog.title,
+    "description": blog.summary || blog.title,
+    "image": blog.cover_image ? (blog.cover_image.startsWith('http') ? blog.cover_image : `${res.locals.appUrl}${blog.cover_image}`) : `${res.locals.appUrl}/logo.png`,
+    "author": {
+      "@type": "Person",
+      "name": blog.author_name
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "ShaadiShots",
+      "logo": {
+        "@type": "ImageObject",
+        "url": `${res.locals.appUrl}/logo.png`
+      }
+    },
+    "datePublished": blog.published_at || blog.created_at,
+    "dateModified": blog.updated_at || blog.created_at,
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": blogUrl
+    }
+  };
+
+  res.render('public/blogs/detail', {
+    title: blog.meta_title || blog.title,
+    metaDescription: blog.meta_description || blog.summary || blog.title,
+    metaKeywords: blog.meta_keywords || 'wedding blog, wedding photography',
+    ogTitle: blog.meta_title || blog.title,
+    ogDescription: blog.meta_description || blog.summary,
+    ogImage: blog.cover_image ? (blog.cover_image.startsWith('http') ? blog.cover_image : `${res.locals.appUrl}${blog.cover_image}`) : null,
+    ogUrl: blogUrl,
+    structuredData,
+    blog
+  });
+}));
+
+publicRouter.get('/blog/media/:filename', (req, res) => {
+  const filename = path.basename(req.params.filename);
+  const filePath = path.resolve('storage/blogs', filename);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).render('error', { title: 'Not found', message: 'Image not found.' });
+  }
+  res.sendFile(filePath);
+});
 

@@ -1,0 +1,114 @@
+<!-- Admin Blog Create View -->
+<section class="glass-card p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 bg-white/70 backdrop-blur-xl border border-primary/10">
+  <div class="space-y-1">
+    <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 rounded-full text-primary text-xs font-bold shadow-sm border border-primary/15">
+      ✍️ CMS Editor
+    </span>
+    <h2 class="font-headline text-3xl font-bold text-primary tracking-tight mt-2">New Blog Post</h2>
+    <p class="text-slate-500 text-xs font-medium">Draft a new post for your wedding memory platform.</p>
+  </div>
+  <div class="flex flex-wrap gap-2.5 pt-2 sm:pt-0">
+    <a class="border border-primary/20 bg-white hover:bg-slate-50 text-primary px-5 py-2.5 rounded-full font-bold text-xs shadow-sm transition-all" href="/admin/blogs">
+      Back to Articles
+    </a>
+  </div>
+</section>
+
+<form class="glass-card p-8 rounded-2xl border border-primary/10 bg-white/70 backdrop-blur-xl space-y-6" method="post" action="/admin/blogs" enctype="multipart/form-data" novalidate>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    
+    <!-- Main Content Fields (Left 2 Columns) -->
+    <div class="lg:col-span-2 space-y-6">
+      
+      <div class="space-y-1.5">
+        <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Post Title *</label>
+        <input name="title" value="<%= values.title || '' %>" required placeholder="e.g. How to Collect Wedding Photos from Guests" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm">
+        <% if (errors.title) { %><span class="text-xs text-red-600 font-semibold"><%= errors.title[0] %></span><% } %>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="space-y-1.5">
+          <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">URL Slug <span class="text-slate-400 font-normal lowercase">(optional)</span></label>
+          <input name="slug" value="<%= values.slug || '' %>" placeholder="e.g. how-to-collect-wedding-photos" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm">
+          <% if (errors.slug) { %><span class="text-xs text-red-600 font-semibold"><%= errors.slug[0] %></span><% } %>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Publish Status</label>
+          <select name="status" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm">
+            <option value="draft" <%= values.status === 'draft' ? 'selected' : '' %>>Draft</option>
+            <option value="published" <%= values.status === 'published' ? 'selected' : '' %>>Published</option>
+          </select>
+          <% if (errors.status) { %><span class="text-xs text-red-600 font-semibold"><%= errors.status[0] %></span><% } %>
+        </div>
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Summary / Excerpt</label>
+        <textarea name="summary" rows="3" placeholder="Brief summary of the article for cards and SEO descriptions..." class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm"><%= values.summary || '' %></textarea>
+        <% if (errors.summary) { %><span class="text-xs text-red-600 font-semibold"><%= errors.summary[0] %></span><% } %>
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Content * <span class="text-slate-400 font-normal lowercase">(Markdown / HTML Supported)</span></label>
+        <textarea name="content" rows="12" required placeholder="Write your blog article here..." class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm font-mono"><%= values.content || '' %></textarea>
+        <% if (errors.content) { %><span class="text-xs text-red-600 font-semibold"><%= errors.content[0] %></span><% } %>
+      </div>
+
+    </div>
+
+    <!-- Media & SEO Sidebar (Right Column) -->
+    <div class="space-y-6">
+      
+      <!-- Cover Image Settings -->
+      <div class="glass-card p-5 rounded-xl border border-primary/10 bg-white/50 space-y-4">
+        <h3 class="font-headline text-lg font-bold text-slate-800">Cover Image</h3>
+        
+        <div class="space-y-1.5">
+          <label class="text-[10px] uppercase font-bold text-primary tracking-widest">Upload Cover Image</label>
+          <input type="file" name="cover_image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-primary/10 file:text-primary hover:file:bg-primary/15 file:cursor-pointer">
+        </div>
+
+        <div class="text-center text-xs text-slate-400 font-bold uppercase py-1">OR</div>
+
+        <div class="space-y-1.5">
+          <label class="text-[10px] uppercase font-bold text-primary tracking-widest">External Image URL</label>
+          <input name="cover_image_url" value="<%= values.cover_image_url || '' %>" placeholder="https://images.unsplash.com/..." class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2 focus:ring-primary focus:border-primary text-xs">
+          <% if (errors.cover_image_url) { %><span class="text-xs text-red-600 font-semibold"><%= errors.cover_image_url[0] %></span><% } %>
+        </div>
+      </div>
+
+      <!-- SEO Optimization Settings -->
+      <div class="glass-card p-5 rounded-xl border border-primary/10 bg-white/50 space-y-4">
+        <h3 class="font-headline text-lg font-bold text-slate-800">SEO Settings</h3>
+        
+        <div class="space-y-1.5">
+          <label class="text-[10px] uppercase font-bold text-primary tracking-widest">Meta Title</label>
+          <input name="meta_title" value="<%= values.meta_title || '' %>" placeholder="For search engines, 50-60 chars" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2 focus:ring-primary focus:border-primary text-xs">
+          <% if (errors.meta_title) { %><span class="text-xs text-red-600 font-semibold"><%= errors.meta_title[0] %></span><% } %>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-[10px] uppercase font-bold text-primary tracking-widest">Meta Description</label>
+          <textarea name="meta_description" rows="3" placeholder="Description in search results, 150-160 chars" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2 focus:ring-primary focus:border-primary text-xs"><%= values.meta_description || '' %></textarea>
+          <% if (errors.meta_description) { %><span class="text-xs text-red-600 font-semibold"><%= errors.meta_description[0] %></span><% } %>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-[10px] uppercase font-bold text-primary tracking-widest">Meta Keywords</label>
+          <input name="meta_keywords" value="<%= values.meta_keywords || '' %>" placeholder="comma, separated, keywords" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2 focus:ring-primary focus:border-primary text-xs">
+          <% if (errors.meta_keywords) { %><span class="text-xs text-red-600 font-semibold"><%= errors.meta_keywords[0] %></span><% } %>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="pt-4 border-t border-primary/10 flex justify-end gap-3">
+    <a href="/admin/blogs" class="border border-primary/20 bg-white hover:bg-slate-50 text-primary px-8 py-3 rounded-full font-bold text-sm shadow-sm transition-all">Cancel</a>
+    <button type="submit" class="bg-gradient-wedding text-white px-8 py-3 rounded-full font-bold text-sm shadow-md hover:shadow-xl transition-all">Save Article</button>
+  </div>
+</form>

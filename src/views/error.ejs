@@ -1,11 +1,104 @@
-<section style="max-width:680px; margin:40px auto; text-align:center;">
-  <div class="card">
-    <span class="badge rejected">Error</span>
-    <h1 style="letter-spacing:-.04em;"><%= title || 'Error' %></h1>
-    <p class="muted"><%= message || 'Something went wrong.' %></p>
-    <div class="row" style="justify-content:center; margin-top:18px;">
-      <a class="btn" href="/">Home</a>
-      <% if (locals.currentUser) { %><a class="btn secondary" href="/dashboard">Dashboard</a><% } %>
+<!-- Premium, Modern Animated Error View -->
+<section class="max-w-xl mx-auto py-12 px-4 sm:px-6 relative animate-fadein">
+  <!-- Decorative background glows -->
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-primary/10 rounded-full blur-3xl -z-10 animate-glow"></div>
+
+  <div class="glass-card p-8 sm:p-12 rounded-3xl border border-primary/10 bg-white/70 backdrop-blur-xl shadow-xl text-center space-y-8 hover-up">
+    
+    <!-- Custom Animated SVG Illustrations depending on title/error -->
+    <div class="flex justify-center">
+      <% 
+        const lowerTitle = (locals.title || '').toLowerCase();
+        const lowerMsg = (locals.message || '').toLowerCase();
+        
+        if (lowerTitle.includes('not found') || lowerMsg.includes('not exist') || lowerTitle.includes('404')) { 
+      %>
+        <!-- 404/Not Found: Animated Searching Camera -->
+        <div class="relative w-36 h-36 flex items-center justify-center">
+          <svg class="w-full h-full text-primary" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Camera Body -->
+            <path d="M20 35H32L36 28H64L68 35H80C83.3 35 86 37.7 86 41V75C86 78.3 83.3 81 80 81H20C16.7 81 14 78.3 14 75V41C14 37.7 16.7 35 20 35Z" stroke="currentColor" stroke-width="4" stroke-linejoin="round" class="animate-pulse"/>
+            <!-- Flash -->
+            <circle cx="28" cy="45" r="3" fill="currentColor" />
+            <!-- Lens Outer Ring -->
+            <circle cx="50" cy="58" r="16" stroke="currentColor" stroke-width="4" />
+            <!-- Searching Lens Light (Animated) -->
+            <circle cx="50" cy="58" r="8" fill="url(#lensGradient)" class="animate-pulse" />
+            <!-- Animated magnifying glass sweeping -->
+            <g class="animate-bounce" style="animation-duration: 3s;">
+              <circle cx="68" cy="68" r="7" stroke="#ff7a59" stroke-width="3" />
+              <line x1="73" y1="73" x2="82" y2="82" stroke="#ff7a59" stroke-width="3" stroke-linecap="round" />
+            </g>
+            <defs>
+              <radialGradient id="lensGradient" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#ff7a59" stop-opacity="0.8"/>
+                <stop offset="100%" stop-color="#b83280" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+          </svg>
+        </div>
+      <% } else if (lowerTitle.includes('forbidden') || lowerTitle.includes('closed') || lowerTitle.includes('security') || lowerTitle.includes('pin') || lowerTitle.includes('403') || lowerTitle.includes('expired')) { %>
+        <!-- 403/Forbidden/Locked: Animated Padlock/Heart Lock -->
+        <div class="relative w-36 h-36 flex items-center justify-center">
+          <svg class="w-full h-full text-primary" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Lock Body (Heart shaped) -->
+            <path d="M50 82C50 82 22 64 22 46C22 34 31 25 43 25C46 25 48 26 50 28C52 26 54 25 57 25C69 25 78 34 78 46C78 64 50 82 50 82Z" fill="url(#lockGradient)" stroke="currentColor" stroke-width="4" stroke-linejoin="round" />
+            <!-- Lock Shackle (Animated loop open/close) -->
+            <path d="M35 34V22C35 14 41 8 50 8C59 8 65 14 65 22V34" stroke="currentColor" stroke-width="4" stroke-linecap="round" class="origin-bottom transition-all duration-500" />
+            <!-- Keyhole -->
+            <circle cx="50" cy="46" r="4" fill="#ffffff" />
+            <path d="M48 48L52 48L53 58L47 58Z" fill="#ffffff" />
+            <defs>
+              <linearGradient id="lockGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#b83280" />
+                <stop offset="100%" stop-color="#ff7a59" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+      <% } else { %>
+        <!-- Generic Error: Animated Alert Heart -->
+        <div class="relative w-36 h-36 flex items-center justify-center">
+          <svg class="w-full h-full text-primary" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Exclamation Ring -->
+            <circle cx="50" cy="50" r="38" stroke="currentColor" stroke-width="4" class="animate-pulse" />
+            <!-- Broken Heart lines -->
+            <path d="M50 25C54 20 62 20 66 24C71 29 71 37 66 43L50 59L34 43C29 37 29 29 34 24C38 20 46 20 50 25Z" stroke="#ff7a59" stroke-width="3" stroke-linejoin="round" />
+            <!-- Exclamation -->
+            <line x1="50" y1="42" x2="50" y2="52" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
+            <circle cx="50" cy="62" r="3" fill="currentColor" />
+          </svg>
+        </div>
+      <% } %>
     </div>
+
+    <!-- Error Messaging -->
+    <div class="space-y-3">
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-red-50 text-red-700 border border-red-200 rounded-full text-xs font-bold shadow-sm">
+        ⚠️ System Notice
+      </span>
+      <h1 class="font-headline text-3xl sm:text-4xl font-black text-slate-900 leading-tight tracking-tight">
+        <%= title || 'Error' %>
+      </h1>
+      <p class="text-slate-500 text-sm sm:text-base leading-relaxed max-w-sm mx-auto font-medium">
+        <%= message || 'An unexpected issue occurred. Please check the URL or try again.' %>
+      </p>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex flex-col sm:flex-row gap-3 justify-center items-center pt-4 border-t border-primary/5">
+      <button onclick="window.history.length > 1 ? window.history.back() : window.location.href='/'" class="w-full sm:w-auto bg-gradient-wedding text-white px-8 py-3 rounded-full font-bold text-sm shadow-md hover:shadow-xl transition-all">
+        Go Back
+      </button>
+      <a href="/" class="w-full sm:w-auto border border-primary/20 bg-white hover:bg-slate-50 text-primary px-8 py-3 rounded-full font-bold text-sm shadow-sm transition-all">
+        Home Page
+      </a>
+      <% if (locals.currentUser) { %>
+        <a href="/dashboard" class="w-full sm:w-auto border border-primary/20 bg-white hover:bg-slate-50 text-primary px-8 py-3 rounded-full font-bold text-sm shadow-sm transition-all">
+          Dashboard
+        </a>
+      <% } %>
+    </div>
+
   </div>
 </section>

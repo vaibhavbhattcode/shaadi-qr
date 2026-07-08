@@ -1,46 +1,91 @@
-<section class="between">
-  <div>
-    <span class="badge">Owner dashboard</span>
-    <h1 style="margin:10px 0 4px; letter-spacing:-.04em; font-size: clamp(1.6rem, 4vw, 2.5rem);">Your wedding events</h1>
-    <p class="muted">QR links, storage, approvals and gallery controls.</p>
+<!-- Premium Dashboard Index View -->
+<section class="glass-card p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 bg-white/70 backdrop-blur-xl border border-primary/10">
+  <div class="space-y-1">
+    <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 rounded-full text-primary text-xs font-bold shadow-sm border border-primary/15">
+      👑 Couple Area
+    </span>
+    <h1 class="font-headline text-3xl font-bold text-primary tracking-tight mt-2">Your Wedding Albums</h1>
+    <p class="text-slate-500 text-xs font-medium">Manage QR codes, track storage space, moderate guest uploads, and customize public galleries.</p>
   </div>
-  <a class="btn" href="/dashboard/events/new">+ Create event</a>
+  <div class="flex flex-wrap gap-2.5 pt-2 sm:pt-0">
+    <a class="bg-gradient-wedding text-white px-5 py-2.5 rounded-full font-bold text-xs shadow-md hover:shadow-xl transition-all" href="/dashboard/events/new">
+      + Create Wedding Album
+    </a>
+  </div>
 </section>
 
 <% if (!events.length) { %>
-  <div class="empty" style="margin-top:24px;">
-    <div style="font-size: 3rem; margin-bottom: 12px; opacity: 0.5;">📷</div>
-    <h2 style="margin: 0 0 8px;">No events yet</h2>
-    <p class="muted" style="margin: 0 0 16px;">Pehla wedding event create karke QR code download karein.</p>
-    <a class="btn" href="/dashboard/events/new">Create wedding QR</a>
+  <div class="empty py-16 text-center glass-card rounded-2xl bg-white/60 border border-primary/10">
+    <div class="text-5xl mb-4">📸</div>
+    <h2 class="font-headline text-2xl font-bold text-slate-800 mb-2">No albums created yet</h2>
+    <p class="text-slate-500 text-sm max-w-sm mx-auto mb-6">Create your first wedding event to generate a unique QR code and start collecting candid memories.</p>
+    <a class="bg-gradient-wedding text-white px-8 py-3.5 rounded-full font-bold text-sm shadow-md hover:shadow-xl transition-all inline-block" href="/dashboard/events/new">Create Wedding QR</a>
   </div>
 <% } else { %>
-  <section class="grid grid-2" style="margin-top:22px;">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
     <% events.forEach((event) => { %>
-      <article class="card" style="display: flex; flex-direction: column; gap: 12px;">
-        <div class="between">
-          <div>
-            <span class="badge"><%= event.stats.planLabel %></span>
-            <h2 style="margin:10px 0 4px; font-size: clamp(1.2rem, 3vw, 1.5rem);"><%= event.title %></h2>
-            <p class="muted"><%= event.city || 'No city' %> <%= event.wedding_date ? `· ${event.wedding_date}` : '' %></p>
+      <article class="glass-card p-6 rounded-3xl border border-primary/10 bg-white/70 backdrop-blur-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 flex flex-col justify-between space-y-6">
+        
+        <div class="space-y-4">
+          <!-- Album Header info -->
+          <div class="flex justify-between items-start gap-4">
+            <div class="space-y-1">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wide border bg-primary/5 text-primary border-primary/15">
+                <%= event.stats.planLabel %> Plan
+              </span>
+              <h3 class="font-headline text-xl sm:text-2xl font-bold text-slate-800 tracking-tight mt-1.5"><%= event.title %></h3>
+              <p class="text-slate-400 text-xs font-semibold">
+                <%= event.city || 'Location not set' %> <%= event.wedding_date ? `· ${helpers.formatDate(event.wedding_date)}` : '' %>
+              </p>
+            </div>
+            
+            <a class="border border-primary/20 bg-white hover:bg-slate-50 text-primary text-xs font-bold px-4 py-2 rounded-full shadow-sm transition-all" href="/dashboard/events/<%= event.id %>">
+              Manage
+            </a>
           </div>
-          <a class="btn secondary" href="/dashboard/events/<%= event.id %>">Manage</a>
+
+          <!-- Quick Stats Bento Grid -->
+          <div class="grid grid-cols-3 gap-3">
+            <div class="bg-white/40 border border-primary/5 rounded-xl p-3 text-center">
+              <div class="text-lg font-black text-amber-600"><%= event.stats.counts.pending %></div>
+              <div class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-1">Pending</div>
+            </div>
+            <div class="bg-white/40 border border-primary/5 rounded-xl p-3 text-center">
+              <div class="text-lg font-black text-green-600"><%= event.stats.counts.approved %></div>
+              <div class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-1">Approved</div>
+            </div>
+            <div class="bg-white/40 border border-primary/5 rounded-xl p-3 text-center">
+              <div class="text-lg font-black text-slate-700"><%= event.stats.counts.total %></div>
+              <div class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-1">Total</div>
+            </div>
+          </div>
+
+          <!-- Storage Meter -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-[11px] font-semibold text-slate-500">
+              <span>Cloud Storage Used</span>
+              <span><%= event.stats.usedHuman %> / <%= event.stats.limitHuman %></span>
+            </div>
+            <div class="w-full bg-primary/10 h-2 rounded-full overflow-hidden">
+              <div class="bg-gradient-wedding h-full rounded-full" style="width: <%= event.stats.percent %>%"></div>
+            </div>
+          </div>
         </div>
-        <div class="grid grid-3" style="margin-top:4px;">
-          <div class="metric"><div class="num"><%= event.stats.counts.pending %></div><div class="muted">Pending</div></div>
-          <div class="metric"><div class="num"><%= event.stats.counts.approved %></div><div class="muted">Approved</div></div>
-          <div class="metric"><div class="num"><%= event.stats.counts.total %></div><div class="muted">Total</div></div>
+
+        <!-- Quick actions buttons -->
+        <div class="flex flex-wrap gap-2 pt-4 border-t border-primary/5">
+          <a class="bg-gradient-wedding text-white text-xs font-bold px-4 py-2 rounded-full shadow-md hover:shadow-lg transition-all" href="/dashboard/events/<%= event.id %>/media">
+            Review Uploads
+          </a>
+          <a class="border border-primary/15 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold px-4 py-2 rounded-full shadow-sm transition-all" target="_blank" href="/e/<%= event.slug %>/gallery">
+            Open Gallery
+          </a>
+          <a class="border border-primary/15 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold px-4 py-2 rounded-full shadow-sm transition-all" href="/dashboard/events/<%= event.id %>/qr.png?download=1">
+            Download QR
+          </a>
         </div>
-        <div>
-          <div class="between"><span class="hint">Storage</span><span class="hint"><%= event.stats.usedHuman %> / <%= event.stats.limitHuman %></span></div>
-          <div class="progress"><span style="width:<%= event.stats.percent %>%"></span></div>
-        </div>
-        <div class="row" style="margin-top:4px;">
-          <a class="btn small" href="/dashboard/events/<%= event.id %>/media">Review uploads</a>
-          <a class="btn small secondary" target="_blank" href="/e/<%= event.slug %>/gallery">Gallery</a>
-          <a class="btn small secondary" href="/dashboard/events/<%= event.id %>/qr.png?download=1">QR PNG</a>
-        </div>
+
       </article>
     <% }) %>
-  </section>
+  </div>
 <% } %>

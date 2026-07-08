@@ -1,0 +1,85 @@
+<!-- Public Blogs Index View -->
+<section class="py-12 lg:py-16 text-center space-y-4">
+  <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 rounded-full text-primary text-xs font-bold shadow-sm border border-primary/20">
+    ✨ ShaadiShots Blog & CMS
+  </span>
+  <h1 class="font-headline text-4xl sm:text-5xl md:text-6xl font-black text-slate-900 leading-tight">
+    Wedding Photography & Planning Guides
+  </h1>
+  <p class="text-slate-600 text-lg leading-relaxed max-w-2xl mx-auto">
+    Discover expert tips on planning your wedding, collecting candid moments, capturing memories, and managing your QR codes effortlessly.
+  </p>
+</section>
+
+<div class="divider border-b border-primary/10 mb-12"></div>
+
+<section class="max-w-7xl mx-auto">
+  <% if (!blogs || blogs.length === 0) { %>
+    <div class="empty py-16 text-center glass-card rounded-2xl bg-white/60">
+      <div class="text-5xl mb-4">📖</div>
+      <h3 class="font-headline text-2xl font-bold text-slate-800 mb-2">No articles published yet</h3>
+      <p class="text-slate-500 max-w-md mx-auto">Check back soon! We are drafting amazing content to help make your wedding moments unforgettable.</p>
+    </div>
+  <% } else { %>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <% blogs.forEach((blog) => { %>
+        <article class="glass-card rounded-2xl overflow-hidden bg-white/70 backdrop-blur-xl border border-primary/10 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
+          
+          <!-- Cover Image -->
+          <div class="aspect-video w-full bg-slate-100 relative overflow-hidden">
+            <% if (blog.cover_image) { %>
+              <img class="w-full h-full object-cover" src="<%= blog.cover_image %>" alt="<%= blog.title %>">
+            <% } else { %>
+              <div class="w-full h-full bg-gradient-wedding flex items-center justify-center text-white/50 text-3xl font-black font-headline">
+                ShaadiShots
+              </div>
+            <% } %>
+            
+            <% if (blog.meta_keywords) { %>
+              <span class="absolute top-4 left-4 bg-white/90 backdrop-blur-sm text-primary text-[10px] uppercase font-bold tracking-wider px-3 py-1 rounded-full border border-primary/10 shadow-sm">
+                <%= blog.meta_keywords.split(',')[0].trim() %>
+              </span>
+            <% } %>
+          </div>
+
+          <!-- Card Body -->
+          <div class="p-6 flex-1 flex flex-col justify-between space-y-4">
+            <div class="space-y-2">
+              <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                <%= helpers.formatDate(blog.published_at || blog.created_at) %> · By <%= blog.author_name %>
+              </span>
+              <h3 class="font-headline text-xl font-bold text-slate-800 leading-snug hover:text-primary transition-colors">
+                <a href="/blog/<%= blog.slug %>"><%= blog.title %></a>
+              </h3>
+              <p class="text-slate-500 text-sm leading-relaxed line-clamp-3">
+                <%= blog.summary || 'Click below to read this full wedding planning and media collection article.' %>
+              </p>
+            </div>
+            
+            <div class="pt-2">
+              <a href="/blog/<%= blog.slug %>" class="inline-flex items-center gap-1.5 text-primary font-bold text-sm hover:gap-2.5 transition-all">
+                Read Article <span class="material-symbols-outlined text-sm font-black">arrow_forward</span>
+              </a>
+            </div>
+          </div>
+        </article>
+      <% }) %>
+    </div>
+  <% } %>
+</section>
+
+<!-- Call to Action -->
+<section class="max-w-4xl mx-auto text-center py-16 px-6 bg-gradient-to-r from-[#3b143c] via-[#8d2363] to-[#ff7a59] rounded-3xl text-white shadow-xl mt-20 space-y-6 relative overflow-hidden">
+  <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
+  <div class="relative z-10 space-y-4">
+    <h2 class="font-headline text-3xl sm:text-4xl font-bold leading-tight">Ready to collect your wedding memories?</h2>
+    <p class="text-slate-100 text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
+      Create your customized wedding QR code in seconds, print a guest poster, and let everyone upload their candid photos automatically.
+    </p>
+    <div class="pt-2">
+      <a href="/register" class="bg-white text-primary px-8 py-3.5 rounded-full font-bold text-sm shadow-md hover:shadow-xl transition-all inline-block hover:scale-105">
+        Get Started Free
+      </a>
+    </div>
+  </div>
+</section>

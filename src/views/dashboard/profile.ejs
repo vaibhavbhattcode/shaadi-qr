@@ -1,96 +1,96 @@
-<div class="admin-toolbar">
-  <div>
-    <span class="eyebrow">Account Settings</span>
-    <h1 style="font-size: clamp(1.6rem, 4vw, 3.65rem);">Manage Profile</h1>
-    <p>Apna name, email aur verify kiya hua WhatsApp phone number update karein, aur subscription payment invoices access karein.</p>
+<!-- Modernized Profile Page -->
+<div class="glass-card p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 bg-white/70 backdrop-blur-xl border border-primary/10">
+  <div class="space-y-1">
+    <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 rounded-full text-primary text-xs font-bold shadow-sm border border-primary/15">
+      👤 Owner Settings
+    </span>
+    <h1 class="font-headline text-3xl font-bold text-primary tracking-tight mt-2">Manage Profile</h1>
+    <p class="text-slate-500 text-xs font-medium">Update your account name, email address, WhatsApp notification number, and access receipts.</p>
   </div>
 </div>
+
 <% if (currentUser.email.endsWith('@shaadishots.local') || currentUser.name.startsWith('User +')) { %>
-  <div class="alert warning" style="margin-top: 16px; margin-bottom: 8px;">
-    <strong>⚠️ Complete Your Profile:</strong> Aapka signup OTP ke through hua hai. Invoices download karne aur account security alerts receive karne ke liye apna actual <strong>Full Name</strong> aur <strong>Email Address</strong> update karein.
+  <div class="alert warning shadow-sm mb-6">
+    <strong>⚠️ Complete Profile Setup:</strong> Your account was created via WhatsApp/OTP. Please add a valid name and email address to receive invoicing records and security notifications.
   </div>
 <% } %>
 
-<section class="grid grid-2" style="margin-top: 24px; align-items: flex-start; gap: 24px;">
-  <!-- Profile Update Form -->
-  <form class="panel grid" method="post" action="/dashboard/profile" novalidate style="gap: 16px;">
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+  
+  <!-- Profile Update Form (Left 5 Columns) -->
+  <form class="glass-card p-6 rounded-2xl border border-primary/10 bg-white/70 backdrop-blur-xl space-y-4 lg:col-span-5" method="post" action="/dashboard/profile" novalidate>
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     
-    <div class="panel-head" style="margin-bottom: 8px;">
-      <div>
-        <h2>Profile Details</h2>
-        <p>Secure details management.</p>
-      </div>
+    <div class="space-y-1">
+      <h2 class="font-headline text-xl font-bold text-slate-800">Profile Details</h2>
+      <p class="text-xs text-slate-400 font-semibold">Keep your personal contact details current.</p>
     </div>
 
-    <label>Full Name
-      <input type="text" name="name" value="<%= values.name || currentUser.name %>" required maxlength="80">
-      <% if (errors.name) { %><span class="error-text"><%= errors.name[0] %></span><% } %>
-    </label>
+    <div class="space-y-4 pt-2">
+      <div class="space-y-1.5">
+        <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Full Name</label>
+        <input type="text" name="name" value="<%= values.name || currentUser.name %>" required maxlength="80" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm">
+        <% if (errors.name) { %><span class="text-xs text-red-600 font-semibold"><%= errors.name[0] %></span><% } %>
+      </div>
 
-    <label>Email Address
-      <input type="email" name="email" value="<%= values.email || currentUser.email %>" required placeholder="name@domain.com">
-      <% if (errors.email) { %><span class="error-text"><%= errors.email[0] %></span><% } %>
-      <span class="hint">Warning: Email change validation will check for duplicate accounts.</span>
-    </label>
+      <div class="space-y-1.5">
+        <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Email Address</label>
+        <input type="email" name="email" value="<%= values.email || currentUser.email %>" required placeholder="name@domain.com" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm">
+        <% if (errors.email) { %><span class="text-xs text-red-600 font-semibold"><%= errors.email[0] %></span><% } %>
+        <span class="hint block text-[10px] text-slate-400 font-medium">Changing email will check for duplicate accounts.</span>
+      </div>
 
-    <label>WhatsApp Phone Number
-      <input type="tel" name="phone_number" value="<%= values.phone_number || (currentUser.phone_number ? '+' + currentUser.phone_number : '') %>" placeholder="E.g. +91 98765 43210">
-      <% if (errors.phone_number) { %><span class="error-text"><%= errors.phone_number[0] %></span><% } %>
-      <span class="hint">Apna linked phone number manage karein. Must include country code.</span>
-    </label>
+      <div class="space-y-1.5">
+        <label class="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">WhatsApp Phone Number</label>
+        <input type="tel" name="phone_number" value="<%= values.phone_number || (currentUser.phone_number ? '+' + currentUser.phone_number : '') %>" placeholder="E.g. +91 98765 43210" class="w-full bg-white/50 border border-primary/15 rounded-lg px-4 py-2.5 focus:ring-primary focus:border-primary text-sm">
+        <% if (errors.phone_number) { %><span class="text-xs text-red-600 font-semibold"><%= errors.phone_number[0] %></span><% } %>
+        <span class="hint block text-[10px] text-slate-400 font-medium">For system notifications and event summary alerts.</span>
+      </div>
 
-    <div style="margin-top: 8px;">
-      <button class="btn" type="submit" style="width: 100%;">Save Changes</button>
+      <button class="w-full bg-gradient-wedding text-white px-5 py-3 rounded-full font-bold text-sm shadow-md hover:shadow-xl transition-all" type="submit">Save Changes</button>
     </div>
   </form>
 
-  <!-- Payment & Invoice History Panel -->
-  <div class="panel">
-    <div class="panel-head" style="margin-bottom: 12px;">
-      <div>
-        <h2>Billing & Invoices</h2>
-        <p>Album upgrade transactions history.</p>
-      </div>
+  <!-- Payment & Invoice History Panel (Right 7 Columns) -->
+  <div class="glass-card p-6 rounded-2xl border border-primary/10 bg-white/70 backdrop-blur-xl lg:col-span-7 space-y-4">
+    <div class="space-y-1">
+      <h2 class="font-headline text-xl font-bold text-slate-800">Billing & Invoices</h2>
+      <p class="text-xs text-slate-400 font-semibold">Album upgrade transactions history and PDF receipts.</p>
     </div>
 
     <% if (payments && payments.length > 0) { %>
-      <div class="table-wrap">
-        <table class="table-like pro-table">
+      <div class="table-wrap pt-2">
+        <table class="table-like pro-table w-full text-left text-xs border-collapse">
           <thead>
-            <tr>
-              <th>Date</th>
-              <th>Plan</th>
-              <th>Amount</th>
-              <th>Status</th>
-              <th style="text-align: right;">Invoice</th>
+            <tr class="border-b border-primary/10 text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+              <th class="py-2.5">Date</th>
+              <th class="py-2.5">Plan</th>
+              <th class="py-2.5">Amount</th>
+              <th class="py-2.5">Status</th>
+              <th class="py-2.5 text-right">Invoice</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody class="divide-y divide-primary/5">
             <% payments.forEach(p => { %>
-              <tr>
-                <td><%= helpers.formatDate(p.created_at) %></td>
-                <td>
-                  <strong><%= p.plan_name %></strong>
-                  <div class="hint" style="font-size: 0.8rem; font-weight: normal;"><%= p.event_title || 'General Account' %></div>
+              <tr class="hover:bg-primary/5 transition-colors">
+                <td class="py-3 text-slate-500 font-semibold"><%= helpers.formatDate(p.created_at) %></td>
+                <td class="py-3">
+                  <strong class="text-slate-800 font-bold"><%= p.plan_name %></strong>
+                  <div class="hint text-[10px] text-slate-400 font-semibold"><%= p.event_title || 'General Account' %></div>
                 </td>
-                <td class="mono" style="font-weight: 850;"><%= p.currency %> <%= p.amount %></td>
-                <td>
-                  <% if (p.payment_status === 'paid') { %>
-                    <span class="badge approved">Paid</span>
-                  <% } else if (p.payment_status === 'pending') { %>
-                    <span class="badge pending">Pending</span>
-                  <% } else { %>
-                    <span class="badge rejected"><%= p.payment_status %></span>
-                  <% } %>
+                <td class="py-3 font-mono font-bold text-slate-800"><%= p.currency %> <%= p.amount %></td>
+                <td class="py-3">
+                  <span class="px-2.5 py-0.5 text-[9px] font-extrabold rounded-full border uppercase <%= p.payment_status === 'paid' ? 'bg-green-50 text-green-700 border-green-200' : (p.payment_status === 'pending' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-red-50 text-red-700 border-red-200') %>">
+                    <%= p.payment_status %>
+                  </span>
                 </td>
-                <td style="text-align: right;">
+                <td class="py-3 text-right">
                   <% if (p.payment_status === 'paid') { %>
-                    <a href="/dashboard/payments/<%= p.id %>/invoice" target="_blank" class="btn secondary small" style="padding: 4px 10px; min-height: 28px; font-size: 0.78rem;">
+                    <a href="/dashboard/payments/<%= p.id %>/invoice" target="_blank" class="inline-flex items-center gap-1 border border-primary/15 bg-white hover:bg-slate-50 text-primary text-[10px] font-bold px-3 py-1.5 rounded-full shadow-sm transition-all">
                       📄 View Invoice
                     </a>
                   <% } else { %>
-                    <span class="muted">—</span>
+                    <span class="text-slate-400 font-semibold">—</span>
                   <% } %>
                 </td>
               </tr>
@@ -99,10 +99,10 @@
         </table>
       </div>
     <% } else { %>
-      <div class="empty" style="padding: 30px 14px;">
-        <div style="font-size: 2.2rem; margin-bottom: 8px; opacity: 0.6;">🧾</div>
-        <p style="margin: 0; font-weight: 800;">No payment records found.</p>
-        <span class="hint">Upgrade an event plan to start billing details records.</span>
+      <div class="empty py-12 text-center bg-white/40 border border-dashed border-primary/20 rounded-xl">
+        <div class="text-3xl mb-3">🧾</div>
+        <p class="text-sm font-bold text-slate-800 mb-1">No payment records found</p>
+        <span class="hint block text-xs text-slate-400 font-medium">Upgrade an event plan to start billing details records.</span>
       </div>
     <% } %>
   </div>

@@ -1,0 +1,85 @@
+<!-- Admin Blogs List View -->
+<section class="glass-card p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 bg-white/70 backdrop-blur-xl border border-primary/10">
+  <div class="space-y-1">
+    <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 rounded-full text-primary text-xs font-bold shadow-sm border border-primary/15">
+      ✍️ CMS Panel
+    </span>
+    <h2 class="font-headline text-3xl font-bold text-primary tracking-tight mt-2">Manage Blog Articles</h2>
+    <p class="text-slate-500 text-xs font-medium">Create and edit SEO-rich content to boost platform search visibility.</p>
+  </div>
+  <div class="flex flex-wrap gap-2.5 pt-2 sm:pt-0">
+    <a class="bg-gradient-wedding text-white px-5 py-2.5 rounded-full font-bold text-xs shadow-md hover:shadow-xl transition-all" href="/admin/blogs/new">
+      + New Blog Post
+    </a>
+  </div>
+</section>
+
+<div class="glass-card p-6 rounded-2xl border border-primary/10 bg-white/70 backdrop-blur-xl">
+  <% if (!blogs || blogs.length === 0) { %>
+    <div class="empty py-12 text-center">
+      <div class="text-4xl mb-4">📝</div>
+      <h3 class="text-lg font-bold text-slate-800 mb-1">No blog posts found</h3>
+      <p class="text-slate-500 text-sm mb-4">Start creating informative posts on wedding photography and planning.</p>
+      <a class="btn" href="/admin/blogs/new">+ Create First Post</a>
+    </div>
+  <% } else { %>
+    <div class="table-wrap">
+      <table class="table-like pro-table w-full text-left text-xs border-collapse">
+        <thead>
+          <tr class="border-b border-primary/10 text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+            <th class="py-3">Cover</th>
+            <th class="py-3">Article</th>
+            <th class="py-3">Status</th>
+            <th class="py-3">Author</th>
+            <th class="py-3">Published Date</th>
+            <th class="py-3 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-primary/5">
+          <% blogs.forEach((blog) => { %>
+            <tr class="hover:bg-primary/5 transition-colors">
+              <td class="py-3.5 pr-4">
+                <div class="w-12 h-12 rounded-lg bg-slate-100 border border-primary/5 overflow-hidden flex-shrink-0">
+                  <% if (blog.cover_image) { %>
+                    <img class="w-full h-full object-cover" src="<%= blog.cover_image %>" alt="Cover">
+                  <% } else { %>
+                    <div class="w-full h-full flex items-center justify-center text-slate-300 font-bold text-sm">N/A</div>
+                  <% } %>
+                </div>
+              </td>
+              <td class="py-3.5">
+                <a class="font-bold text-slate-800 hover:text-primary transition-colors text-sm" href="/admin/blogs/<%= blog.id %>/edit">
+                  <%= blog.title %>
+                </a>
+                <div class="text-[10px] text-slate-400 font-semibold truncate max-w-xs mt-0.5">
+                  /blog/<%= blog.slug %>
+                </div>
+              </td>
+              <td class="py-3.5">
+                <span class="px-2.5 py-0.5 text-[9px] font-extrabold rounded-full border uppercase <%= blog.status === 'published' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-50 text-slate-500 border-slate-200' %>">
+                  <%= blog.status %>
+                </span>
+              </td>
+              <td class="py-3.5 font-semibold text-slate-600"><%= blog.author_name %></td>
+              <td class="py-3.5 text-slate-400 font-semibold">
+                <%= blog.published_at ? helpers.formatDate(blog.published_at) : '—' %>
+              </td>
+              <td class="py-3.5 text-right">
+                <div class="flex items-center justify-end gap-2">
+                  <% if (blog.status === 'published') { %>
+                    <a class="btn small secondary" href="/blog/<%= blog.slug %>" target="_blank">View Post</a>
+                  <% } %>
+                  <a class="btn small" href="/admin/blogs/<%= blog.id %>/edit">Edit</a>
+                  <form action="/admin/blogs/<%= blog.id %>/delete" method="post" onsubmit="return confirm('Delete this blog post permanently?')" class="inline m-0">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button class="btn small danger" type="submit">Delete</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>

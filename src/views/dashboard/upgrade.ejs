@@ -1,71 +1,115 @@
-<section class="between">
-  <div>
-    <h1 style="margin:0 0 4px; letter-spacing:-.04em; font-size: clamp(1.4rem, 4vw, 2.2rem);">Upgrade Album Storage & Features</h1>
-    <p class="muted">Increase upload capacity and enable premium features like guest downloads and branding.</p>
+<!-- Modernized Upgrade Storage & Pricing Panel -->
+<section class="glass-card p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 bg-white/70 backdrop-blur-xl border border-primary/10">
+  <div class="space-y-1">
+    <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 rounded-full text-primary text-xs font-bold shadow-sm border border-primary/15">
+      👑 Premium Features
+    </span>
+    <h1 class="font-headline text-3xl font-bold text-primary tracking-tight mt-2">Upgrade Album Storage</h1>
+    <p class="text-slate-500 text-xs font-medium">Increase your upload space and unlock exclusive features like original ZIP downloads, PIN lock, and custom themes.</p>
   </div>
-  <a class="btn secondary" href="/dashboard/events/<%= event.id %>">Back to Event</a>
+  <div class="flex flex-wrap gap-2.5 pt-2 sm:pt-0">
+    <a class="border border-primary/20 bg-white hover:bg-slate-50 text-primary px-5 py-2.5 rounded-full font-bold text-xs shadow-sm transition-all" href="/dashboard/events/<%= event.id %>">
+      Back to Album
+    </a>
+  </div>
 </section>
 
-<section class="grid grid-3" style="margin-top:24px; align-items: stretch;">
+<!-- Pricing Columns -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch mb-8">
   <% plans.forEach((p) => { %>
     <% const isCurrent = event.plan === p.slug; %>
-    <div class="card" style="display:flex; flex-direction:column; justify-content:space-between; border-color: <%= isCurrent ? 'var(--brand)' : 'var(--border)' %>; background: <%= isCurrent ? 'rgba(255, 246, 251, 0.9)' : 'var(--surface)' %>; position: relative; overflow: hidden; height: 100%;">
+    <div class="glass-card p-8 rounded-3xl flex flex-col justify-between h-full hover-up border-2 <%= isCurrent ? 'border-primary/40 bg-white/95 ring-4 ring-primary/5' : 'border-primary/10 bg-white/60' %> relative">
+      
       <% if (isCurrent) { %>
-        <span class="badge approved" style="position: absolute; top: 12px; right: 12px;">Active Plan</span>
+        <span class="absolute top-4 right-4 bg-gradient-wedding text-white text-[9px] uppercase font-extrabold tracking-widest px-3 py-1 rounded-full shadow-sm">
+          Active Plan
+        </span>
       <% } %>
-      <div>
-        <h3 style="margin-top:0; font-size: 1.4rem; letter-spacing:-.02em;"><%= p.name %></h3>
-        <div style="margin: 16px 0;">
-          <span style="font-size: 2.2rem; font-weight: 950; letter-spacing: -.05em;">₹<%= p.price %></span>
-          <span class="muted">/ wedding event</span>
+
+      <div class="space-y-6">
+        <div>
+          <span class="text-[10px] uppercase font-bold text-primary tracking-widest block">Package Tier</span>
+          <h3 class="font-headline text-2xl font-bold text-slate-800 mt-1"><%= p.name %></h3>
         </div>
-        <div class="divider"></div>
-        <ul style="list-style: none; padding: 0; margin: 18px 0; display: grid; gap: 10px;">
-          <li style="display: flex; align-items: center; gap: 8px;">
-            <span style="color: var(--green); font-weight: bold;">✓</span>
-            <strong><%= p.storageLimitHuman %></strong> total storage
+
+        <div class="py-2">
+          <span class="text-4xl font-black text-slate-900">₹<%= p.price %></span>
+          <span class="text-xs font-bold text-slate-400">/ event</span>
+        </div>
+
+        <div class="divider border-b border-primary/5"></div>
+
+        <ul class="space-y-3.5 text-xs text-slate-600 font-semibold">
+          <li class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm text-green-600 font-bold">check</span>
+            <span><strong><%= p.storageLimitHuman %></strong> total storage quota</span>
           </li>
-          <li style="display: flex; align-items: center; gap: 8px;">
-            <span style="color: var(--green); font-weight: bold;">✓</span>
-            Photo uploads: max <strong><%= (p.photoMaxBytes / (1024*1024)).toFixed(0) %> MB</strong> / file
+          <li class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm text-green-600 font-bold">check</span>
+            <span>Photos: up to <strong><%= (p.photoMaxBytes / (1024*1024)).toFixed(0) %> MB</strong> per file</span>
           </li>
-          <li style="display: flex; align-items: center; gap: 8px;">
-            <span style="color: <%= p.videoEnabled ? 'var(--green)' : 'var(--red)' %>; font-weight: bold;"><%= p.videoEnabled ? '✓' : '✗' %></span>
-            Video uploads: <%= p.videoEnabled ? `max <strong>${(p.videoMaxBytes / (1024*1024)).toFixed(0)} MB</strong> / file` : 'Disabled' %>
+          <li class="flex items-center gap-2">
+            <% if (p.videoEnabled) { %>
+              <span class="material-symbols-outlined text-sm text-green-600 font-bold">check</span>
+              <span>Videos: up to <strong><%= (p.videoMaxBytes / (1024*1024)).toFixed(0) %> MB</strong> per file</span>
+            <% } else { %>
+              <span class="material-symbols-outlined text-sm text-red-600 font-bold">close</span>
+              <span class="text-slate-400 font-normal">Video uploads disabled</span>
+            <% } %>
           </li>
-          <li style="display: flex; align-items: center; gap: 8px;">
-            <span style="color: <%= p.zipDownloadEnabled ? 'var(--green)' : 'var(--red)' %>; font-weight: bold;"><%= p.zipDownloadEnabled ? '✓' : '✗' %></span>
-            Album ZIP download: <%= p.zipDownloadEnabled ? 'Enabled' : 'Disabled' %>
+          <li class="flex items-center gap-2">
+            <% if (p.zipDownloadEnabled) { %>
+              <span class="material-symbols-outlined text-sm text-green-600 font-bold">check</span>
+              <span>Album ZIP download enabled</span>
+            <% } else { %>
+              <span class="material-symbols-outlined text-sm text-red-600 font-bold">close</span>
+              <span class="text-slate-400 font-normal">Album ZIP download disabled</span>
+            <% } %>
           </li>
-          <li style="display: flex; align-items: center; gap: 8px;">
-            <span style="color: <%= p.pinGalleryEnabled ? 'var(--green)' : 'var(--red)' %>; font-weight: bold;"><%= p.pinGalleryEnabled ? '✓' : '✗' %></span>
-            Gallery PIN security: <%= p.pinGalleryEnabled ? 'Enabled' : 'Disabled' %>
+          <li class="flex items-center gap-2">
+            <% if (p.pinGalleryEnabled) { %>
+              <span class="material-symbols-outlined text-sm text-green-600 font-bold">check</span>
+              <span>Gallery PIN protection enabled</span>
+            <% } else { %>
+              <span class="material-symbols-outlined text-sm text-red-600 font-bold">close</span>
+              <span class="text-slate-400 font-normal">Gallery PIN security disabled</span>
+            <% } %>
           </li>
-          <li style="display: flex; align-items: center; gap: 8px;">
-            <span style="color: <%= p.customBrandingEnabled ? 'var(--green)' : 'var(--red)' %>; font-weight: bold;"><%= p.customBrandingEnabled ? '✓' : '✗' %></span>
-            Custom branding: <%= p.customBrandingEnabled ? 'Enabled' : 'Disabled' %>
+          <li class="flex items-center gap-2">
+            <% if (p.customBrandingEnabled) { %>
+              <span class="material-symbols-outlined text-sm text-green-600 font-bold">check</span>
+              <span>Premium theme & branding</span>
+            <% } else { %>
+              <span class="material-symbols-outlined text-sm text-red-600 font-bold">close</span>
+              <span class="text-slate-400 font-normal">Standard branding theme only</span>
+            <% } %>
           </li>
         </ul>
       </div>
-      <div style="margin-top:20px;">
+
+      <div class="pt-6">
         <% if (isCurrent) { %>
-          <button class="btn secondary" style="width: 100%; cursor: not-allowed;" disabled>Current Plan</button>
+          <button class="w-full bg-slate-100 text-slate-400 border border-slate-200 py-3 rounded-full font-bold text-xs cursor-not-allowed" disabled>Current active plan</button>
         <% } else { %>
-          <button class="btn upgrade-plan-btn" id="btn-<%= p.slug %>" data-plan="<%= p.slug %>" style="width: 100%;">Upgrade to <%= p.name %></button>
+          <button class="w-full bg-gradient-wedding text-white py-3 rounded-full font-bold text-xs shadow-md hover:shadow-xl transition-all upgrade-plan-btn active:scale-95" id="btn-<%= p.slug %>" data-plan="<%= p.slug %>">
+            Upgrade to <%= p.name %>
+          </button>
         <% } %>
       </div>
+
     </div>
   <% }) %>
 </section>
 
+<!-- Sandbox alerts -->
 <% if (!razorpayKeyId) { %>
-  <section class="card" style="margin-top:24px; border-color: var(--gold); background: #fffdf6; display: flex; align-items: center; gap: 14px;">
-    <div style="font-size: 1.8rem;">💡</div>
+  <div class="alert warning shadow-sm flex items-start gap-3 bg-amber-50/50 border border-amber-200 text-amber-800 p-5 rounded-2xl">
+    <span class="material-symbols-outlined text-xl pt-0.5">lightbulb</span>
     <div>
-      <h4 style="margin: 0 0 4px; color: var(--gold);">Sandbox Mock Payment Mode Active</h4>
-      <p class="hint" style="margin: 0; color: #786131;">The platform is currently operating without live Razorpay keys. Upgrades can be tested instantly and are simulated for free.</p>
+      <h4 class="font-headline font-bold text-sm text-amber-900">Sandbox Mock Payment Mode Active</h4>
+      <p class="text-xs text-amber-700 leading-relaxed font-semibold mt-1">The platform is currently operating without live Razorpay keys. Upgrades can be tested instantly and are simulated for free.</p>
     </div>
-  </section>
+  </div>
 <% } %>
 
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>

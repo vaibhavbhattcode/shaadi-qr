@@ -1,31 +1,82 @@
-<header class="sticky top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-primary/10 shadow-sm">
+<header class="sticky top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-primary/10 shadow-sm transition-all duration-300">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center gap-3">
-    <a class="flex items-center gap-2 sm:gap-3" href="/">
-      <svg class="w-8 h-8 sm:w-10 sm:h-10 p-1 rounded-lg bg-white border border-primary/15 flex-shrink-0" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <!-- Brand Logo -->
+    <a class="flex items-center gap-2 sm:gap-3 group" href="/">
+      <svg class="w-9 h-9 sm:w-11 sm:h-11 p-1 rounded-xl bg-white border border-primary/15 shadow-sm group-hover:scale-105 transition-transform duration-300 flex-shrink-0" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="roseGradientNavHeader" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" style="stop-color:#b83280;stop-opacity:1" />
             <stop offset="100%" style="stop-color:#ff7a59;stop-opacity:1" />
           </linearGradient>
         </defs>
-        <path d="M50 15 C30 15 15 30 15 50 C15 70 30 85 50 85 C70 85 85 70 85 50 C85 30 70 15 50 15" fill="none" stroke="url(#roseGradientNavHeader)" stroke-width="3"/>
-        <circle cx="50" cy="50" r="12" fill="url(#roseGradientNavHeader)"/>
+        <path d="M50 15 C30 15 15 30 15 50 C15 70 30 85 50 85 C70 85 85 70 85 50 C85 30 70 15 50 15" fill="none" stroke="url(#roseGradientNavHeader)" stroke-width="3.5"/>
+        <circle cx="50" cy="50" r="13" fill="url(#roseGradientNavHeader)"/>
         <path d="M45 40 Q50 30 55 40 T65 50 Q60 60 55 50 T45 40" fill="#b83280" opacity="0.6"/>
       </svg>
-      <span class="font-headline text-xl sm:text-2xl font-bold text-primary tracking-tight">ShaadiShots</span>
+      <span class="font-headline text-2xl sm:text-3xl font-black text-gradient-wedding tracking-tight">ShaadiShots</span>
     </a>
     
-    <div class="flex items-center gap-1 sm:gap-2">
-      <% if (currentUser) { %>
-        <% if (isSuperAdmin) { %>
-          <a class="hidden sm:inline-flex items-center text-xs font-bold text-slate-600 hover:text-primary transition-colors px-3 py-2 rounded-lg" href="/admin">Super Admin</a>
+    <!-- Desktop Navigation Links -->
+    <nav class="hidden md:flex items-center gap-8 font-body text-sm font-bold text-slate-600">
+      <a class="hover:text-primary transition-colors duration-200" href="/#features">Features</a>
+      <a class="hover:text-primary transition-colors duration-200" href="/#how-it-works">How It Works</a>
+      <a class="hover:text-primary transition-colors duration-200" href="/#pricing">Pricing</a>
+      <a class="hover:text-primary transition-colors duration-200" href="/blog">Blog</a>
+      <a class="hover:text-primary transition-colors duration-200" href="/contact">Contact</a>
+    </nav>
+    
+    <!-- User Actions / CTA -->
+    <div class="flex items-center gap-3">
+      <div class="hidden sm:flex items-center gap-3">
+        <% if (currentUser) { %>
+          <% if (isSuperAdmin) { %>
+            <a class="text-xs font-bold text-slate-600 hover:text-primary transition-colors px-3 py-2 rounded-lg" href="/admin">Super Admin</a>
+          <% } %>
+          <a class="text-xs font-bold text-slate-600 hover:text-primary transition-colors px-3 py-2 rounded-lg" href="/dashboard">Dashboard</a>
+          <a class="bg-gradient-wedding text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-md hover:shadow-xl hover:scale-105 transition-all duration-200 whitespace-nowrap" href="/dashboard">My Account</a>
+        <% } else { %>
+          <a class="text-xs font-bold text-slate-600 hover:text-primary transition-colors px-4 py-2 rounded-lg" href="/login">Login</a>
+          <a class="bg-gradient-wedding text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-md hover:shadow-xl hover:scale-105 transition-all duration-200 whitespace-nowrap" href="/register">Get Started</a>
         <% } %>
-        <a class="hidden sm:inline-flex items-center text-xs font-bold text-slate-600 hover:text-primary transition-colors px-3 py-2 rounded-lg" href="/dashboard">Dashboard</a>
-        <a class="bg-gradient-wedding text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-full text-[11px] sm:text-xs font-bold shadow-md hover:shadow-xl transition-all whitespace-nowrap" href="/dashboard">My Account</a>
-      <% } else { %>
-        <a class="text-xs font-bold text-slate-600 hover:text-primary transition-colors px-2 sm:px-3 py-2 rounded-lg" href="/login">Login</a>
-        <a class="bg-gradient-wedding text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-full text-[11px] sm:text-xs font-bold shadow-md hover:shadow-xl transition-all whitespace-nowrap" href="/register">Get Started</a>
-      <% } %>
+      </div>
+
+      <!-- Mobile Hamburger Button -->
+      <button onclick="toggleMobilePublicMenu()" class="md:hidden p-2 text-slate-600 hover:text-primary focus:outline-none" aria-label="Toggle Navigation Menu">
+        <span id="publicMenuIcon" class="material-symbols-outlined text-2xl font-bold">menu</span>
+      </button>
     </div>
   </div>
+
+  <!-- Mobile Dropdown Navigation Menu -->
+  <div id="mobilePublicDropdown" class="hidden md:hidden border-t border-primary/5 bg-white/95 backdrop-blur-xl px-4 py-6 space-y-4 shadow-lg animate-fade-in absolute w-full left-0 z-40">
+    <nav class="flex flex-col gap-4 font-body text-base font-bold text-slate-600">
+      <a onclick="toggleMobilePublicMenu()" class="hover:text-primary transition-colors" href="/#features">Features</a>
+      <a onclick="toggleMobilePublicMenu()" class="hover:text-primary transition-colors" href="/#how-it-works">How It Works</a>
+      <a onclick="toggleMobilePublicMenu()" class="hover:text-primary transition-colors" href="/#pricing">Pricing</a>
+      <a onclick="toggleMobilePublicMenu()" class="hover:text-primary transition-colors" href="/blog">Blog</a>
+      <a onclick="toggleMobilePublicMenu()" class="hover:text-primary transition-colors" href="/contact">Contact</a>
+      <hr class="border-primary/5 my-2">
+      <% if (currentUser) { %>
+        <a onclick="toggleMobilePublicMenu()" class="hover:text-primary transition-colors" href="/dashboard">My Dashboard</a>
+        <a class="bg-gradient-wedding text-white text-center py-3 rounded-full text-sm font-bold shadow-md inline-block w-full" href="/dashboard">My Account</a>
+      <% } else { %>
+        <a onclick="toggleMobilePublicMenu()" class="hover:text-primary transition-colors" href="/login">Login</a>
+        <a class="bg-gradient-wedding text-white text-center py-3 rounded-full text-sm font-bold shadow-md inline-block w-full" href="/register">Get Started</a>
+      <% } %>
+    </nav>
+  </div>
 </header>
+
+<script>
+  function toggleMobilePublicMenu() {
+    const dropdown = document.getElementById('mobilePublicDropdown');
+    const icon = document.getElementById('publicMenuIcon');
+    if (dropdown.classList.contains('hidden')) {
+      dropdown.classList.remove('hidden');
+      icon.textContent = 'close';
+    } else {
+      dropdown.classList.add('hidden');
+      icon.textContent = 'menu';
+    }
+  }
+</script>
