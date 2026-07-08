@@ -28,7 +28,7 @@ export function helmetMiddleware() {
         scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://accounts.google.com", "https://checkout.razorpay.com", "https://cdn.tailwindcss.com"],
         styleSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com", "https://fonts.googleapis.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
-        imgSrc: ["'self'", 'data:', 'blob:', 'https://lh3.googleusercontent.com', 'https://ssl.gstatic.com', 'https://*.razorpay.com'],
+        imgSrc: ["'self'", 'data:', 'blob:', 'https://lh3.googleusercontent.com', 'https://ssl.gstatic.com', 'https://*.razorpay.com', 'https://images.unsplash.com'],
         mediaSrc: ["'self'", 'blob:'],
         connectSrc: ["'self'", "https://accounts.google.com", "https://api.razorpay.com", "https://checkout.razorpay.com"],
         frameSrc: ["'self'", "https://accounts.google.com", "https://api.razorpay.com", "https://checkout.razorpay.com"],
